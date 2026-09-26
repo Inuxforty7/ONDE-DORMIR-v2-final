@@ -1,0 +1,10 @@
+{
+  "name": "Remix Onde Dormir - Hospedagens em Moçambique",
+  "description": "Plataforma simples, rápida e privada para encontrar pensões, guest houses e hotéis próximos em Moçambique.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
