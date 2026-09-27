@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Accommodation, AccommodationType, ActiveTab, UserLocationState } from './types';
 import { INITIAL_ACCOMMODATIONS } from './data/accommodations';
-import { calculateDistanceKm, MozLocationPreset } from './utils/geo';
+import { calculateDistanceKm, MozLocationPreset, findNearestPresetLocation, MOZ_PRESET_LOCATIONS } from './utils/geo';
 import { getSavedAccommodationIds, toggleSaveAccommodation, clearSavedAccommodations } from './utils/privacy';
 
 import { Header } from './components/Header';
@@ -51,13 +51,26 @@ export default function App() {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
-  // User location state (defaults to Maputo Central)
-  const [userLocation, setUserLocation] = useState<UserLocationState>({
-    coords: { lat: -25.9692, lng: 32.5732 },
-    name: 'Maputo (Centro)',
-    isCustom: false,
-    isLoading: false,
-    error: null,
+  // User location state (persisted in localStorage, defaults to Inhambane for instant localized experience)
+  const [userLocation, setUserLocation] = useState<UserLocationState>(() => {
+    const saved = localStorage.getItem('onde_dormir_user_location');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // fallback
+      }
+    }
+    return {
+      coords: { lat: -23.8650, lng: 35.3833 },
+      name: 'Inhambane (Cidade)',
+      city: 'Inhambane',
+      province: 'Inhambane',
+      isAllMozambique: false,
+      isCustom: true,
+      isLoading: false,
+      error: null,
+    };
   });
 
   // Calculate distance for all accommodations based on user location
@@ -82,7 +95,7 @@ export default function App() {
     return accommodationsWithDistance.find((a) => a.id === selectedAccommodation.id) || selectedAccommodation;
   }, [selectedAccommodation, accommodationsWithDistance]);
 
-  // Request real GPS location
+  // Request real GPS location and detect the nearest Mozambican province/city
   const handleRequestGps = useCallback(() => {
     if (!('geolocation' in navigator)) {
       showToast('Geolocalização não suportada no seu navegador. Escolha a cidade manualmente.', 'warn');
@@ -98,14 +111,20 @@ export default function App() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
-        setUserLocation({
+        const nearest = findNearestPresetLocation(coords.lat, coords.lng);
+        const newLoc: UserLocationState = {
           coords,
-          name: 'Minha Localização (GPS)',
+          name: `${nearest.city} (GPS)`,
+          city: nearest.city,
+          province: nearest.province,
+          isAllMozambique: false,
           isCustom: false,
           isLoading: false,
           error: null,
-        });
-        showToast('Localização GPS atualizada!', 'success');
+        };
+        setUserLocation(newLoc);
+        localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
+        showToast(`📍 Província detetada: ${nearest.province} (${nearest.city})`, 'success');
       },
       (error) => {
         console.warn('Geolocation error:', error);
@@ -127,14 +146,63 @@ export default function App() {
   // Handle Preset selection
   const handleSelectPreset = (preset: MozLocationPreset, neighborhood?: string) => {
     const locName = neighborhood ? `${preset.city} (${neighborhood})` : preset.name;
-    setUserLocation({
+    const newLoc: UserLocationState = {
       coords: preset.coords,
       name: locName,
+      city: preset.city,
+      province: preset.province,
+      isAllMozambique: false,
       isCustom: true,
       isLoading: false,
       error: null,
-    });
-    showToast(`Localização definida para ${locName}`, 'success');
+    };
+    setUserLocation(newLoc);
+    localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
+    showToast(`📍 Província de ${preset.province} ativa`, 'success');
+  };
+
+  // Handle Select All Mozambique
+  const handleSelectAllMozambique = () => {
+    const newLoc: UserLocationState = {
+      coords: null,
+      name: 'Todo Moçambique',
+      city: undefined,
+      province: undefined,
+      isAllMozambique: true,
+      isCustom: true,
+      isLoading: false,
+      error: null,
+    };
+    setUserLocation(newLoc);
+    localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
+    showToast('A mostrar opções de todo o Moçambique', 'info');
+  };
+
+  // Handle direct province selection
+  const handleSelectProvince = (provName: string) => {
+    if (provName === 'all' || provName.toLowerCase() === 'todo moçambique') {
+      handleSelectAllMozambique();
+      return;
+    }
+    const found = MOZ_PRESET_LOCATIONS.find((p) => p.province.toLowerCase() === provName.toLowerCase()) ||
+                  MOZ_PRESET_LOCATIONS.find((p) => p.name.toLowerCase().includes(provName.toLowerCase()));
+    if (found) {
+      handleSelectPreset(found);
+    } else {
+      const newLoc: UserLocationState = {
+        coords: null,
+        name: provName,
+        city: provName,
+        province: provName,
+        isAllMozambique: false,
+        isCustom: true,
+        isLoading: false,
+        error: null,
+      };
+      setUserLocation(newLoc);
+      localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
+      showToast(`📍 Província de ${provName} ativa`, 'success');
+    }
   };
 
   // Toggle Save handler
@@ -219,27 +287,42 @@ export default function App() {
             isSaved={(id) => savedIds.includes(id)}
             onToggleSave={handleToggleSave}
             onSwitchToMap={() => setActiveTab('map')}
+            onBackToHome={() => setActiveTab('home')}
             initialTypeFilter={exploreTypeFilter}
             initialSearchQuery={exploreSearchQuery}
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
+            onSelectProvince={handleSelectProvince}
+            onSelectAllMozambique={handleSelectAllMozambique}
           />
         )}
 
         {activeTab === 'guides' && (
           <TourGuidesTab
             onBackToHome={() => setActiveTab('home')}
+            userLocation={userLocation}
+            onOpenLocationModal={() => setIsLocationModalOpen(true)}
+            onSelectProvince={handleSelectProvince}
+            onSelectAllMozambique={handleSelectAllMozambique}
           />
         )}
 
         {activeTab === 'rentacar' && (
           <RentACarTab
             onBackToHome={() => setActiveTab('home')}
+            userLocation={userLocation}
+            onOpenLocationModal={() => setIsLocationModalOpen(true)}
+            onSelectProvince={handleSelectProvince}
+            onSelectAllMozambique={handleSelectAllMozambique}
           />
         )}
 
         {activeTab === 'heartlink' && (
           <HeartLinkTab
             onBackToHome={() => setActiveTab('home')}
+            userLocation={userLocation}
+            onOpenLocationModal={() => setIsLocationModalOpen(true)}
+            onSelectProvince={handleSelectProvince}
+            onSelectAllMozambique={handleSelectAllMozambique}
             accommodations={accommodationsWithDistance}
             onSelectAccommodation={setSelectedAccommodation}
             onNavigateToExplore={() => setActiveTab('explore')}
@@ -250,6 +333,7 @@ export default function App() {
           <MapView
             accommodations={accommodationsWithDistance}
             userCoords={userLocation.coords}
+            userLocation={userLocation}
             onSelectAccommodation={setSelectedAccommodation}
             onRequestGps={handleRequestGps}
             isGpsLoading={userLocation.isLoading}
@@ -297,8 +381,10 @@ export default function App() {
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         onSelectPreset={handleSelectPreset}
+        onSelectAllMozambique={handleSelectAllMozambique}
         onRequestGps={handleRequestGps}
         currentLocationName={userLocation.name}
+        userLocation={userLocation}
         isGpsLoading={userLocation.isLoading}
       />
 

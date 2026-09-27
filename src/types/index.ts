@@ -1,9 +1,4 @@
-export type AccommodationType = 
-  | 'pensao' 
-  | 'guest_house' 
-  | 'hotel' 
-  | 'lodge' 
-  | 'residencial';
+export type AccommodationType = 'pensao' | 'hotel' | 'guest_house' | 'lodge' | 'residencial';
 
 export type AmenityId = 
   | 'ac' 
@@ -15,15 +10,9 @@ export type AmenityId =
   | 'restaurant' 
   | 'tv' 
   | 'pool' 
-  | 'security'
-  | 'bar'
-  | 'hot_water';
-
-export interface AmenityInfo {
-  id: AmenityId;
-  name: string;
-  icon: string;
-}
+  | 'bar' 
+  | 'hot_water' 
+  | 'security';
 
 export type VerificationStatus = 'verified_in_person' | 'verified' | 'unverified' | 'pending';
 
@@ -32,19 +21,21 @@ export interface LocationCoordinates {
   lng: number;
 }
 
-export interface AccommodationLocation extends LocationCoordinates {
+export interface AccommodationLocation {
+  lat: number;
+  lng: number;
   address: string;
-  neighborhood: string; // Bairro / Zona (ex: Polana, Sommerschield, Zimpeto, Bairro Central)
-  city: string; // ex: Maputo, Matola, Beira, Nampula
-  province: string; // ex: Maputo Cidade, Sofala, Inhambane, Nampula
-  landmark?: string; // Ponto de referência útil em Moçambique
+  neighborhood: string; // ex: Sommerschield, Baixa, Polana, Zimpeto
+  city: string; // ex: Maputo, Matola, Beira, Nampula, Vilankulo
+  province: string; // ex: Maputo Cidade, Maputo Província, Sofala, Nampula, Inhambane
+  landmark?: string; // ex: "A 100m do Hospital Central", "Perto da paragem do Xipamanine"
 }
 
 export interface IndicativePrice {
   approxMin?: number;
   approxMax?: number;
-  currency: 'MZN';
-  labelNote?: string;
+  currency: 'MZN' | 'USD';
+  labelNote?: string; // ex: "A partir de 1.800 MT/noite"
 }
 
 export interface Accommodation {
@@ -54,18 +45,18 @@ export interface Accommodation {
   tagline: string;
   description: string;
   location: AccommodationLocation;
-  phone: string; // Formatado para chamada: ex: +258841234567
-  whatsapp: string; // Para link do wa.me: ex: 258841234567
+  phone: string;
+  whatsapp?: string;
   amenities: AmenityId[];
   photos: string[];
   verificationStatus: VerificationStatus;
   verifiedAt?: string;
   priceEstimate?: IndicativePrice;
   distanceKm?: number;
-  rating?: number; // ex: 4.5, 4.8
-  reviewsCount?: number; // ex: 28
-  isPremium?: boolean; // 👑 PREMIUM (Plano de destaque comercial)
-  featured?: boolean; // ⭐ DESTAQUE
+  rating?: number;
+  reviewsCount?: number;
+  isPremium?: boolean;
+  featured?: boolean;
   isOpen24h?: boolean;
   notes?: string;
 }
@@ -73,6 +64,9 @@ export interface Accommodation {
 export interface UserLocationState {
   coords: LocationCoordinates | null;
   name: string;
+  city?: string;
+  province?: string;
+  isAllMozambique?: boolean;
   isCustom: boolean;
   isLoading: boolean;
   error?: string | null;
@@ -120,7 +114,9 @@ export interface CarRental {
   description: string;
 }
 
-export type HeartLinkIntention = 'encontro_intimo' | 'convivio_guesthouse' | 'relacionamento_discreto' | 'acompanhamento_vip' | 'namoro';
+// Strictly restricted to two legitimate social objectives in compliance with Mozambican law:
+// Amizade & Companheirismo | Matrimónio & Relacionamento Sério
+export type HeartLinkIntention = 'amizade' | 'matrimonio';
 
 export interface HeartLinkProfile {
   id: string;
@@ -131,26 +127,24 @@ export interface HeartLinkProfile {
   city: string;
   province: string;
   intentions: HeartLinkIntention[];
-  verified?: boolean; // 🟢 Perfil Verificado (Selo após verificação de BI / Selfie / Celular)
-  isPremium?: boolean; // 👑 HeartLink Premium (1.000 MT/mês)
-  isFeatured?: boolean; // ⭐ Destaque no topo
+  verified?: boolean; // 🟢 Perfil Verificado (Selo após verificação de BI / Celular)
+  isPremium?: boolean;
+  isFeatured?: boolean;
   isVipExclusive?: boolean;
   bio: string;
   profession?: string;
   phone?: string;
   whatsapp?: string;
-  encounterRate?: number; // Valor indicativo em MT
-  rateNote?: string;
   availabilitySchedule?: string;
   preferredAccommodations?: string[];
-  likesReceived?: number; // Quantidade de curtidas recebidas
+  likesReceived?: number;
   isOnline?: boolean;
 }
 
 export interface HeartLinkUserAccount {
-  isPremium: boolean; // 1.000 MT/mês
+  isPremium: boolean;
   premiumExpiresAt?: string;
-  isVerified: boolean; // 300 MT taxa única (BI + Selfie)
+  isVerified: boolean;
   verifiedAt?: string;
   likedProfiles: string[];
   myProfile?: HeartLinkProfile;

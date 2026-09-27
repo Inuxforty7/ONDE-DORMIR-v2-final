@@ -1,4 +1,4 @@
-import { LocationCoordinates } from '../types';
+import { LocationCoordinates, UserLocationState } from '../types';
 
 /**
  * Calculates Haversine distance between two coordinates in kilometers.
@@ -54,7 +54,8 @@ export function getDirectionsUrl(lat: number, lng: number, placeName?: string): 
 /**
  * Generates direct WhatsApp click-to-chat URL with inquiry message.
  */
-export function getWhatsAppInquiryUrl(phoneClean: string, accommodationName: string): string {
+export function getWhatsAppInquiryUrl(phoneClean: string | undefined, accommodationName: string): string {
+  if (!phoneClean) return '#';
   // Clean phone number (remove +, spaces, dashes)
   let cleanNumber = phoneClean.replace(/[^0-9]/g, '');
   // If local Mozambique 9-digit number starting with 8, prefix with 258
@@ -78,6 +79,33 @@ export interface MozLocationPreset {
 }
 
 export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
+  // Inhambane
+  {
+    id: 'inhambane-cidade',
+    name: 'Inhambane (Cidade)',
+    city: 'Inhambane',
+    province: 'Inhambane',
+    coords: { lat: -23.8650, lng: 35.3833 },
+    popularNeighborhoods: ['Balane', 'Salela', 'Chambone', 'Aeroporto'],
+  },
+  {
+    id: 'inhambane-tofo',
+    name: 'Praia do Tofo (Inhambane)',
+    city: 'Inhambane',
+    province: 'Inhambane',
+    coords: { lat: -23.8552, lng: 35.5458 },
+    popularNeighborhoods: ['Tofo Beach', 'Tofinho', 'Barra'],
+  },
+  {
+    id: 'vilankulo',
+    name: 'Vilankulo (Inhambane)',
+    city: 'Vilankulo',
+    province: 'Inhambane',
+    coords: { lat: -22.0134, lng: 35.3149 },
+    popularNeighborhoods: ['Bairro Central', 'Zona da Praia', 'Chibuene'],
+  },
+
+  // Maputo Cidade
   {
     id: 'maputo-central',
     name: 'Maputo (Centro & Polana)',
@@ -94,6 +122,8 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     coords: { lat: -25.9225, lng: 32.6178 },
     popularNeighborhoods: ['Costa do Sol', 'Triunfo', 'Mavalane', 'Zimpeto'],
   },
+
+  // Maputo Província
   {
     id: 'matola',
     name: 'Matola (Cidade)',
@@ -103,6 +133,16 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     popularNeighborhoods: ['Fomento', 'Matola Rio', 'Machava', 'Liberdade', 'Tchumene'],
   },
   {
+    id: 'ponta-ouro',
+    name: 'Ponta do Ouro',
+    city: 'Ponta do Ouro',
+    province: 'Maputo Província',
+    coords: { lat: -26.8456, lng: 32.8872 },
+    popularNeighborhoods: ['Vila da Ponta', 'Praia', 'Ponta Malongane'],
+  },
+
+  // Sofala
+  {
     id: 'beira',
     name: 'Beira (Centro & Macuti)',
     city: 'Beira',
@@ -110,14 +150,8 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     coords: { lat: -19.8316, lng: 34.8389 },
     popularNeighborhoods: ['Ponta Gea', 'Macuti', 'Chiveve', 'Estoril', 'Munhava'],
   },
-  {
-    id: 'vilankulo',
-    name: 'Vilankulo',
-    city: 'Vilankulo',
-    province: 'Inhambane',
-    coords: { lat: -22.0134, lng: 35.3149 },
-    popularNeighborhoods: ['Bairro Central', 'Zona da Praia', 'Chibuene'],
-  },
+
+  // Nampula
   {
     id: 'nampula',
     name: 'Nampula (Cidade)',
@@ -127,13 +161,15 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     popularNeighborhoods: ['Bairro Central', 'Muatala', 'Natikiri', 'Muhala'],
   },
   {
-    id: 'ponta-ouro',
-    name: 'Ponta do Ouro',
-    city: 'Ponta do Ouro',
-    province: 'Maputo Província',
-    coords: { lat: -26.8456, lng: 32.8872 },
-    popularNeighborhoods: ['Vila da Ponta', 'Praia', 'Ponta Malongane'],
+    id: 'ilha-mocambique',
+    name: 'Ilha de Moçambique',
+    city: 'Ilha de Moçambique',
+    province: 'Nampula',
+    coords: { lat: -15.0342, lng: 40.7303 },
+    popularNeighborhoods: ['Cidade de Pedra', 'Bairro dos Pescadores', 'Fortaleza'],
   },
+
+  // Gaza
   {
     id: 'bilene',
     name: 'Praia do Bilene',
@@ -143,6 +179,16 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     popularNeighborhoods: ['Lagoa Uembje', 'Vila do Bilene'],
   },
   {
+    id: 'xai-xai',
+    name: 'Xai-Xai (Cidade & Praia)',
+    city: 'Xai-Xai',
+    province: 'Gaza',
+    coords: { lat: -25.0444, lng: 33.6406 },
+    popularNeighborhoods: ['Praia de Xai-Xai', 'Bairro 1', 'Bairro 2'],
+  },
+
+  // Tete
+  {
     id: 'tete',
     name: 'Tete (Cidade)',
     city: 'Tete',
@@ -150,6 +196,8 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     coords: { lat: -16.1564, lng: 33.5863 },
     popularNeighborhoods: ['Francisco Manyanga', 'Degue', 'Matundo'],
   },
+
+  // Cabo Delgado
   {
     id: 'pemba',
     name: 'Pemba',
@@ -158,4 +206,79 @@ export const MOZ_PRESET_LOCATIONS: MozLocationPreset[] = [
     coords: { lat: -12.9739, lng: 40.5178 },
     popularNeighborhoods: ['Wimbe', 'Centro', 'Natite'],
   },
+
+  // Manica
+  {
+    id: 'chimoio',
+    name: 'Chimoio',
+    city: 'Chimoio',
+    province: 'Manica',
+    coords: { lat: -19.1167, lng: 33.4833 },
+    popularNeighborhoods: ['Centro', 'Vila Nova', 'Chissui'],
+  },
+
+  // Zambézia
+  {
+    id: 'quelimane',
+    name: 'Quelimane',
+    city: 'Quelimane',
+    province: 'Zambézia',
+    coords: { lat: -17.8786, lng: 36.8883 },
+    popularNeighborhoods: ['Centro', 'Torrone', 'Zalala'],
+  },
+
+  // Niassa
+  {
+    id: 'lichinga',
+    name: 'Lichinga',
+    city: 'Lichinga',
+    province: 'Niassa',
+    coords: { lat: -13.3128, lng: 35.2406 },
+    popularNeighborhoods: ['Centro', 'Chiuaula', 'Nomba'],
+  },
 ];
+
+/**
+ * Finds the closest Mozambican preset city/province based on GPS coordinates.
+ */
+export function findNearestPresetLocation(lat: number, lng: number): MozLocationPreset {
+  let nearest = MOZ_PRESET_LOCATIONS[0];
+  let minDistance = Infinity;
+
+  for (const preset of MOZ_PRESET_LOCATIONS) {
+    const dist = calculateDistanceKm(lat, lng, preset.coords.lat, preset.coords.lng);
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = preset;
+    }
+  }
+
+  return nearest;
+}
+
+/**
+ * Checks if an item matches the user's active location.
+ * When userLocation is set to a specific province/city, it ensures only items from that region are returned.
+ */
+export function isLocationMatched(
+  itemProvince: string,
+  itemCity: string | undefined,
+  userLocation?: UserLocationState
+): boolean {
+  if (!userLocation || userLocation.isAllMozambique || !userLocation.province) {
+    return true;
+  }
+
+  const normUserProv = userLocation.province.toLowerCase().trim();
+  const normItemProv = (itemProvince || '').toLowerCase().trim();
+
+  // If user selected "Maputo Cidade" vs "Maputo Província"
+  if (normUserProv === 'maputo cidade' || normUserProv === 'maputo província') {
+    if (normItemProv === normUserProv) return true;
+    if (normItemProv === 'maputo' && normUserProv.includes('maputo')) return true;
+  } else if (normItemProv.includes(normUserProv) || normUserProv.includes(normItemProv)) {
+    return true;
+  }
+
+  return false;
+}

@@ -1,24 +1,7 @@
 import { TourGuide } from '../types';
 
 export const INITIAL_TOUR_GUIDES: TourGuide[] = [
-  {
-    id: 'guide-1',
-    name: 'Mateus Tembe',
-    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-    city: 'Maputo',
-    province: 'Maputo Cidade',
-    specialties: ['City Tour Histórico', 'Mafalala Cultural', 'Mercado Central', 'Arte Urbana'],
-    languages: ['Português', 'Changana', 'Inglês'],
-    experienceYears: 8,
-    phone: '+258842345678',
-    whatsapp: '258842345678',
-    verified: true,
-    rating: 4.9,
-    reviewsCount: 42,
-    bio: 'Guia turístico certificado apaixonado pela história viva de Maputo. Especialista nos trilhos culturais da Mafalala, Baixa e arquitetura colonial.',
-    ratePerDay: 2500,
-    featured: true
-  },
+  // ================= Inhambane & Vilankulo =================
   {
     id: 'guide-2',
     name: 'Armindo Cossa',
@@ -53,42 +36,122 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
     reviewsCount: 38,
     bio: 'Especialista em excursões ecológicas no Parque Nacional do Bazaruto. Organização completa com transfers, lanche local e equipamento de mergulho.',
     ratePerDay: 4000,
+    featured: true
+  },
+
+  // ================= Maputo Cidade & Província =================
+  {
+    id: 'guide-1',
+    name: 'Mateus Tembe',
+    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    city: 'Maputo',
+    province: 'Maputo Cidade',
+    specialties: ['City Tour Histórico', 'Mafalala Cultural', 'Mercado Central', 'Arte Urbana'],
+    languages: ['Português', 'Changana', 'Inglês'],
+    experienceYears: 8,
+    phone: '+258842345678',
+    whatsapp: '258842345678',
+    verified: true,
+    rating: 4.9,
+    reviewsCount: 42,
+    bio: 'Guia turístico certificado apaixonado pela história viva de Maputo. Especialista nos trilhos culturais da Mafalala, Baixa e arquitetura colonial.',
+    ratePerDay: 2500,
+    featured: true
+  },
+  {
+    id: 'guide-ponta',
+    name: 'Sérgio Mondlane',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    city: 'Ponta do Ouro',
+    province: 'Maputo Província',
+    specialties: ['Natação com Golfinhos', 'Trilhas de Dunas', 'Reserva Especial de Maputo'],
+    languages: ['Português', 'Inglês'],
+    experienceYears: 5,
+    phone: '+258848811223',
+    whatsapp: '258848811223',
+    verified: true,
+    rating: 4.9,
+    reviewsCount: 27,
+    bio: 'Guia credenciado em ecoturismo marinho na Ponta do Ouro. Acompanhamento profissional e ético de observação de fauna marinha.',
+    ratePerDay: 3000,
     featured: false
   },
+
+  // ================= Sofala (Beira & Gorongosa) =================
   {
     id: 'guide-4',
     name: 'Eusébio Macuácua',
     photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
     city: 'Gorongosa',
     province: 'Sofala',
-    specialties: ['Safari Vida Selvagem', 'Trilhos no Monte Gorongosa', 'Ornitologia', 'Fotografia'],
-    languages: ['Português', 'Sena', 'Inglês'],
+    specialties: ['Safari Vida Selvagem', 'Trilhos Monte Gorongosa', 'Observação de Aves'],
+    languages: ['Português', 'Sena', 'Ndau', 'Inglês'],
     experienceYears: 12,
     phone: '+258845678901',
     whatsapp: '258845678901',
     verified: true,
-    rating: 4.9,
-    reviewsCount: 64,
-    bio: 'Guia de campo sénior no Parque Nacional da Gorongosa. Conhecedor profundo do comportamento dos felinos, manadas de elefantes e ecologia do parque.',
+    rating: 5.0,
+    reviewsCount: 65,
+    bio: 'Biólogo e rastreador de fauna no Parque Nacional da Gorongosa. Conhecimento profundo da flora, leões, elefantes e paisagens montanhosas.',
     ratePerDay: 4500,
     featured: true
   },
   {
+    id: 'guide-beira',
+    name: 'Dinis Chiveve',
+    photo: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
+    city: 'Beira',
+    province: 'Sofala',
+    specialties: ['City Tour Beira', 'Farol do Macuti', 'Património Ferroviário'],
+    languages: ['Português', 'Sena', 'Inglês'],
+    experienceYears: 7,
+    phone: '+258843332211',
+    whatsapp: '258843332211',
+    verified: true,
+    rating: 4.7,
+    reviewsCount: 19,
+    bio: 'Especialista na história marítima e arquitetura modernista da Cidade da Beira.',
+    ratePerDay: 2200,
+    featured: false
+  },
+
+  // ================= Nampula & Ilha de Moçambique =================
+  {
     id: 'guide-5',
-    name: 'Fátima Nhaduate',
-    photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+    name: 'Fatima Abdala',
+    photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
     city: 'Ilha de Moçambique',
     province: 'Nampula',
-    specialties: ['Património Mundial UNESCO', 'Fortaleza de São Sebastião', 'Palácio de São Paulo', 'Tradições Macua'],
-    languages: ['Português', 'Macua', 'Inglês', 'Italiano'],
+    specialties: ['Património Mundial UNESCO', 'Fortaleza de São Sebastião', 'História Macua'],
+    languages: ['Português', 'Emakhuwa', 'Inglês', 'Árabe básico'],
     experienceYears: 9,
     phone: '+258846789012',
     whatsapp: '258846789012',
     verified: true,
-    rating: 5.0,
-    reviewsCount: 49,
-    bio: 'Nascida e criada na mágica Ilha de Moçambique. Desvenda os segredos da Cidade de Pedra, museus, arquitetura suaili e culinária tradicional.',
+    rating: 4.9,
+    reviewsCount: 51,
+    bio: 'Nascida na Ilha de Moçambique e historiadora local. Visitas guiadas pela Cidade de Pedra e Cal, palácios, museus e culinária tradicional.',
     ratePerDay: 3000,
+    featured: true
+  },
+
+  // ================= Cabo Delgado (Pemba) =================
+  {
+    id: 'guide-pemba',
+    name: 'Jafar Mussa',
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+    city: 'Pemba',
+    province: 'Cabo Delgado',
+    specialties: ['Baía de Pemba', 'Praia de Wimbe', 'Escultura Makonde', 'Mergulho Coral'],
+    languages: ['Português', 'Swahili', 'Kimwani', 'Inglês'],
+    experienceYears: 8,
+    phone: '+258841239988',
+    whatsapp: '258841239988',
+    verified: true,
+    rating: 4.9,
+    reviewsCount: 31,
+    bio: 'Guia turístico e artesão na cidade de Pemba. Roteiros culturais, mergulhos em recifes de coral e visitas aos ateliers de escultura Makonde.',
+    ratePerDay: 3200,
     featured: true
   }
 ];

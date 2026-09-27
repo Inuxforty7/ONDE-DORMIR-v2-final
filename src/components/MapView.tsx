@@ -13,13 +13,14 @@ import {
   Layers,
   Phone
 } from 'lucide-react';
-import { Accommodation, AccommodationType, LocationCoordinates } from '../types';
-import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
+import { Accommodation, AccommodationType, LocationCoordinates, UserLocationState } from '../types';
+import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl, isLocationMatched } from '../utils/geo';
 import { ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
 
 interface MapViewProps {
   accommodations: Accommodation[];
   userCoords: LocationCoordinates | null;
+  userLocation?: UserLocationState;
   onSelectAccommodation: (item: Accommodation) => void;
   onRequestGps: () => void;
   isGpsLoading: boolean;
@@ -31,6 +32,7 @@ interface MapViewProps {
 export const MapView: React.FC<MapViewProps> = ({
   accommodations,
   userCoords,
+  userLocation,
   onSelectAccommodation,
   onRequestGps,
   isGpsLoading,
@@ -46,8 +48,13 @@ export const MapView: React.FC<MapViewProps> = ({
   const [selectedPlace, setSelectedPlace] = useState<Accommodation | null>(null);
   const [filterType, setFilterType] = useState<AccommodationType | 'all'>('all');
 
-  // Filtered list
+  // Filtered list by type & active province
   const filteredList = accommodations.filter((item) => {
+    // Location match
+    if (userLocation && !isLocationMatched(item.location.province, item.location.city, userLocation)) {
+      return false;
+    }
+
     if (filterType === 'all') return true;
     if (filterType === 'pensao' || filterType === 'guest_house' || filterType === 'residencial') {
       return item.type === 'pensao' || item.type === 'guest_house' || item.type === 'residencial';

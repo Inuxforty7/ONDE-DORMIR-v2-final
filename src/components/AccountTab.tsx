@@ -40,7 +40,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         <div>
           <Logo size="lg" />
           <p className="text-xs sm:text-sm text-neutral-600 mt-2 leading-relaxed">
-            Directório de hospedagens, guias locais, aluguer de viaturas e conexões em Moçambique.
+            Directório de hospedagens, guias locais, aluguer de viaturas e conexões.
           </p>
         </div>
 

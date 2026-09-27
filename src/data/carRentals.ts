@@ -1,6 +1,7 @@
 import { CarRental } from '../types';
 
 export const INITIAL_CAR_RENTALS: CarRental[] = [
+  // ================= Maputo Cidade & Província =================
   {
     id: 'car-1',
     model: 'Toyota Land Cruiser Prado 4x4',
@@ -19,8 +20,112 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258842112233',
     verified: true,
     featured: true,
-    description: 'Ideal para expedições pelas praias de Ponta do Ouro, Bilene ou picadas da Reserva Especial de Maputo. Ar condicionado duplo e tração integral 4WD.'
+    description: 'Ideal para viagens até à Ponta do Ouro, Bilene ou deslocações executivas em Maputo. Tração 4x4 integral e ar condicionado duplo.'
   },
+  {
+    id: 'car-4',
+    model: 'Toyota Corolla Quest Sedan',
+    brand: 'Toyota',
+    category: 'economico',
+    categoryLabel: 'Sedan Urbano Económico',
+    photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
+    seats: 5,
+    transmission: 'Automático',
+    fuel: 'Gasolina',
+    city: 'Maputo',
+    province: 'Maputo Cidade',
+    withDriverAvailable: true,
+    ratePerDay: 2800,
+    phone: '+258847778899',
+    whatsapp: '258847778899',
+    verified: true,
+    featured: false,
+    description: 'Perfeito para reuniões de trabalho, deslocações urbanas em Maputo e Matola, e transfers do Aeroporto Internacional de Mavalane.'
+  },
+  {
+    id: 'car-matola',
+    model: 'Toyota Hilux GD-6 2.4 4x4',
+    brand: 'Toyota',
+    category: 'carrinha',
+    categoryLabel: 'Pickup 4x4',
+    photo: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80',
+    seats: 5,
+    transmission: 'Manual',
+    fuel: 'Gasóleo',
+    city: 'Matola',
+    province: 'Maputo Província',
+    withDriverAvailable: true,
+    ratePerDay: 4200,
+    phone: '+258848881122',
+    whatsapp: '258848881122',
+    verified: true,
+    featured: false,
+    description: 'Robusta e económica para serviços comerciais, logística e deslocações em Maputo Província.'
+  },
+
+  // ================= Inhambane & Vilankulo =================
+  {
+    id: 'car-3',
+    model: 'Toyota Hilux Double Cab 4WD Safari',
+    brand: 'Toyota',
+    category: 'carrinha',
+    categoryLabel: 'Pickup Robusta 4x4',
+    photo: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=600&q=80',
+    seats: 5,
+    transmission: 'Manual',
+    fuel: 'Gasóleo',
+    city: 'Vilankulo',
+    province: 'Inhambane',
+    withDriverAvailable: true,
+    ratePerDay: 4500,
+    phone: '+258845556677',
+    whatsapp: '258845556677',
+    verified: true,
+    featured: true,
+    description: 'A carrinha mais fiável para as estradas de areia e transfers de barco para o Arquipélago de Bazaruto em Vilankulo.'
+  },
+  {
+    id: 'car-inh-1',
+    model: 'Suzuki Jimny 4x4 Dune Explorer',
+    brand: 'Suzuki',
+    category: '4x4',
+    categoryLabel: 'Mini 4x4 Praia & Areia',
+    photo: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80',
+    seats: 4,
+    transmission: 'Manual',
+    fuel: 'Gasolina',
+    city: 'Inhambane',
+    province: 'Inhambane',
+    withDriverAvailable: false,
+    ratePerDay: 3200,
+    phone: '+258843990022',
+    whatsapp: '258843990022',
+    verified: true,
+    featured: true,
+    description: 'Excelente para explorar a Praia do Tofo, Barra e dunas de Inhambane com máxima agilidade e baixo consumo.'
+  },
+  {
+    id: 'car-inh-2',
+    model: 'Toyota Fortuner 4WD 7 Lugares',
+    brand: 'Toyota',
+    category: 'suv',
+    categoryLabel: 'SUV Familiar',
+    photo: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=600&q=80',
+    seats: 7,
+    transmission: 'Automático',
+    fuel: 'Gasóleo',
+    city: 'Inhambane',
+    province: 'Inhambane',
+    withDriverAvailable: true,
+    ratePerDay: 4900,
+    phone: '+258843445566',
+    whatsapp: '258843445566',
+    verified: true,
+    featured: false,
+    description: 'Espaço e conforto para famílias em férias nas praias de Inhambane, Tofinho e Maxixe.'
+  },
+
+  // ================= Sofala (Beira) =================
   {
     id: 'car-2',
     model: 'Toyota Fortuner 2.8 GD-6',
@@ -39,48 +144,10 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258843334455',
     verified: true,
     featured: true,
-    description: 'Excelente para viagens em família até ao Parque Nacional da Gorongosa e litoral centro. Confortável, seguro e económico.'
+    description: 'Excelente para viagens em família até ao Parque Nacional da Gorongosa e litoral centro.'
   },
-  {
-    id: 'car-3',
-    model: 'Toyota Hilux Double Cab 4WD',
-    brand: 'Toyota',
-    category: 'carrinha',
-    categoryLabel: 'Pickup Robusta 4x4',
-    photo: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=600&q=80',
-    seats: 5,
-    transmission: 'Manual',
-    fuel: 'Gasóleo',
-    city: 'Vilankulo',
-    province: 'Inhambane',
-    withDriverAvailable: true,
-    ratePerDay: 4500,
-    phone: '+258845556677',
-    whatsapp: '258845556677',
-    verified: true,
-    featured: false,
-    description: 'A carrinha mais fiável para estradas de areia em Inhambane, Tofo e Vilankulo. Grande capacidade de carga e snorkel.'
-  },
-  {
-    id: 'car-4',
-    model: 'Toyota Corolla Quest',
-    brand: 'Toyota',
-    category: 'economico',
-    categoryLabel: 'Sedan Urbano Económico',
-    photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
-    seats: 5,
-    transmission: 'Automático',
-    fuel: 'Gasolina',
-    city: 'Maputo',
-    province: 'Maputo Cidade',
-    withDriverAvailable: true,
-    ratePerDay: 2800,
-    phone: '+258847778899',
-    whatsapp: '258847778899',
-    verified: true,
-    featured: false,
-    description: 'Perfeito para reuniões de trabalho, deslocações urbanas em Maputo e Matola, e transfers pontuais do Aeroporto Internacional de Mavalane.'
-  },
+
+  // ================= Nampula & Ilha de Moçambique =================
   {
     id: 'car-5',
     model: 'Ford Ranger XLT 4x4',
@@ -99,6 +166,72 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258849990011',
     verified: true,
     featured: true,
-    description: 'Robusta e moderna para viagens entre Nampula, Ilha de Moçambique e Nacala. Assistência 24h incluída.'
+    description: 'Viatura alta e potente para ligações entre Nampula, Nacala e a histórica Ilha de Moçambique.'
+  },
+
+  // ================= Cabo Delgado (Pemba) =================
+  {
+    id: 'car-pemba',
+    model: 'Toyota Land Cruiser Prado GX 4x4',
+    brand: 'Toyota',
+    category: '4x4',
+    categoryLabel: '4x4 Todo-o-Terreno',
+    photo: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80',
+    seats: 7,
+    transmission: 'Automático',
+    fuel: 'Gasóleo',
+    city: 'Pemba',
+    province: 'Cabo Delgado',
+    withDriverAvailable: true,
+    ratePerDay: 5800,
+    phone: '+258841122334',
+    whatsapp: '258841122334',
+    verified: true,
+    featured: true,
+    description: 'Perfeito para deslocações executivas e turismo pela Baía de Pemba e Praia de Wimbe.'
+  },
+
+  // ================= Tete =================
+  {
+    id: 'car-tete',
+    model: 'Nissan Navara 4x4 Double Cab',
+    brand: 'Nissan',
+    category: 'carrinha',
+    categoryLabel: 'Pickup Robusta',
+    photo: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=600&q=80',
+    seats: 5,
+    transmission: 'Manual',
+    fuel: 'Gasóleo',
+    city: 'Tete',
+    province: 'Tete',
+    withDriverAvailable: true,
+    ratePerDay: 4600,
+    phone: '+258846677889',
+    whatsapp: '258846677889',
+    verified: true,
+    featured: false,
+    description: 'Ar condicionado potente e suspensão reforçada para o clima quente e estradas da província de Tete.'
+  },
+
+  // ================= Gaza (Bilene) =================
+  {
+    id: 'car-bilene',
+    model: 'Toyota RAV4 4WD',
+    brand: 'Toyota',
+    category: 'suv',
+    categoryLabel: 'SUV Praia',
+    photo: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=600&q=80',
+    seats: 5,
+    transmission: 'Automático',
+    fuel: 'Gasolina',
+    city: 'Bilene',
+    province: 'Gaza',
+    withDriverAvailable: false,
+    ratePerDay: 3500,
+    phone: '+258843112244',
+    whatsapp: '258843112244',
+    verified: true,
+    featured: true,
+    description: 'Ideal para passeios em redor da Lagoa Uembje e resorts da Praia do Bilene.'
   }
 ];

@@ -7,17 +7,21 @@ import {
   X, 
   ArrowUpDown, 
   Map as MapIcon, 
-  Filter, 
+  ChevronRight,
+  ChevronDown,
+  Building,
+  Palmtree,
+  Waves,
+  Building2,
+  Navigation,
+  Sparkles,
+  ArrowLeft,
   RotateCcw,
-  Wind,
-  Wifi,
-  Car,
-  Zap,
-  Bath
+  Check
 } from 'lucide-react';
 import { Accommodation, AccommodationType, AmenityId, UserLocationState } from '../types';
 import { AccommodationCard } from './AccommodationCard';
-import { ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
+import { ACCOMMODATION_TYPE_LABELS, AMENITIES_CATALOG } from '../utils/amenities';
 
 interface ExploreTabProps {
   accommodations: Accommodation[];
@@ -26,10 +30,27 @@ interface ExploreTabProps {
   isSaved: (id: string) => boolean;
   onToggleSave: (id: string) => void;
   onSwitchToMap: () => void;
+  onBackToHome?: () => void;
   initialTypeFilter?: AccommodationType | 'all';
   initialSearchQuery?: string;
   onOpenLocationModal: () => void;
+  onSelectProvince?: (prov: string) => void;
+  onSelectAllMozambique?: () => void;
 }
+
+export const MOZ_PROVINCES_LIST = [
+  'Maputo Cidade',
+  'Maputo Província',
+  'Inhambane',
+  'Gaza',
+  'Sofala',
+  'Nampula',
+  'Cabo Delgado',
+  'Manica',
+  'Tete',
+  'Zambézia',
+  'Niassa'
+];
 
 export const ExploreTab: React.FC<ExploreTabProps> = ({
   accommodations,
@@ -38,17 +59,59 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   isSaved,
   onToggleSave,
   onSwitchToMap,
+  onBackToHome,
   initialTypeFilter = 'all',
   initialSearchQuery = '',
   onOpenLocationModal,
+  onSelectProvince,
+  onSelectAllMozambique,
 }) => {
+  // Search & Filter States
+  const [selectedProvince, setSelectedProvince] = useState<string>(() => {
+    if (userLocation.isAllMozambique) return 'all';
+    return userLocation.province || 'Inhambane';
+  });
+
+  // Keep in sync with userLocation if user changes it externally
+  React.useEffect(() => {
+    if (userLocation.isAllMozambique) {
+      setSelectedProvince('all');
+    } else if (userLocation.province) {
+      setSelectedProvince(userLocation.province);
+    }
+  }, [userLocation.province, userLocation.isAllMozambique]);
+
   const [search, setSearch] = useState(initialSearchQuery);
   const [selectedType, setSelectedType] = useState<AccommodationType | 'all'>(initialTypeFilter);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [only24h, setOnly24h] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<AmenityId[]>([]);
   const [sortBy, setSortBy] = useState<'distance' | 'name' | 'verified'>('distance');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Compute neighborhoods list based on active province
+  const neighborhoodsList = useMemo(() => {
+    let items = accommodations;
+    if (selectedProvince !== 'all') {
+      const selP = selectedProvince.toLowerCase();
+      items = items.filter((a) => {
+        const p = (a.location.province || '').toLowerCase();
+        if (selP === 'maputo cidade' || selP === 'maputo província') {
+          return p === selP || p === 'maputo';
+        }
+        return p.includes(selP) || selP.includes(p);
+      });
+    }
+    return Array.from(new Set(items.map((a) => a.location.neighborhood))).filter((b): b is string => Boolean(b));
+  }, [accommodations, selectedProvince]);
+
+  // Reset neighborhood if it's no longer in the list
+  React.useEffect(() => {
+    if (selectedNeighborhood !== 'all' && !neighborhoodsList.includes(selectedNeighborhood)) {
+      setSelectedNeighborhood('all');
+    }
+  }, [neighborhoodsList, selectedNeighborhood]);
 
   // Toggle amenity
   const toggleAmenity = (id: AmenityId) => {
@@ -59,17 +122,43 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   // Reset all filters
   const resetFilters = () => {
+    setSelectedProvince('all');
+    if (onSelectAllMozambique) onSelectAllMozambique();
     setSearch('');
     setSelectedType('all');
+    setSelectedNeighborhood('all');
     setVerifiedOnly(false);
     setOnly24h(false);
     setSelectedAmenities([]);
     setSortBy('distance');
   };
 
+  const handleProvinceClick = (prov: string) => {
+    setSelectedProvince(prov);
+    if (prov === 'all') {
+      if (onSelectAllMozambique) onSelectAllMozambique();
+    } else {
+      if (onSelectProvince) onSelectProvince(prov);
+    }
+  };
+
   // Filtered & Sorted list
   const filteredList = useMemo(() => {
     let result = [...accommodations];
+
+    // Province filter
+    if (selectedProvince !== 'all') {
+      result = result.filter((item) =>
+        item.location.province.toLowerCase().includes(selectedProvince.toLowerCase())
+      );
+    }
+
+    // Neighborhood filter
+    if (selectedNeighborhood !== 'all') {
+      result = result.filter(
+        (item) => item.location.neighborhood.toLowerCase() === selectedNeighborhood.toLowerCase()
+      );
+    }
 
     // Search query filter
     if (search.trim()) {
@@ -94,7 +183,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       result = result.filter((item) => item.type === selectedType);
     }
 
-    // Verified only filter (in person or certified)
+    // Verified only filter
     if (verifiedOnly) {
       result = result.filter((item) => item.verificationStatus === 'verified' || item.verificationStatus === 'verified_in_person');
     }
@@ -113,7 +202,6 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
     // Sort
     result.sort((a, b) => {
-      // Premium / Featured get natural boost
       if (a.isPremium && !b.isPremium) return -1;
       if (!a.isPremium && b.isPremium) return 1;
 
@@ -133,320 +221,300 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     });
 
     return result;
-  }, [accommodations, search, selectedType, verifiedOnly, only24h, selectedAmenities, sortBy]);
+  }, [accommodations, selectedProvince, search, selectedType, verifiedOnly, only24h, selectedAmenities, sortBy]);
 
   const activeFiltersCount =
+    (selectedProvince !== 'all' ? 1 : 0) +
     (selectedType !== 'all' ? 1 : 0) +
     (verifiedOnly ? 1 : 0) +
     (only24h ? 1 : 0) +
     selectedAmenities.length;
 
   return (
-    <div className="pb-32 pt-2 sm:pt-4 max-w-5xl mx-auto px-3.5 sm:px-4 space-y-4">
-      {/* Top Search bar & Actions with generous mobile heights */}
-      <div className="space-y-3">
-        <div className="flex gap-2">
-          {/* Search Input - Large 48px touch target */}
+    <div className="pb-32 pt-2 sm:pt-4 max-w-5xl mx-auto px-3.5 sm:px-4 space-y-3.5">
+      
+      {/* Compact Search and Province Filter Bar */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">
+        <div className="flex items-center gap-2">
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="w-10 h-10 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center shrink-0 cursor-pointer transition-colors"
+              title="Voltar ao início"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
-              placeholder="Pesquisar por nome, bairro, cidade..."
+              placeholder="Pesquisar pensão, hotel, bairro..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-12 sm:h-13 pl-11 pr-10 bg-white rounded-2xl text-sm sm:text-base text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 border border-neutral-200/90 shadow-2xs transition-all"
+              className="w-full h-10 sm:h-11 pl-9 pr-8 bg-neutral-50 rounded-xl text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-neutral-200"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="w-9 h-9 absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 flex items-center justify-center cursor-pointer"
-                title="Limpar pesquisa"
-                aria-label="Limpar pesquisa"
+                className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 flex items-center justify-center cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Toggle Filters panel */}
+          {/* Filter button trigger */}
           <button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`h-12 sm:h-13 px-3.5 sm:px-4 rounded-2xl border text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
-              showAdvancedFilters || activeFiltersCount > 0
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs'
-                : 'bg-white border-neutral-200/90 text-neutral-700 hover:bg-neutral-50 shadow-2xs'
+            className={`h-10 sm:h-11 px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+              activeFiltersCount > 0 || showAdvancedFilters
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            <SlidersHorizontal className="w-4.5 h-4.5" />
+            <SlidersHorizontal className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Filtros</span>
             {activeFiltersCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
+              <span className="w-4.5 h-4.5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">
                 {activeFiltersCount}
               </span>
             )}
           </button>
-
-          {/* Switch to Map button */}
-          <button
-            onClick={onSwitchToMap}
-            className="h-12 sm:h-13 px-4 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
-            title="Ver no mapa"
-          >
-            <MapIcon className="w-4.5 h-4.5" />
-            <span className="hidden sm:inline">Mapa</span>
-          </button>
         </div>
 
-        {/* Categories scrollable pill list - Height 40px with readable text */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+        {/* Quick Horizontal Province Chips */}
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
           <button
-            onClick={() => setSelectedType('all')}
-            className={`h-10 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center active:scale-95 ${
-              selectedType === 'all'
+            onClick={() => handleProvinceClick('all')}
+            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
+              selectedProvince === 'all'
                 ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-white text-neutral-700 border border-neutral-200/80 hover:bg-neutral-50'
+                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
             }`}
           >
-            Todas ({accommodations.length})
+            Todas as Províncias
           </button>
-
-          <button
-            onClick={() => setSelectedType('pensao')}
-            className={`h-10 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center active:scale-95 ${
-              selectedType === 'pensao' || selectedType === 'guest_house' || selectedType === 'residencial'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-white text-neutral-700 border border-neutral-200/80 hover:bg-neutral-50'
-            }`}
-          >
-            Pensões & Guest Houses
-          </button>
-
-          <button
-            onClick={() => setSelectedType('hotel')}
-            className={`h-10 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center active:scale-95 ${
-              selectedType === 'hotel'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-white text-neutral-700 border border-neutral-200/80 hover:bg-neutral-50'
-            }`}
-          >
-            Hotéis
-          </button>
-
-          <button
-            onClick={() => setSelectedType('lodge')}
-            className={`h-10 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center active:scale-95 ${
-              selectedType === 'lodge'
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'bg-white text-neutral-700 border border-neutral-200/80 hover:bg-neutral-50'
-            }`}
-          >
-            Lodges & Praia
-          </button>
-
-          {/* Quick 24h filter chip */}
-          <button
-            onClick={() => setOnly24h(!only24h)}
-            className={`h-10 px-3.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-              only24h
-                ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-white text-neutral-700 border border-neutral-200/80 hover:bg-neutral-50'
-            }`}
-          >
-            <span>⏰ 24 Horas</span>
-          </button>
-
-          {/* Quick Generator filter chip */}
-          <button
-            onClick={() => toggleAmenity('generator')}
-            className={`h-10 px-3.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-              selectedAmenities.includes('generator')
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-white text-neutral-700 border border-neutral-200/80 hover:bg-neutral-50'
-            }`}
-          >
-            <span>⚡ Gerador</span>
-          </button>
+          {MOZ_PROVINCES_LIST.map((p) => {
+            const isSelected = selectedProvince.toLowerCase() === p.toLowerCase();
+            return (
+              <button
+                key={p}
+                onClick={() => handleProvinceClick(isSelected ? 'all' : p)}
+                className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
+                  isSelected
+                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                }`}
+              >
+                {p}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Active Filters Quick Strip */}
-        {activeFiltersCount > 0 && (
-          <div className="flex items-center gap-2 flex-wrap pt-1 text-xs sm:text-sm">
-            <span className="text-xs text-neutral-500 font-semibold mr-1">Filtros ativos:</span>
-            {selectedType !== 'all' && (
-              <button
-                onClick={() => setSelectedType('all')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 hover:bg-neutral-200 transition-colors cursor-pointer"
-              >
-                <span>{ACCOMMODATION_TYPE_LABELS[selectedType]?.label}</span>
-                <X className="w-3.5 h-3.5 text-neutral-500" />
-              </button>
-            )}
-            {verifiedOnly && (
-              <button
-                onClick={() => setVerifiedOnly(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
-              >
-                <span>Apenas Verificados</span>
-                <X className="w-3.5 h-3.5 text-emerald-600" />
-              </button>
-            )}
-            {selectedAmenities.map((amenityId) => (
-              <button
-                key={amenityId}
-                onClick={() => toggleAmenity(amenityId)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200 hover:bg-neutral-200 transition-colors cursor-pointer"
-              >
-                <span>{amenityId.toUpperCase()}</span>
-                <X className="w-3.5 h-3.5 text-neutral-500" />
-              </button>
-            ))}
-            <button
-              onClick={resetFilters}
-              className="text-xs text-rose-600 hover:underline font-bold ml-auto cursor-pointer"
+        {/* Active Province Scope Indicator */}
+        {selectedProvince !== 'all' && (
+          <div className="flex items-center justify-between bg-emerald-50 text-emerald-950 px-3 py-1.5 rounded-xl border border-emerald-200 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">A filtrar apenas: <strong>{selectedProvince}</strong> ({filteredList.length})</span>
+            </div>
+            <button 
+              onClick={() => handleProvinceClick('all')}
+              className="text-[11px] text-emerald-800 font-bold underline hover:text-emerald-950 shrink-0 ml-2 cursor-pointer"
             >
-              Limpar todos
+              Ver Todas as Províncias
             </button>
           </div>
         )}
 
-        {/* Advanced Filters Expandable Drawer */}
-        {showAdvancedFilters && (
-          <div className="bg-white p-4 sm:p-5 rounded-3xl border border-neutral-200 shadow-sm space-y-3.5 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                Filtros Detalhados
-              </span>
-              {activeFiltersCount > 0 && (
+        {/* Dynamic Bairros & Zonas Chips */}
+        {neighborhoodsList.length > 0 && (
+          <div className="pt-2 border-t border-neutral-100">
+            <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>📍 Bairros & Zonas ({selectedProvince !== 'all' ? selectedProvince : 'Geral'}):</span>
+              {selectedNeighborhood !== 'all' && (
                 <button
-                  onClick={resetFilters}
-                  className="text-xs text-rose-600 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                  onClick={() => setSelectedNeighborhood('all')}
+                  className="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Limpar Filtros
+                  Limpar Bairro
                 </button>
               )}
             </div>
-
-            {/* Verified Only Toggle */}
-            <div className="flex items-center justify-between py-1">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4.5 h-4.5 text-emerald-600" />
-                <span className="text-xs sm:text-sm font-semibold text-neutral-800">
-                  Apenas estabelecimentos verificados
-                </span>
-              </div>
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
               <button
-                onClick={() => setVerifiedOnly(!verifiedOnly)}
-                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  verifiedOnly ? 'bg-emerald-600' : 'bg-neutral-200'
+                onClick={() => setSelectedNeighborhood('all')}
+                className={`h-7 px-2.5 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                  selectedNeighborhood === 'all'
+                    ? 'bg-emerald-800 text-white shadow-xs'
+                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >
-                <div
-                  className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transform transition-transform ${
-                    verifiedOnly ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
+                Todos os Bairros ({neighborhoodsList.length})
               </button>
+              {neighborhoodsList.map((b) => {
+                const isSel = selectedNeighborhood.toLowerCase() === b.toLowerCase();
+                return (
+                  <button
+                    key={b}
+                    onClick={() => setSelectedNeighborhood(isSel ? 'all' : b)}
+                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
+                      isSel
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+        )}
 
-            {/* Essential Amenities */}
+        {/* Type Filter Chips */}
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5 border-t border-neutral-100 pt-2">
+          {[
+            { id: 'all', label: 'Todos os Tipos' },
+            { id: 'pensao', label: 'Pensões & Guest Houses' },
+            { id: 'hotel', label: 'Hotéis' },
+            { id: 'resort', label: 'Resorts & Lodges' },
+            { id: 'apart_hotel', label: 'Apartamentos' },
+          ].map((type) => {
+            const isSelected = selectedType === type.id;
+            return (
+              <button
+                key={type.id}
+                onClick={() => setSelectedType(type.id as any)}
+                className={`h-7 px-2.5 rounded-md text-xs font-medium shrink-0 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                }`}
+              >
+                {type.label}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() => setVerifiedOnly(!verifiedOnly)}
+            className={`h-7 px-2.5 rounded-md text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1 border ${
+              verifiedOnly
+                ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
+                : 'bg-white text-neutral-600 border-neutral-200'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3" />
+            <span>Verificados</span>
+          </button>
+
+          <button
+            onClick={() => setOnly24h(!only24h)}
+            className={`h-7 px-2.5 rounded-md text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
+              only24h
+                ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold'
+                : 'bg-white text-neutral-600 border-neutral-200'
+            }`}
+          >
+            <span>24 Horas</span>
+          </button>
+        </div>
+
+        {/* Advanced Filters Expandable Drawer */}
+        {showAdvancedFilters && (
+          <div className="pt-3 border-t border-neutral-200/80 space-y-3 animate-in fade-in duration-150">
             <div>
-              <span className="text-xs font-bold text-neutral-700 block mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">
                 Comodidades Essenciais
               </span>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'ac' as AmenityId, label: 'Ar Condicionado', icon: Wind },
-                  { id: 'generator' as AmenityId, label: 'Gerador / Energia 24h', icon: Zap },
-                  { id: 'parking' as AmenityId, label: 'Estacionamento Seguro', icon: Car },
-                  { id: 'wifi' as AmenityId, label: 'Wi-Fi Grátis', icon: Wifi },
-                  { id: 'private_bathroom' as AmenityId, label: 'Casa de Banho Privada', icon: Bath },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  const isSelected = selectedAmenities.includes(item.id);
+              <div className="flex flex-wrap gap-1.5">
+                {Object.values(AMENITIES_CATALOG).slice(0, 8).map((amenity) => {
+                  const isChecked = selectedAmenities.includes(amenity.id);
                   return (
                     <button
-                      key={item.id}
-                      onClick={() => toggleAmenity(item.id)}
-                      className={`h-10 px-3.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer border active:scale-95 ${
-                        isSelected
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                          : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                      key={amenity.id}
+                      onClick={() => toggleAmenity(amenity.id)}
+                      className={`h-8 px-2.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isChecked
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold'
+                          : 'bg-neutral-50 border-neutral-200 text-neutral-700'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
+                      {isChecked && <Check className="w-3 h-3 text-emerald-600" />}
+                      <span>{amenity.name}</span>
                     </button>
                   );
                 })}
               </div>
             </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={resetFilters}
+                className="text-xs font-bold text-neutral-500 hover:text-neutral-900 flex items-center gap-1 cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Limpar Filtros</span>
+              </button>
+              <button
+                onClick={() => setShowAdvancedFilters(false)}
+                className="h-8 px-4 bg-neutral-900 text-white text-xs font-bold rounded-lg cursor-pointer"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
         )}
-
-        {/* Results Count & Sort Row */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="text-xs sm:text-sm text-neutral-600">
-            <span className="font-bold text-neutral-900">{filteredList.length}</span>{' '}
-            hospedagens encontradas
-          </div>
-
-          <div className="flex items-center gap-2 bg-neutral-100 px-3 py-1.5 rounded-xl border border-neutral-200/80">
-            <ArrowUpDown className="w-4 h-4 text-neutral-500" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs sm:text-sm font-bold text-neutral-800 bg-transparent border-none focus:outline-none cursor-pointer"
-            >
-              <option value="distance">Mais Próximos</option>
-              <option value="verified">Verificados</option>
-              <option value="name">Nome (A - Z)</option>
-            </select>
-          </div>
-        </div>
       </div>
 
-      {/* Accommodations List */}
+      {/* Accommodations Grid Header */}
+      <div className="flex items-center justify-between px-1">
+        <div className="text-xs text-neutral-600">
+          <strong className="text-neutral-900 font-bold">{filteredList.length}</strong> acomodações encontradas
+        </div>
+
+        <button
+          onClick={onSwitchToMap}
+          className="h-8 px-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-colors cursor-pointer"
+        >
+          <MapIcon className="w-3.5 h-3.5" />
+          <span>Ver no Mapa</span>
+        </button>
+      </div>
+
+      {/* Accommodations Grid */}
       {filteredList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {filteredList.map((place) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+          {filteredList.map((item) => (
             <AccommodationCard
-              key={place.id}
-              accommodation={place}
+              key={item.id}
+              accommodation={item}
               onSelect={onSelectAccommodation}
-              isSaved={isSaved(place.id)}
+              isSaved={isSaved(item.id)}
               onToggleSave={onToggleSave}
             />
           ))}
         </div>
       ) : (
-        /* Empty State */
-        <div className="bg-white rounded-3xl p-8 border border-neutral-200/90 text-center space-y-4 my-6">
-          <div className="w-16 h-16 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto">
-            <Search className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="font-bold text-base sm:text-lg text-neutral-900">
-              Nenhuma hospedagem encontrada
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-600 max-w-sm mx-auto mt-1 leading-relaxed">
-              Não encontramos resultados para os filtros selecionados ou para o termo "{search}".
-            </p>
-          </div>
-
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
-            <button
-              onClick={resetFilters}
-              className="w-full sm:w-auto h-11 px-5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer active:scale-95"
-            >
-              Limpar todos os filtros
-            </button>
-            <button
-              onClick={onOpenLocationModal}
-              className="w-full sm:w-auto h-11 px-5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer active:scale-95"
-            >
-              Mudar de Cidade ou Bairro
-            </button>
-          </div>
+        <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-neutral-200/90 shadow-2xs">
+          <Building className="w-12 h-12 text-neutral-300 mx-auto" />
+          <h3 className="font-extrabold text-base text-neutral-800">
+            Nenhuma acomodação encontrada
+          </h3>
+          <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+            Tente alterar os termos de pesquisa ou selecionar outra província.
+          </p>
+          <button
+            onClick={resetFilters}
+            className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+          >
+            Limpar Filtros de Pesquisa
+          </button>
         </div>
       )}
     </div>
