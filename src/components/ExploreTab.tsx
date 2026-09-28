@@ -232,7 +232,30 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   return (
     <div className="pb-32 pt-2 sm:pt-4 max-w-5xl mx-auto px-3.5 sm:px-4 space-y-3.5">
-      
+      {/* Top Brand Banner with Slogan */}
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-sky-950 text-white p-3.5 sm:p-4 rounded-3xl border border-sky-400/20 shadow-md flex items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black tracking-tight leading-none">
+              <span>ONDE </span>
+              <span className="text-amber-400">DORMIR</span>{' '}
+              <span className="text-sky-300 font-black text-xs sm:text-sm tracking-wider uppercase">MOÇAMBIQUE</span>
+            </h2>
+          </div>
+          <p className="text-[11px] sm:text-xs text-sky-100 font-medium mt-1 leading-snug">
+            Encontre onde dormir, quem o possa guiar e como pode se deslocar.
+          </p>
+        </div>
+        {onBackToHome && (
+          <button
+            onClick={onBackToHome}
+            className="h-8 px-3 bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold rounded-xl border border-white/20 transition-all shrink-0 cursor-pointer"
+          >
+            Menu Início
+          </button>
+        )}
+      </div>
+
       {/* Compact Search and Province Filter Bar */}
       <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">
         <div className="flex items-center gap-2">

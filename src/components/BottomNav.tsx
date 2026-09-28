@@ -12,6 +12,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { ActiveTab } from '../types';
+import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
@@ -191,7 +192,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             }`}
           >
             <div className="relative">
-              <Heart className={`w-5 h-5 ${activeTab === 'heartlink' ? 'fill-rose-600 stroke-[2.5px] scale-105' : 'stroke-[2px]'}`} />
+              <HeartLinkTwoHeartsIcon
+                className={`w-5 h-5 transition-transform ${
+                  activeTab === 'heartlink' ? 'scale-110' : 'opacity-85'
+                }`}
+                variant={activeTab === 'heartlink' ? 'embroidered' : 'embroidered'}
+                showStitches={true}
+              />
               {activeTab !== 'heartlink' && (
                 <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-rose-500" />
               )}

@@ -1,0 +1,412 @@
+import React, { useState } from 'react';
+import { 
+  X, 
+  Sparkles, 
+  Check, 
+  ShieldCheck, 
+  Eye, 
+  EyeOff, 
+  Clock, 
+  Smartphone, 
+  CheckCircle2, 
+  AlertCircle,
+  Zap,
+  Star,
+  Flame,
+  ArrowRight
+} from 'lucide-react';
+import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
+
+export interface VisibilityPlan {
+  id: 'vis_24h' | 'vis_7d' | 'vis_30d';
+  name: string;
+  durationLabel: string;
+  durationHours: number;
+  priceMt: number;
+  description: string;
+  badge?: string;
+  isPopular?: boolean;
+}
+
+export const VISIBILITY_PLANS: VisibilityPlan[] = [
+  {
+    id: 'vis_24h',
+    name: 'Passe 24 Horas',
+    durationLabel: '24 Horas',
+    durationHours: 24,
+    priceMt: 150,
+    description: 'Apareça na vitrine pública por 1 dia inteiro. Ideal para o fim de semana ou testar a atração.',
+    badge: 'Mais Acessível'
+  },
+  {
+    id: 'vis_7d',
+    name: 'Passe 7 Dias',
+    durationLabel: '7 Dias (1 Semana)',
+    durationHours: 168,
+    priceMt: 450,
+    description: '1 semana completa no topo da vitrine para ser vista(o) e cortejada(o) por centenas de pretendentes.',
+    badge: 'Mais Procurado',
+    isPopular: true
+  },
+  {
+    id: 'vis_30d',
+    name: 'Passe 30 Dias (VIP)',
+    durationLabel: '30 Dias (1 Mês)',
+    durationHours: 720,
+    priceMt: 1000,
+    description: 'Máxima visibilidade durante 1 mês inteiro com selo de Destaque VIP e prioridade nas buscas.',
+    badge: 'Máxima Visibilidade'
+  }
+];
+
+export interface UserVisibilityData {
+  mode: 'anonymous' | 'public_showcase';
+  isUnlocked: boolean;
+  planId?: 'vis_24h' | 'vis_7d' | 'vis_30d';
+  planName?: string;
+  expiresAt?: string; // ISO string
+  unlockedAt?: string;
+  paymentPhone?: string;
+  paymentMethod?: 'mpesa' | 'emola';
+}
+
+interface HeartLinkVisibilityModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentVisibility: UserVisibilityData;
+  onSaveVisibility: (updated: UserVisibilityData) => void;
+  userPhone?: string;
+}
+
+export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> = ({
+  isOpen,
+  onClose,
+  currentVisibility,
+  onSaveVisibility,
+  userPhone = ''
+}) => {
+  const [selectedPlanId, setSelectedPlanId] = useState<'vis_24h' | 'vis_7d' | 'vis_30d'>('vis_7d');
+  const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'emola'>('mpesa');
+  const [phoneNumber, setPhoneNumber] = useState(
+    userPhone ? userPhone.replace('+258', '').replace(/\s+/g, '') : '841234567'
+  );
+  const [step, setStep] = useState<'select_plan' | 'payment_processing' | 'success'>('select_plan');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!isOpen) return null;
+
+  const selectedPlan = VISIBILITY_PLANS.find((p) => p.id === selectedPlanId) || VISIBILITY_PLANS[1];
+
+  const handleConfirmPayment = () => {
+    setIsProcessing(true);
+    setStep('payment_processing');
+
+    // Simulate real M-Pesa / E-Mola push STK confirmation
+    setTimeout(() => {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + selectedPlan.durationHours * 60 * 60 * 1000).toISOString();
+
+      const newVisibility: UserVisibilityData = {
+        mode: 'public_showcase',
+        isUnlocked: true,
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        expiresAt: expiresAt,
+        unlockedAt: now.toISOString(),
+        paymentPhone: phoneNumber,
+        paymentMethod: paymentMethod
+      };
+
+      onSaveVisibility(newVisibility);
+      setIsProcessing(false);
+      setStep('success');
+    }, 2400);
+  };
+
+  const handleToggleToAnonymous = () => {
+    onSaveVisibility({
+      ...currentVisibility,
+      mode: 'anonymous'
+    });
+    onClose();
+  };
+
+  const handleReactivateShowcase = () => {
+    onSaveVisibility({
+      ...currentVisibility,
+      mode: 'public_showcase'
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+      <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150">
+        
+        {/* Header */}
+        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-4 sm:p-5 relative overflow-hidden">
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0 shadow-inner">
+                <HeartLinkTwoHeartsIcon className="w-7 h-7" variant="white" showStitches={true} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-md">
+                  Vitrine HeartLink
+                </span>
+                <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5">
+                  Desbloquear Visibilidade de Perfil
+                </h2>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+
+          {/* STEP 1: SELECT PLAN */}
+          {step === 'select_plan' && (
+            <>
+              {/* Concept Banner explaining the system logic */}
+              <div className="bg-rose-50/80 border border-rose-200/90 rounded-2xl p-3.5 space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <Eye className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="text-xs text-neutral-800 space-y-1">
+                    <p className="font-extrabold text-rose-950">
+                      Como funciona a Visibilidade no HeartLink?
+                    </p>
+                    <p className="leading-relaxed text-neutral-700">
+                      • <strong>Cadastro 100% Mahala (Grátis):</strong> Qualquer pessoa se cadastra gratuitamente e pode navegar no <em>Modo Anónimo</em>, vendo todos e mandando mensagens sem aparecer na vitrine.
+                    </p>
+                    <p className="leading-relaxed text-neutral-700">
+                      • <strong>Desbloquear a Visibilidade:</strong> Para o seu perfil <strong>aparecer na vitrine pública</strong>, ser visto e cortejado por centenas de pretendentes, desbloqueie um dos pacotes abaixo.
+                    </p>
+                  </div>
+                </div>
+
+                {/* If user currently has active visibility, allow quick toggle */}
+                {currentVisibility.isUnlocked && (
+                  <div className="pt-2 border-t border-rose-200/70 flex items-center justify-between text-xs">
+                    <span className="text-rose-900 font-bold">
+                      Estado Atual: {currentVisibility.mode === 'public_showcase' ? '👁️ Visível na Vitrine' : '🕶️ Modo Anónimo'}
+                    </span>
+                    {currentVisibility.mode === 'public_showcase' ? (
+                      <button
+                        onClick={handleToggleToAnonymous}
+                        className="text-[11px] font-bold text-neutral-700 hover:text-neutral-900 underline cursor-pointer"
+                      >
+                        Pausar e ficar anónimo(a)
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleReactivateShowcase}
+                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+                      >
+                        Reativar vitrine
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 3 Packages Cards */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block">
+                  Escolha o seu Pacote de Visibilidade:
+                </label>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {VISIBILITY_PLANS.map((plan) => {
+                    const isSelected = selectedPlanId === plan.id;
+                    return (
+                      <div
+                        key={plan.id}
+                        onClick={() => setSelectedPlanId(plan.id)}
+                        className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer relative flex items-center justify-between ${
+                          isSelected
+                            ? 'border-rose-600 bg-rose-50/60 shadow-sm'
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                        }`}
+                      >
+                        <div className="space-y-1 pr-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-sm sm:text-base text-neutral-900">
+                              {plan.name}
+                            </span>
+                            {plan.badge && (
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                plan.isPopular
+                                  ? 'bg-rose-600 text-white'
+                                  : 'bg-amber-100 text-amber-900 border border-amber-300/80'
+                              }`}>
+                                {plan.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-neutral-600 leading-snug">
+                            {plan.description}
+                          </p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="font-black text-lg sm:text-xl text-rose-600">
+                            {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
+                          </div>
+                          <div className="text-[10px] text-neutral-500 font-bold">
+                            {plan.durationLabel}
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Payment Method Selector (M-Pesa / E-Mola) */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block">
+                  Método de Pagamento Instantâneo:
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('mpesa')}
+                    className={`h-13 rounded-2xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
+                      paymentMethod === 'mpesa'
+                        ? 'border-red-600 bg-red-50 text-red-700 shadow-2xs'
+                        : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
+                    }`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-red-600 shrink-0" />
+                    <span>M-Pesa (Vodacom)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('emola')}
+                    className={`h-13 rounded-2xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
+                      paymentMethod === 'emola'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-2xs'
+                        : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
+                    }`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-orange-500 shrink-0" />
+                    <span>E-Mola (Movitel)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Phone number input for M-Pesa / E-Mola */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-neutral-700 block">
+                  Número de Celular para Débito ({paymentMethod === 'mpesa' ? '84/85' : '86/87'}) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-500">
+                    +258
+                  </span>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                    placeholder={paymentMethod === 'mpesa' ? '84 123 4567' : '86 123 4567'}
+                    className="w-full h-11 pl-14 pr-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-bold text-neutral-900 focus:ring-2 focus:ring-rose-500 focus:bg-white outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Irá receber um pedido USSD no ecrã do seu telemóvel para inserir o seu PIN com total segurança.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold cursor-pointer"
+                >
+                  Continuar no Modo Anónimo (Grátis)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmPayment}
+                  disabled={phoneNumber.length < 8}
+                  className="flex-1 h-12 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
+                >
+                  <span>Pagar {selectedPlan.priceMt} MT e Desbloquear</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* STEP 2: PROCESSING SIMULATION */}
+          {step === 'payment_processing' && (
+            <div className="py-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-rose-100 border-4 border-rose-500 border-t-transparent animate-spin mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-neutral-900">
+                  A Enviar Notificação {paymentMethod === 'mpesa' ? 'M-Pesa' : 'E-Mola'}...
+                </h3>
+                <p className="text-xs text-neutral-600 max-w-xs mx-auto">
+                  Por favor, confirme no seu telemóvel (+258 {phoneNumber}) o débito de <strong>{selectedPlan.priceMt} MT</strong> para ativar o <strong>{selectedPlan.name}</strong>.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold">
+                <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
+                <span>Aguardando introdução do PIN no celular...</span>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: SUCCESS */}
+          {step === 'success' && (
+            <div className="py-6 text-center space-y-4">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+                <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-neutral-900">
+                  Visibilidade Desbloqueada com Sucesso! ✨
+                </h3>
+                <p className="text-xs text-neutral-600 max-w-sm mx-auto leading-relaxed">
+                  O seu perfil já está <strong>visível na vitrine pública do HeartLink</strong>. Agora centenas de utilizadores podem ver o seu perfil, foto e iniciar conversas consigo!
+                </p>
+              </div>
+
+              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-950 font-bold space-y-1">
+                <div>Plano Ativo: {selectedPlan.name} ({selectedPlan.durationLabel})</div>
+                <div className="text-[11px] text-emerald-800 font-medium">
+                  Pode alternar para o <em>Modo Anónimo</em> a qualquer momento nas opções se desejar privacidade temporária.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
+              >
+                <span>Ver Meu Perfil na Vitrine</span>
+                <Check className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};

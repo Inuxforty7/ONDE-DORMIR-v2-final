@@ -19,6 +19,7 @@ import {
   Check,
   Heart
 } from 'lucide-react';
+import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 
 export interface VerificationDossier {
   fullName: string;
@@ -34,6 +35,7 @@ export interface VerificationDossier {
   driverLicensePhoto?: string;
   biometricSelfiePhoto: string;
   purpose: 'rentacar' | 'tourguide' | 'heartlink';
+  userRole?: 'client' | 'car_owner' | 'guide';
   verifiedAt: string;
 }
 
@@ -41,6 +43,7 @@ interface BiometricVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   purpose: 'rentacar' | 'tourguide' | 'heartlink';
+  userRole?: 'client' | 'car_owner' | 'guide';
   targetItemName?: string;
   onVerificationComplete: (dossier: VerificationDossier) => void;
 }
@@ -51,6 +54,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
   isOpen,
   onClose,
   purpose,
+  userRole = 'client',
   targetItemName,
   onVerificationComplete
 }) => {
@@ -207,6 +211,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
       driverLicensePhoto: driverLicensePhoto || undefined,
       biometricSelfiePhoto: biometricSelfiePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       purpose,
+      userRole,
       verifiedAt: new Date().toISOString()
     };
 
@@ -237,7 +242,8 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                 <span className="text-[10px] uppercase font-black tracking-wider bg-black/20 text-white px-2 py-0.5 rounded-md">
                   Segurança Obrigatória
                 </span>
-                <span className="text-xs font-bold opacity-90">
+                <span className="text-xs font-bold opacity-90 flex items-center gap-1">
+                  {purpose === 'heartlink' && <HeartLinkTwoHeartsIcon className="w-3.5 h-3.5" variant="white" />}
                   {purpose === 'rentacar' ? 'Rent-a-Car' : purpose === 'heartlink' ? 'HeartLink' : 'Guia Turístico'}
                 </span>
               </div>
@@ -415,7 +421,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                 </div>
               </div>
 
-              {purpose === 'rentacar' && (
+              {purpose === 'rentacar' && userRole === 'client' && (
                 <div>
                   <label className="text-xs font-bold text-neutral-700 block mb-1">
                     Número da Carta de Condução *
@@ -631,8 +637,8 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                 </div>
               </div>
 
-              {/* Se for Rent-a-Car: Carta de Condução */}
-              {purpose === 'rentacar' && (
+              {/* Se for Rent-a-Car para Locatário/Condutor: Carta de Condução */}
+              {purpose === 'rentacar' && userRole === 'client' && (
                 <div className="p-4 rounded-2xl border-2 border-dashed border-neutral-300 hover:border-neutral-400 bg-neutral-50 flex flex-col items-center justify-center text-center space-y-2 relative">
                   {driverLicensePhoto ? (
                     <div className="relative w-full h-32 rounded-xl overflow-hidden border">
@@ -646,7 +652,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                       <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center">
                         <Car className="w-5 h-5" />
                       </div>
-                      <div className="font-bold text-xs text-neutral-800">Carta de Condução (Obrigatório para Carros) *</div>
+                      <div className="font-bold text-xs text-neutral-800">Carta de Condução (Obrigatório para Locatário) *</div>
                       <p className="text-[10px] text-neutral-500">Foto nítida da carta de condução válida em Moçambique</p>
                     </>
                   )}

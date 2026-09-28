@@ -19,12 +19,17 @@ import {
   Sparkles,
   Camera,
   FileCheck,
-  Lock
+  Lock,
+  Layers,
+  CreditCard,
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { CarRental, UserLocationState } from '../types';
+import { CarRental, UserLocationState, CarOwnerFleetAccount } from '../types';
 import { INITIAL_CAR_RENTALS } from '../data/carRentals';
 import { TermsModal } from './TermsModal';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
+import { OwnerFleetManagerModal } from './OwnerFleetManagerModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 
 interface RentACarTabProps {
@@ -42,6 +47,119 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
   onSelectProvince,
   onSelectAllMozambique,
 }) => {
+  // Owner fleet account
+  const [ownerFleet, setOwnerFleet] = useState<CarOwnerFleetAccount | null>(() => {
+    const saved = localStorage.getItem('onde_dormir_owner_fleet');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    // Default demo owner fleet for immediate testing
+    return {
+      ownerId: 'owner-demo-1',
+      fullName: 'Armando C. Guebuza (Rentals)',
+      biNumber: '110200345678A',
+      isFacialVerified: true,
+      phone: '+258842112233',
+      whatsapp: '258842112233',
+      city: 'Maputo',
+      province: 'Maputo Cidade',
+      verifiedAt: new Date().toISOString(),
+      vehicles: [
+        {
+          id: 'fleet-v1',
+          model: 'Toyota Land Cruiser Prado VX 4x4',
+          brand: 'Toyota',
+          category: '4x4',
+          categoryLabel: '4x4 Todo-o-Terreno',
+          photo: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80',
+          seats: 7,
+          transmission: 'Automático',
+          fuel: 'Gasóleo',
+          city: 'Maputo',
+          province: 'Maputo Cidade',
+          withDriverAvailable: true,
+          ratePerDay: 5500,
+          depositAmount: 15000,
+          plateNumber: 'AE-890-MC',
+          phone: '+258842112233',
+          whatsapp: '258842112233',
+          verified: true,
+          featured: true,
+          description: 'Viatura da frota executiva. Ar condicionado bizona e revisão completa.',
+          ownerName: 'Armando C. Guebuza (Rentals)',
+          ownerBiNumber: '110200345678A',
+          ownerFacialVerified: true,
+          livretePhoto: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
+          tituloPropriedadePhoto: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=400&q=80',
+          isActiveSubscription: true,
+          monthlyFee: 1000
+        },
+        {
+          id: 'fleet-v2',
+          model: 'Toyota Hilux GD-6 2.8 4x4 Double Cab',
+          brand: 'Toyota',
+          category: 'carrinha',
+          categoryLabel: 'Pickup 4x4',
+          photo: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80',
+          seats: 5,
+          transmission: 'Manual',
+          fuel: 'Gasóleo',
+          city: 'Matola',
+          province: 'Maputo Província',
+          withDriverAvailable: true,
+          ratePerDay: 4200,
+          depositAmount: 12000,
+          plateNumber: 'AF-321-MC',
+          phone: '+258842112233',
+          whatsapp: '258842112233',
+          verified: true,
+          featured: true,
+          description: 'Carrinha para safari, trabalhos de campo e transporte de carga.',
+          ownerName: 'Armando C. Guebuza (Rentals)',
+          ownerBiNumber: '110200345678A',
+          ownerFacialVerified: true,
+          livretePhoto: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
+          tituloPropriedadePhoto: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=400&q=80',
+          isActiveSubscription: true,
+          monthlyFee: 1000
+        },
+        {
+          id: 'fleet-v3',
+          model: 'Toyota Corolla Cross Hybrid',
+          brand: 'Toyota',
+          category: 'suv',
+          categoryLabel: 'SUV Familiar',
+          photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
+          seats: 5,
+          transmission: 'Automático',
+          fuel: 'Gasolina',
+          city: 'Maputo',
+          province: 'Maputo Cidade',
+          withDriverAvailable: true,
+          ratePerDay: 3500,
+          depositAmount: 10000,
+          plateNumber: 'AH-112-MC',
+          phone: '+258842112233',
+          whatsapp: '258842112233',
+          verified: true,
+          featured: false,
+          description: 'Económico e confortável para a cidade de Maputo.',
+          ownerName: 'Armando C. Guebuza (Rentals)',
+          ownerBiNumber: '110200345678A',
+          ownerFacialVerified: true,
+          livretePhoto: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
+          tituloPropriedadePhoto: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=400&q=80',
+          isActiveSubscription: false, // Mensalidade expirada: invisível no catálogo público até pagar!
+          monthlyFee: 1000
+        }
+      ]
+    };
+  });
+
   const [vehicles, setVehicles] = useState<CarRental[]>(() => {
     const saved = localStorage.getItem('onde_dormir_custom_cars');
     if (saved) {
@@ -54,6 +172,19 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
     }
     return INITIAL_CAR_RENTALS;
   });
+
+  // Combine static cars and owner fleet cars that are actively subscribed
+  const allActiveVehicles = useMemo(() => {
+    const fleetCars = ownerFleet?.vehicles || [];
+    // Only include fleet cars that have active subscription (paid for the month)
+    const activeFleetCars = fleetCars.filter((v) => v.isActiveSubscription !== false);
+    
+    // Avoid duplicates
+    const fleetIds = new Set(activeFleetCars.map((v) => v.id));
+    const otherCars = vehicles.filter((v) => !fleetIds.has(v.id));
+
+    return [...activeFleetCars, ...otherCars];
+  }, [vehicles, ownerFleet]);
 
   const [selectedProvince, setSelectedProvince] = useState<string>(() => {
     if (!userLocation || userLocation.isAllMozambique) return 'all';
@@ -76,15 +207,17 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
   const [withDriverOnly, setWithDriverOnly] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<CarRental | null>(null);
   
-  // KYC / Verification State
+  // KYC / Verification State for Client vs Owner
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [verificationRole, setVerificationRole] = useState<'client' | 'car_owner'>('client');
   const [pendingVehicleAction, setPendingVehicleAction] = useState<CarRental | null>(null);
   const [verifiedDossier, setVerifiedDossier] = useState<VerificationDossier | null>(() => {
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  // Owner Fleet Manager Modal
+  const [isFleetManagerOpen, setIsFleetManagerOpen] = useState(false);
 
   const categories = [
     { id: '4x4', label: '4x4 Todo-o-Terreno' },
@@ -94,7 +227,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
   ];
 
   const citiesList = useMemo(() => {
-    let cars = vehicles;
+    let cars = allActiveVehicles;
     if (selectedProvince !== 'all') {
       const selProv = selectedProvince.toLowerCase();
       cars = cars.filter((v) => {
@@ -106,7 +239,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
       });
     }
     return Array.from(new Set(cars.map((c) => c.city))).filter(Boolean);
-  }, [vehicles, selectedProvince]);
+  }, [allActiveVehicles, selectedProvince]);
 
   // Reset selectedCity if it's not in the new citiesList
   React.useEffect(() => {
@@ -124,8 +257,14 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
     }
   };
 
+  // Filter ONLY vehicles that are subscribed / visible
   const filteredVehicles = useMemo(() => {
-    return vehicles.filter((car) => {
+    return allActiveVehicles.filter((car) => {
+      // If car has isActiveSubscription explicitly set to false, it is hidden from the public!
+      if (car.isActiveSubscription === false) {
+        return false;
+      }
+
       // Province filter - strict isolation
       if (selectedProvince !== 'all') {
         const carProv = (car.province || '').toLowerCase();
@@ -160,24 +299,44 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
       return true;
     });
-  }, [vehicles, selectedProvince, searchQuery, selectedCategory, selectedCity, withDriverOnly]);
+  }, [allActiveVehicles, selectedProvince, searchQuery, selectedCategory, selectedCity, withDriverOnly]);
 
-  const handleRegisterCar = (newCar: CarRental) => {
-    setVehicles((prev) => [newCar, ...prev]);
-    const custom = JSON.parse(localStorage.getItem('onde_dormir_custom_cars') || '[]');
-    localStorage.setItem('onde_dormir_custom_cars', JSON.stringify([newCar, ...custom]));
-    setIsRegisterOpen(false);
+  const handleSaveFleet = (newFleet: CarOwnerFleetAccount) => {
+    setOwnerFleet(newFleet);
+    localStorage.setItem('onde_dormir_owner_fleet', JSON.stringify(newFleet));
   };
 
   const handleVerificationComplete = (dossier: VerificationDossier) => {
-    setVerifiedDossier(dossier);
-    if (pendingVehicleAction) {
-      const v = pendingVehicleAction;
-      setPendingVehicleAction(null);
-      const text = encodeURIComponent(
-        `Olá! Sou o locatário ${dossier.fullName} (BI: ${dossier.biNumber.slice(0, 4)}**** - Identidade e Carta de Condução Verificadas no Onde Dormir Moçambique). Gostaria de alugar a viatura ${v.model} em ${v.city}.`
-      );
-      window.open(`https://wa.me/${v.whatsapp}?text=${text}`, '_blank');
+    if (dossier.userRole === 'car_owner' || verificationRole === 'car_owner') {
+      // Save or update owner fleet
+      const updatedFleet: CarOwnerFleetAccount = {
+        ownerId: ownerFleet?.ownerId || `owner-${Date.now()}`,
+        fullName: dossier.fullName,
+        biNumber: dossier.biNumber,
+        biFrontPhoto: dossier.biFrontPhoto,
+        biBackPhoto: dossier.biBackPhoto,
+        facialSelfiePhoto: dossier.biometricSelfiePhoto,
+        isFacialVerified: true,
+        phone: dossier.phone,
+        whatsapp: dossier.whatsapp || dossier.phone,
+        city: dossier.city,
+        province: dossier.province,
+        verifiedAt: dossier.verifiedAt,
+        vehicles: ownerFleet?.vehicles || []
+      };
+      setOwnerFleet(updatedFleet);
+      localStorage.setItem('onde_dormir_owner_fleet', JSON.stringify(updatedFleet));
+      setIsFleetManagerOpen(true);
+    } else {
+      setVerifiedDossier(dossier);
+      if (pendingVehicleAction) {
+        const v = pendingVehicleAction;
+        setPendingVehicleAction(null);
+        const text = encodeURIComponent(
+          `Olá! Sou o locatário ${dossier.fullName} (BI: ${dossier.biNumber.slice(0, 4)}**** - Identidade e Carta de Condução Verificadas no Onde Dormir Moçambique). Gostaria de alugar a viatura ${v.model} em ${v.city}.`
+        );
+        window.open(`https://wa.me/${v.whatsapp}?text=${text}`, '_blank');
+      }
     }
   };
 
@@ -185,12 +344,22 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
     if (e) e.stopPropagation();
     if (!verifiedDossier) {
       setPendingVehicleAction(car);
+      setVerificationRole('client');
       setIsVerificationOpen(true);
     } else {
       const text = encodeURIComponent(
-        `Olá! Sou o locatário ${verifiedDossier.fullName} (BI: ${verifiedDossier.biNumber.slice(0, 4)}**** - Identidade e Carta de Condução Verificadas no Onde Dormir Moçambique). Gostaria de alugar a viatura ${car.model} em ${car.city}.`
+        `Olá! Sou o locatário ${verifiedDossier.fullName} (BI: ${verifiedDossier.biNumber.slice(0, 4)}**** - Identidade Verificada no Onde Dormir Moçambique). Gostaria de alugar a viatura ${car.model} em ${car.city}.`
       );
       window.open(`https://wa.me/${car.whatsapp}?text=${text}`, '_blank');
+    }
+  };
+
+  const handleOpenOwnerFleet = () => {
+    if (!ownerFleet || !ownerFleet.isFacialVerified) {
+      setVerificationRole('car_owner');
+      setIsVerificationOpen(true);
+    } else {
+      setIsFleetManagerOpen(true);
     }
   };
 
@@ -228,7 +397,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             {verifiedDossier ? (
               <span className="h-10 px-3 bg-emerald-950/80 border border-emerald-400 text-emerald-300 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -236,20 +405,27 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
               </span>
             ) : (
               <button
-                onClick={() => setIsVerificationOpen(true)}
+                onClick={() => {
+                  setVerificationRole('client');
+                  setIsVerificationOpen(true);
+                }}
                 className="flex-1 sm:flex-none h-10 px-3 bg-amber-400 hover:bg-amber-300 active:scale-95 text-zinc-950 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Validar Meu BI + Foto</span>
+                <span>Validar BI + Selfie</span>
               </button>
             )}
 
+            {/* Painel do Proprietário / Adicionar Viatura (+) */}
             <button
-              onClick={() => setIsRegisterOpen(true)}
-              className="h-10 px-3.5 bg-white text-orange-700 hover:bg-orange-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              onClick={handleOpenOwnerFleet}
+              className="h-10 px-3.5 bg-neutral-950 hover:bg-neutral-900 border border-amber-400/40 text-amber-300 active:scale-95 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Registar Viatura</span>
+              <Car className="w-3.5 h-3.5 text-orange-400" />
+              <span>Painel do Proprietário</span>
+              <span className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center text-xs font-black ml-0.5">
+                +
+              </span>
             </button>
           </div>
         </div>
@@ -436,7 +612,20 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 <div className="flex items-center gap-1 text-xs text-neutral-600 mt-0.5">
                   <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                   <span>{car.city}, {car.province}</span>
+                  {car.plateNumber && (
+                    <span className="text-[10px] font-mono bg-neutral-100 border border-neutral-200 px-1 rounded ml-1 text-neutral-600">
+                      {car.plateNumber}
+                    </span>
+                  )}
                 </div>
+
+                {/* Owner info banner */}
+                {car.ownerName && (
+                  <div className="mt-1.5 flex items-center gap-1 text-[11px] text-neutral-600">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">Proprietário: <strong className="text-neutral-800">{car.ownerName}</strong></span>
+                  </div>
+                )}
 
                 {/* Specs */}
                 <div className="grid grid-cols-3 gap-1.5 mt-2 text-[11px] font-semibold text-neutral-700">
@@ -532,6 +721,30 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 </div>
               </div>
 
+              {/* Owner & Legal Documents Verification Badge */}
+              <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-neutral-800">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Proprietário: {selectedVehicle.ownerName || 'Proprietário Verificado'}</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    Facial + BI Ativo
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-neutral-200/80">
+                  <div className="flex items-center gap-1.5 text-neutral-600">
+                    <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Livrete Verificado (INATRO)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-neutral-600">
+                    <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Título de Propriedade Válido</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Description */}
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1">
@@ -570,18 +783,24 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
         isOpen={isVerificationOpen}
         onClose={() => setIsVerificationOpen(false)}
         purpose="rentacar"
+        userRole={verificationRole}
         targetItemName={pendingVehicleAction?.model}
         onVerificationComplete={handleVerificationComplete}
       />
 
-      {/* Register Vehicle Modal */}
-      {isRegisterOpen && (
-        <RegisterCarModal
-          onClose={() => setIsRegisterOpen(false)}
-          onRegister={handleRegisterCar}
-          cities={citiesList}
-        />
-      )}
+      {/* Owner Fleet & Multi-Vehicle Manager Modal */}
+      <OwnerFleetManagerModal
+        isOpen={isFleetManagerOpen}
+        onClose={() => setIsFleetManagerOpen(false)}
+        ownerFleet={ownerFleet}
+        onSaveFleet={handleSaveFleet}
+        onStartOwnerBiometrics={() => {
+          setIsFleetManagerOpen(false);
+          setVerificationRole('car_owner');
+          setIsVerificationOpen(true);
+        }}
+        availableCities={citiesList}
+      />
     </div>
   );
 };

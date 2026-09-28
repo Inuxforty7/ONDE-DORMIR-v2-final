@@ -77,6 +77,7 @@ export type ActiveTab = 'home' | 'explore' | 'guides' | 'rentacar' | 'heartlink'
 export interface TourGuide {
   id: string;
   name: string;
+  age?: number;
   photo: string;
   city: string;
   province: string;
@@ -107,11 +108,41 @@ export interface CarRental {
   province: string;
   withDriverAvailable: boolean;
   ratePerDay?: number;
+  depositAmount?: number; // Caução em MT
+  plateNumber?: string; // Matrícula (ex: AB-123-MC)
   phone: string;
   whatsapp: string;
   verified: boolean;
   featured?: boolean;
   description: string;
+  // Owner profile & fleet verification
+  ownerId?: string;
+  ownerName?: string;
+  ownerBiNumber?: string;
+  ownerBiPhoto?: string;
+  ownerFacialVerified?: boolean;
+  livretePhoto?: string; // Documento Livrete do veículo
+  tituloPropriedadePhoto?: string; // Documento Título de Propriedade
+  // Monetization & visibility per vehicle
+  isActiveSubscription?: boolean; // Se a taxa mensal desta viatura está paga
+  subscriptionExpiresAt?: string; // Data em que expira a mensalidade desta viatura
+  monthlyFee?: number; // Taxa mensal (ex: 1000 MT)
+}
+
+export interface CarOwnerFleetAccount {
+  ownerId: string;
+  fullName: string;
+  biNumber: string;
+  biFrontPhoto?: string;
+  biBackPhoto?: string;
+  facialSelfiePhoto?: string;
+  isFacialVerified: boolean;
+  phone: string;
+  whatsapp: string;
+  city: string;
+  province: string;
+  verifiedAt: string;
+  vehicles: CarRental[];
 }
 
 // Strictly restricted to two legitimate social objectives in compliance with Mozambican law:
@@ -131,6 +162,9 @@ export interface HeartLinkProfile {
   isPremium?: boolean;
   isFeatured?: boolean;
   isVipExclusive?: boolean;
+  isPubliclyVisible?: boolean; // Se o perfil está desbloqueado e visível na vitrine pública
+  visibilityBadge?: string;    // Ex: "Passe 7 Dias", "Passe 24h", "Destaque VIP"
+  visibilityExpiresAt?: string;
   bio: string;
   profession?: string;
   phone?: string;

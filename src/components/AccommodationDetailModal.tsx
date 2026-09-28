@@ -150,8 +150,9 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
               </div>
 
               {accommodation.distanceKm !== undefined && (
-                <span className="bg-white/95 text-neutral-900 text-xs font-extrabold px-3 py-1 rounded-lg shadow-sm">
-                  {formatDistance(accommodation.distanceKm)} de si
+                <span className="bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 text-xs font-black px-3 py-1 rounded-xl shadow-sm backdrop-blur-md flex items-center gap-1.5">
+                  <Navigation2 className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{formatDistance(accommodation.distanceKm)}</span>
                 </span>
               )}
             </div>
@@ -315,8 +316,16 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                   <div className="text-sm sm:text-base font-bold text-neutral-900">
                     {accommodation.location.neighborhood}, {accommodation.location.city}
                   </div>
-                  <div className="text-xs sm:text-sm text-neutral-600">
-                    {accommodation.location.address} • {accommodation.location.province}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs sm:text-sm text-neutral-600">
+                      {accommodation.location.address} • {accommodation.location.province}
+                    </span>
+                    {accommodation.distanceKm !== undefined && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                        <Navigation2 className="w-3 h-3 text-emerald-600" />
+                        <span>{formatDistance(accommodation.distanceKm)}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

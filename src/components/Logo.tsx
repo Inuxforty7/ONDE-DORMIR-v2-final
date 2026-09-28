@@ -4,12 +4,14 @@ interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
+  theme?: 'dark' | 'light' | 'auto';
 }
 
 export const Logo: React.FC<LogoProps> = ({ 
   className = '', 
   size = 'md',
-  showText = true 
+  showText = true,
+  theme = 'light'
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-8 rounded-xl',
@@ -139,14 +141,28 @@ export const Logo: React.FC<LogoProps> = ({
         </svg>
       </div>
 
-      {/* Brand Text - Clean ONDE DORMIR without MZ/Moçambique */}
+      {/* Brand Text - ONDE DORMIR MOÇAMBIQUE */}
       {showText && (
         <div className="flex flex-col shrink min-w-0 justify-center">
-          <span className={`${textClasses[size]} text-neutral-950 tracking-tight font-black truncate leading-tight`}>
-            ONDE <span className="text-blue-600">DORMIR</span>
-          </span>
-          <span className="text-[11px] text-neutral-500 font-medium whitespace-nowrap hidden md:block leading-tight mt-0.5">
-            Hospedagens, Guias & Viaturas
+          <div className={`${textClasses[size]} tracking-tight font-black truncate leading-tight`}>
+            {theme === 'dark' ? (
+              <>
+                <span className="text-white drop-shadow-xs">ONDE </span>
+                <span className="text-amber-400 drop-shadow-xs">DORMIR</span>
+              </>
+            ) : (
+              <>
+                <span className="text-neutral-950">ONDE </span>
+                <span className="text-blue-600">DORMIR</span>
+              </>
+            )}
+          </div>
+          <span 
+            className={`text-[9px] sm:text-[10px] font-black tracking-[0.22em] uppercase leading-tight mt-0.5 ${
+              theme === 'dark' ? 'text-sky-200 drop-shadow-xs' : 'text-blue-700'
+            }`}
+          >
+            MOÇAMBIQUE
           </span>
         </div>
       )}

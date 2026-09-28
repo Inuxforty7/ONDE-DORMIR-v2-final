@@ -9,6 +9,7 @@ interface HeaderProps {
   onRequestGps: () => void;
   onOpenPrivacyModal: () => void;
   activeTab: string;
+  onNavigateHome?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,12 +17,19 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLocationModal,
   onRequestGps,
   onOpenPrivacyModal,
+  onNavigateHome,
 }) => {
   return (
     <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-3 sm:px-4 py-2 sm:py-2.5 transition-all">
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 w-full">
         {/* Logo & Brand */}
-        <Logo size="md" />
+        <button 
+          onClick={onNavigateHome}
+          className="text-left cursor-pointer active:scale-95 transition-transform"
+          title="Voltar ao Início"
+        >
+          <Logo size="md" />
+        </button>
 
         {/* Location selector trigger & quick actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">

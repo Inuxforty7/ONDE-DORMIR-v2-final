@@ -5,6 +5,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-2',
     name: 'Armindo Cossa',
+    age: 32,
     photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
     city: 'Inhambane',
     province: 'Inhambane',
@@ -23,6 +24,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-3',
     name: 'Isabel Chissano',
+    age: 27,
     photo: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&q=80',
     city: 'Vilankulo',
     province: 'Inhambane',
@@ -43,6 +45,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-1',
     name: 'Mateus Tembe',
+    age: 29,
     photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
     city: 'Maputo',
     province: 'Maputo Cidade',
@@ -61,6 +64,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-ponta',
     name: 'Sérgio Mondlane',
+    age: 26,
     photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     city: 'Ponta do Ouro',
     province: 'Maputo Província',
@@ -81,6 +85,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-4',
     name: 'Eusébio Macuácua',
+    age: 38,
     photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
     city: 'Gorongosa',
     province: 'Sofala',
@@ -99,6 +104,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-beira',
     name: 'Dinis Chiveve',
+    age: 30,
     photo: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&q=80',
     city: 'Beira',
     province: 'Sofala',
@@ -119,6 +125,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-5',
     name: 'Fatima Abdala',
+    age: 31,
     photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
     city: 'Ilha de Moçambique',
     province: 'Nampula',
@@ -139,6 +146,7 @@ export const INITIAL_TOUR_GUIDES: TourGuide[] = [
   {
     id: 'guide-pemba',
     name: 'Jafar Mussa',
+    age: 33,
     photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
     city: 'Pemba',
     province: 'Cabo Delgado',

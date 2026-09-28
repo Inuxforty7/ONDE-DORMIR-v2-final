@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Filter,
   Layers,
-  Phone
+  Phone,
+  ArrowLeft
 } from 'lucide-react';
 import { Accommodation, AccommodationType, LocationCoordinates, UserLocationState } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl, isLocationMatched } from '../utils/geo';
@@ -207,8 +208,35 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Floating Top Filter / Controls Bar */}
-      <div className="absolute top-3 left-3 right-3 sm:right-auto sm:max-w-md z-10 flex flex-col gap-2">
+      {/* 
+        =======================================================
+        TOP FLOATING NAVIGATION HEADER:
+        Big, Prominent Back Arrow Button + Region Indicator
+        =======================================================
+      */}
+      <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none gap-2">
+        {/* Touch-Friendly Return Button */}
+        <button
+          type="button"
+          onClick={onSwitchToList}
+          className="pointer-events-auto h-11 px-4 bg-white/95 hover:bg-white active:scale-95 text-neutral-900 rounded-2xl shadow-xl border border-neutral-300 font-black text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all touch-manipulation backdrop-blur-md"
+          title="Voltar para a lista de alojamentos"
+        >
+          <ArrowLeft className="w-5 h-5 text-emerald-700 stroke-[2.5]" />
+          <span>Voltar para Lista</span>
+        </button>
+
+        {/* Current Active Location Pill */}
+        <div className="pointer-events-auto px-3.5 py-2.5 bg-neutral-900/90 backdrop-blur-md text-white rounded-2xl text-xs font-bold shadow-xl border border-white/20 flex items-center gap-1.5 shrink-0">
+          <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span className="truncate max-w-[120px] sm:max-w-xs">
+            {userLocation?.name || 'Moçambique'}
+          </span>
+        </div>
+      </div>
+
+      {/* Floating Top Filter / Controls Bar right below the back bar */}
+      <div className="absolute top-16 left-3 right-3 sm:right-auto sm:max-w-md z-20 flex flex-col gap-2">
         {/* Quick Type pills */}
         <div className="flex gap-1.5 p-1.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-md border border-neutral-200/80 overflow-x-auto no-scrollbar">
           <button
@@ -311,8 +339,9 @@ export const MapView: React.FC<MapViewProps> = ({
                   </p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {selectedPlace.distanceKm !== undefined && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        {formatDistance(selectedPlace.distanceKm)} de si
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                        <Navigation className="w-2.5 h-2.5 text-emerald-600" />
+                        <span>{formatDistance(selectedPlace.distanceKm)}</span>
                       </span>
                     )}
                     {selectedPlace.isOpen24h && (

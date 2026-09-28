@@ -25,6 +25,16 @@ export default function App() {
 
   // Active Bottom Tab
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [previousTab, setPreviousTab] = useState<ActiveTab>('home');
+
+  const handleNavigateToTab = useCallback((tab: ActiveTab) => {
+    setActiveTab((prev) => {
+      if (prev !== tab && prev !== 'map') {
+        setPreviousTab(prev);
+      }
+      return tab;
+    });
+  }, []);
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'warn' } | null>(null);
@@ -74,20 +84,33 @@ export default function App() {
   });
 
   // Calculate distance for all accommodations based on user location
+  // Always resolves a valid reference location so "a X metros de si" is NEVER missing!
   const accommodationsWithDistance = useMemo(() => {
-    return accommodations.map((item) => {
-      if (!userLocation.coords) {
-        return { ...item, distanceKm: undefined };
+    let refCoords = userLocation.coords;
+    if (!refCoords) {
+      if (userLocation.province) {
+        const found = MOZ_PRESET_LOCATIONS.find(
+          (p) => p.province.toLowerCase() === userLocation.province?.toLowerCase() ||
+                 p.name.toLowerCase().includes(userLocation.province?.toLowerCase() || '')
+        );
+        if (found) refCoords = found.coords;
       }
+    }
+    // Reliable default fallback to Inhambane center
+    if (!refCoords) {
+      refCoords = { lat: -23.8650, lng: 35.3833 };
+    }
+
+    return accommodations.map((item) => {
       const dist = calculateDistanceKm(
-        userLocation.coords.lat,
-        userLocation.coords.lng,
+        refCoords!.lat,
+        refCoords!.lng,
         item.location.lat,
         item.location.lng
       );
       return { ...item, distanceKm: dist };
     });
-  }, [accommodations, userLocation.coords]);
+  }, [accommodations, userLocation]);
 
   // Updated selected accommodation with distance
   const currentDetailAccommodation = useMemo(() => {
@@ -251,14 +274,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-neutral-50 flex flex-col font-sans selection:bg-emerald-500 selection:text-white relative">
-      {/* Header */}
-      <Header
-        userLocation={userLocation}
-        onOpenLocationModal={() => setIsLocationModalOpen(true)}
-        onRequestGps={handleRequestGps}
-        onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
-        activeTab={activeTab}
-      />
+      {/* Header - shown on all tabs except home, which has the full-bleed mobile hero matching the print */}
+      {activeTab !== 'home' && (
+        <Header
+          userLocation={userLocation}
+          onOpenLocationModal={() => setIsLocationModalOpen(true)}
+          onRequestGps={handleRequestGps}
+          onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
+          activeTab={activeTab}
+          onNavigateHome={() => setActiveTab('home')}
+        />
+      )}
 
       {/* Main Tab Content */}
       <main className="flex-1 w-full overflow-x-hidden">
@@ -273,8 +299,8 @@ export default function App() {
             onRequestGps={handleRequestGps}
             onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
             onNavigateToExplore={handleNavigateToExplore}
-            onNavigateToTab={setActiveTab}
-            onNavigateToMap={() => setActiveTab('map')}
+            onNavigateToTab={handleNavigateToTab}
+            onNavigateToMap={() => handleNavigateToTab('map')}
             onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
           />
         )}
@@ -286,8 +312,8 @@ export default function App() {
             onSelectAccommodation={setSelectedAccommodation}
             isSaved={(id) => savedIds.includes(id)}
             onToggleSave={handleToggleSave}
-            onSwitchToMap={() => setActiveTab('map')}
-            onBackToHome={() => setActiveTab('home')}
+            onSwitchToMap={() => handleNavigateToTab('map')}
+            onBackToHome={() => handleNavigateToTab('home')}
             initialTypeFilter={exploreTypeFilter}
             initialSearchQuery={exploreSearchQuery}
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
@@ -298,7 +324,7 @@ export default function App() {
 
         {activeTab === 'guides' && (
           <TourGuidesTab
-            onBackToHome={() => setActiveTab('home')}
+            onBackToHome={() => handleNavigateToTab('home')}
             userLocation={userLocation}
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
             onSelectProvince={handleSelectProvince}
@@ -308,7 +334,7 @@ export default function App() {
 
         {activeTab === 'rentacar' && (
           <RentACarTab
-            onBackToHome={() => setActiveTab('home')}
+            onBackToHome={() => handleNavigateToTab('home')}
             userLocation={userLocation}
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
             onSelectProvince={handleSelectProvince}
@@ -318,14 +344,14 @@ export default function App() {
 
         {activeTab === 'heartlink' && (
           <HeartLinkTab
-            onBackToHome={() => setActiveTab('home')}
+            onBackToHome={() => handleNavigateToTab('home')}
             userLocation={userLocation}
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
             onSelectProvince={handleSelectProvince}
             onSelectAllMozambique={handleSelectAllMozambique}
             accommodations={accommodationsWithDistance}
             onSelectAccommodation={setSelectedAccommodation}
-            onNavigateToExplore={() => setActiveTab('explore')}
+            onNavigateToExplore={() => handleNavigateToTab('explore')}
           />
         )}
 
@@ -339,7 +365,7 @@ export default function App() {
             isGpsLoading={userLocation.isLoading}
             isSaved={(id) => savedIds.includes(id)}
             onToggleSave={handleToggleSave}
-            onSwitchToList={() => setActiveTab('explore')}
+            onSwitchToList={() => handleNavigateToTab(previousTab === 'map' ? 'explore' : previousTab)}
           />
         )}
 
@@ -406,7 +432,7 @@ export default function App() {
       {/* Bottom Navigation */}
       <BottomNav
         activeTab={activeTab}
-        onChangeTab={setActiveTab}
+        onChangeTab={handleNavigateToTab}
         savedCount={savedIds.length}
       />
 

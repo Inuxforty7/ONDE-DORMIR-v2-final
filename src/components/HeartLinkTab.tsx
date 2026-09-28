@@ -24,12 +24,18 @@ import {
   ArrowLeft,
   Camera,
   Lock,
-  UserCheck
+  UserCheck,
+  Eye,
+  EyeOff,
+  Clock,
+  Zap
 } from 'lucide-react';
 import { HeartLinkProfile, HeartLinkIntention, Accommodation, UserLocationState } from '../types';
 import { INITIAL_HEARTLINK_PROFILES } from '../data/heartLinkProfiles';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
+import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
+import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
 
 interface HeartLinkTabProps {
   onBackToHome?: () => void;
@@ -97,7 +103,72 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   const [chatProfile, setChatProfile] = useState<HeartLinkProfile | null>(null);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false);
+  const [regVisibilityMode, setRegVisibilityMode] = useState<'anonymous' | 'public'>('anonymous');
   const [pendingAction, setPendingAction] = useState<{ type: 'chat' | 'whatsapp' | 'register' | 'like'; profile?: HeartLinkProfile } | null>(null);
+
+  // User Visibility State (Modo Anónimo vs. Vitrine Pública)
+  const [userVisibility, setUserVisibility] = useState<UserVisibilityData>(() => {
+    const saved = localStorage.getItem('onde_dormir_heartlink_visibility');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.expiresAt && new Date(parsed.expiresAt).getTime() < Date.now()) {
+          return { ...parsed, isUnlocked: false, mode: 'anonymous' };
+        }
+        return parsed;
+      } catch (e) {
+        // fallback
+      }
+    }
+    return {
+      mode: 'anonymous',
+      isUnlocked: false
+    };
+  });
+
+  // User's own registered profile
+  const [myProfile, setMyProfile] = useState<HeartLinkProfile | null>(() => {
+    const saved = localStorage.getItem('onde_dormir_my_heartlink_profile');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleSaveVisibility = (updated: UserVisibilityData) => {
+    setUserVisibility(updated);
+    localStorage.setItem('onde_dormir_heartlink_visibility', JSON.stringify(updated));
+    if (myProfile) {
+      const updatedProfile: HeartLinkProfile = {
+        ...myProfile,
+        isPubliclyVisible: updated.isUnlocked && updated.mode === 'public_showcase',
+        visibilityBadge: updated.planName || 'Passe Ativo',
+        visibilityExpiresAt: updated.expiresAt
+      };
+      setMyProfile(updatedProfile);
+      localStorage.setItem('onde_dormir_my_heartlink_profile', JSON.stringify(updatedProfile));
+    }
+  };
+
+  const handleToggleAnonymous = () => {
+    const nextMode = userVisibility.mode === 'public_showcase' ? 'anonymous' : 'public_showcase';
+    const updated: UserVisibilityData = {
+      ...userVisibility,
+      mode: nextMode
+    };
+    handleSaveVisibility(updated);
+  };
+
+  const calculateRemainingTime = (expiresAt?: string) => {
+    if (!expiresAt) return '';
+    const diffMs = new Date(expiresAt).getTime() - Date.now();
+    if (diffMs <= 0) return 'Expirado';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days} dias e ${hours % 24}h`;
+    }
+    return `${hours}h ${minutes}m`;
+  };
 
   const [verifiedDossier, setVerifiedDossier] = useState<VerificationDossier | null>(() => {
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
@@ -231,9 +302,30 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     }
   };
 
+  // Source profiles for the showcase (respects Anonymous Mode vs Public Showcase)
+  const allShowcaseProfiles = useMemo(() => {
+    let list = [...profiles];
+    if (myProfile) {
+      list = list.filter((p) => p.id !== myProfile.id);
+
+      // If user has unlocked visibility and is in showcase mode, place their profile at the top of the showcase!
+      if (userVisibility.isUnlocked && userVisibility.mode === 'public_showcase') {
+        const enrichedMyProfile: HeartLinkProfile = {
+          ...myProfile,
+          isPubliclyVisible: true,
+          visibilityBadge: userVisibility.planName || 'Passe Ativo',
+          visibilityExpiresAt: userVisibility.expiresAt
+        };
+        list = [enrichedMyProfile, ...list];
+      }
+      // If user is in anonymous mode (or hasn't unlocked visibility), their profile is completely hidden from the public showcase!
+    }
+    return list;
+  }, [profiles, myProfile, userVisibility]);
+
   // Filter profiles
   const filteredProfiles = useMemo(() => {
-    return profiles.filter((profile) => {
+    return allShowcaseProfiles.filter((profile) => {
       // Province filter - strict isolation
       if (selectedProvince !== 'all') {
         const profProv = (profile.province || '').toLowerCase();
@@ -272,18 +364,29 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
       return true;
     });
-  }, [profiles, searchQuery, selectedProvince, selectedCity, selectedGender, selectedIntention, activeSubTab, likedProfileIds]);
+  }, [allShowcaseProfiles, searchQuery, selectedProvince, selectedCity, selectedGender, selectedIntention, activeSubTab, likedProfileIds]);
 
   const featuredProfiles = useMemo(() => {
-    return profiles.filter((p) => p.isFeatured || p.isPremium || p.verified);
-  }, [profiles]);
+    return allShowcaseProfiles.filter((p) => p.isFeatured || p.isPremium || p.verified || p.isPubliclyVisible);
+  }, [allShowcaseProfiles]);
 
   // Handle register profile
-  const handleCreateProfile = (newP: HeartLinkProfile) => {
-    setProfiles((prev) => [newP, ...prev]);
-    const custom = JSON.parse(localStorage.getItem('onde_dormir_heartlink_profiles') || '[]');
-    localStorage.setItem('onde_dormir_heartlink_profiles', JSON.stringify([newP, ...custom]));
-    setIsRegisterOpen(false);
+  const handleCreateProfile = (newP: HeartLinkProfile, initialMode: 'anonymous' | 'public') => {
+    setMyProfile(newP);
+    localStorage.setItem('onde_dormir_my_heartlink_profile', JSON.stringify(newP));
+
+    if (initialMode === 'public') {
+      setIsRegisterOpen(false);
+      setIsVisibilityModalOpen(true);
+    } else {
+      // Modo Anónimo: 100% Mahala / Grátis
+      const updatedVis: UserVisibilityData = {
+        mode: 'anonymous',
+        isUnlocked: false
+      };
+      handleSaveVisibility(updatedVis);
+      setIsRegisterOpen(false);
+    }
   };
 
   // Handle Send Chat Message
@@ -340,8 +443,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
-            <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
-              <Heart className="w-6 h-6 fill-white" />
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
+              <HeartLinkTwoHeartsIcon className="w-8 h-8" variant="white" showStitches={true} />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -427,6 +530,96 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         <span className="leading-tight">
           <strong>Segurança mútua:</strong> Identidades validadas com BI e reconhecimento facial para proteção e confiança mútua.
         </span>
+      </div>
+
+      {/* Visibility Status Banner (Modo Anónimo vs. Vitrine Pública) */}
+      <div className="overflow-hidden rounded-3xl border shadow-sm transition-all">
+        {userVisibility.isUnlocked && userVisibility.mode === 'public_showcase' ? (
+          /* Estado 1: Perfil Visível na Vitrine */
+          <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 text-white p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shrink-0 shadow-inner">
+                <Eye className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm text-white">
+                    ✨ Seu Perfil está Visível na Vitrine Pública!
+                  </span>
+                  <span className="text-[10px] font-black bg-black/25 text-amber-200 px-2 py-0.5 rounded-full border border-amber-200/30">
+                    {userVisibility.planName || 'Passe Ativo'}
+                  </span>
+                </div>
+                <p className="text-xs text-pink-100 mt-0.5 flex items-center gap-1.5 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-amber-200 shrink-0" />
+                  <span>{calculateRemainingTime(userVisibility.expiresAt)} restantes na vitrine</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleToggleAnonymous}
+                className="flex-1 sm:flex-none h-9 px-3 bg-black/30 hover:bg-black/40 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                title="Ficar temporariamente invisível na vitrine"
+              >
+                <EyeOff className="w-3.5 h-3.5" />
+                <span>Pausar e Ficar Anónimo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsVisibilityModalOpen(true)}
+                className="h-9 px-3.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <span>Renovar</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Estado 2: Modo Anónimo (100% Mahala) */
+          <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white p-3.5 sm:p-4 border-neutral-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
+                <EyeOff className="w-5 h-5 text-neutral-300" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm text-white">
+                    Você está no Modo Anónimo
+                  </span>
+                  <span className="text-[10px] font-black bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                    100% Mahala (Grátis)
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-300 mt-0.5 leading-snug">
+                  O seu perfil está <strong>invisível na vitrine pública</strong>. Pode navegar, ver todos os perfis e conversar no anonimato.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              {userVisibility.isUnlocked ? (
+                <button
+                  type="button"
+                  onClick={handleToggleAnonymous}
+                  className="h-9 px-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs rounded-xl border border-neutral-600 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Reativar Vitrine</span>
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsVisibilityModalOpen(true)}
+                className="flex-1 sm:flex-none h-10 px-4 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Desbloquear Visibilidade (Aparecer na Vitrine)</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -564,7 +757,30 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
           <strong className="text-neutral-900 font-bold">{filteredProfiles.length}</strong> perfis autenticados
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {filteredProfiles.length === 0 ? (
+          <div className="bg-white rounded-3xl p-8 border border-neutral-200 text-center space-y-3 my-4 shadow-2xs">
+            <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto shadow-2xs">
+              <HeartLinkTwoHeartsIcon className="w-10 h-10" variant="embroidered" showStitches={true} />
+            </div>
+            <h3 className="font-black text-neutral-800 text-base">Nenhum perfil encontrado nesta região</h3>
+            <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+              Experimente selecionar outra província ou remover os filtros de género e intenção para ver mais perfis.
+            </p>
+            <button
+              onClick={() => {
+                setSelectedProvince('all');
+                setSelectedCity('all');
+                setSelectedGender('all');
+                setSelectedIntention('all');
+                setSearchQuery('');
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer border border-rose-200"
+            >
+              <span>Ver todas as províncias e filtros</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filteredProfiles.map((profile) => (
             <div
               key={profile.id}
@@ -585,6 +801,11 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   {profile.verified && (
                     <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Verificado
+                    </span>
+                  )}
+                  {profile.visibilityBadge && (
+                    <span className="text-[9px] font-black bg-gradient-to-r from-amber-500 to-rose-500 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5 text-amber-200" /> {profile.visibilityBadge}
                     </span>
                   )}
                 </div>
@@ -639,6 +860,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Profile Detail Modal */}
@@ -713,6 +935,17 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               </div>
             </div>
 
+            {/* Anonymous mode contact strip */}
+            {userVisibility.mode === 'anonymous' && (
+              <div className="px-4 py-2 bg-neutral-100 border-t border-neutral-200 flex items-center justify-between text-[11px] text-neutral-700 font-medium">
+                <span className="flex items-center gap-1.5 font-bold text-neutral-900">
+                  <EyeOff className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Navegando no Modo Anónimo (100% Mahala)</span>
+                </span>
+                <span className="text-[10px] text-neutral-500">Seu perfil não é visto</span>
+              </div>
+            )}
+
             <div className="p-3.5 border-t border-neutral-100 flex items-center gap-2 bg-neutral-50">
               <button
                 onClick={(e) => handleOpenChat(selectedProfile, e)}
@@ -741,8 +974,10 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="bg-rose-600 text-white p-3.5 sm:p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 fill-white" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                  <HeartLinkTwoHeartsIcon className="w-5 h-5" variant="white" />
+                </div>
                 <h3 className="font-extrabold text-base">Cadastrar Meu Perfil</h3>
               </div>
               <button
@@ -794,10 +1029,11 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   photo: chosenPhoto,
                   intentions: regIntentions.length > 0 ? regIntentions : ['amizade'],
                   verified: true,
-                  isPremium: true,
+                  isPremium: regVisibilityMode === 'public',
+                  isPubliclyVisible: regVisibilityMode === 'public',
                 };
 
-                handleCreateProfile(newProfile);
+                handleCreateProfile(newProfile, regVisibilityMode);
               }}
               className="p-4 space-y-3 max-h-[75vh] overflow-y-auto"
             >
@@ -907,11 +1143,83 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 <textarea name="bio" required rows={2} placeholder="Descreva um pouco sobre si..." className="w-full p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none resize-none" />
               </div>
 
+              {/* Escolha de Visibilidade: Modo Anónimo vs Vitrine Pública */}
+              <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-rose-950 uppercase tracking-wide">
+                    Escolha de Visibilidade
+                  </span>
+                  <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
+                    Cadastro 100% Mahala
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div
+                    onClick={() => setRegVisibilityMode('anonymous')}
+                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                      regVisibilityMode === 'anonymous' ? 'bg-white border-rose-600 ring-1 ring-rose-600' : 'bg-neutral-50/80 border-neutral-200'
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="visibilityChoice" 
+                      checked={regVisibilityMode === 'anonymous'} 
+                      onChange={() => setRegVisibilityMode('anonymous')}
+                      className="mt-0.5 text-rose-600" 
+                    />
+                    <div>
+                      <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
+                        <EyeOff className="w-3.5 h-3.5 text-neutral-600" />
+                        <span>Modo Anónimo (0 MT - Gratuito)</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
+                        O seu perfil não é exibido na vitrine pública. Pode ver perfis e conversar no anonimato com total privacidade.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setRegVisibilityMode('public')}
+                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                      regVisibilityMode === 'public' ? 'bg-white border-rose-600 ring-1 ring-rose-600' : 'bg-neutral-50/80 border-neutral-200'
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="visibilityChoice" 
+                      checked={regVisibilityMode === 'public'} 
+                      onChange={() => setRegVisibilityMode('public')}
+                      className="mt-0.5 text-rose-600" 
+                    />
+                    <div>
+                      <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Desbloquear Visibilidade na Vitrine</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
+                        Apareça na vitrine pública do HeartLink para ser visto(a) e cortejado(a) por centenas de pretendentes. (150 MT, 450 MT ou 1.000 MT).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
-                className="w-full h-11 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
+                className="w-full h-11 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Publicar Meu Perfil Verificado
+                {regVisibilityMode === 'anonymous' ? (
+                  <>
+                    <EyeOff className="w-4 h-4" />
+                    <span>Concluir Cadastro no Modo Anónimo (Grátis)</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Avançar para Desbloquear Visibilidade</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -1014,6 +1322,15 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* Visibility Modal (Pacotes 150 MT / 450 MT / 1.000 MT via M-Pesa / E-Mola) */}
+      <HeartLinkVisibilityModal
+        isOpen={isVisibilityModalOpen}
+        onClose={() => setIsVisibilityModalOpen(false)}
+        currentVisibility={userVisibility}
+        onSaveVisibility={handleSaveVisibility}
+        userPhone={myProfile?.whatsapp || verifiedDossier?.phone}
+      />
 
       {/* Biometric KYC Modal for HeartLink */}
       <BiometricVerificationModal

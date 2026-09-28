@@ -165,6 +165,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     const newG: TourGuide = {
       id: `guide-verified-${Date.now()}`,
       name: dossier.fullName,
+      age: 28,
       photo: dossier.biometricSelfiePhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
       city: dossier.city,
       province: dossier.province,
@@ -366,15 +367,24 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             className="bg-white rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3"
           >
             <div className="flex items-start gap-3">
-              <img
-                src={guide.photo}
-                alt={guide.name}
-                className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover border border-neutral-200 shrink-0"
-              />
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-900 shadow-2xs">
+                <img
+                  src={guide.photo}
+                  alt={guide.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                {guide.age && (
+                  <span className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-white text-[11px] font-black px-1.5 py-0.5 rounded-md leading-none shadow-sm border border-white/20">
+                    {guide.age}
+                  </span>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
                   <h3 className="font-extrabold text-base text-neutral-900 truncate">
-                    {guide.name}
+                    {guide.name}{guide.age ? `, ${guide.age}` : ''}
                   </h3>
                   <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                     <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verificado
@@ -470,7 +480,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
               <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg sm:text-xl font-black">
-                    {selectedGuide.name}
+                    {selectedGuide.name}{selectedGuide.age ? `, ${selectedGuide.age} anos` : ''}
                   </h2>
                   <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-lg">
                     <ShieldCheck className="w-3 h-3" /> Verificado
@@ -484,6 +494,24 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             </div>
 
             <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
+              {/* Quick stats pills including Age */}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                {selectedGuide.age && (
+                  <div className="font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    <span>Idade:</span>
+                    <strong className="text-neutral-900">{selectedGuide.age} anos</strong>
+                  </div>
+                )}
+                <div className="font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <span>Experiência:</span>
+                  <strong className="text-neutral-900">{selectedGuide.experienceYears} anos</strong>
+                </div>
+                <div className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <span>{selectedGuide.rating.toFixed(1)} ({selectedGuide.reviewsCount} avaliações)</span>
+                </div>
+              </div>
+
               <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
                 <span>

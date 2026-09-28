@@ -112,8 +112,9 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           </div>
 
           {accommodation.distanceKm !== undefined && (
-            <span className="bg-black/70 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-md backdrop-blur-xs">
-              {formatDistance(accommodation.distanceKm)} de si
+            <span className="bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 text-[11px] font-black px-2.5 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1 shadow-sm">
+              <Navigation2 className="w-3 h-3 text-emerald-300" />
+              <span>{formatDistance(accommodation.distanceKm)}</span>
             </span>
           )}
         </div>
@@ -130,13 +131,25 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
             {accommodation.name}
           </h3>
 
-          {/* 2. Bairro, Cidade */}
-          <div className="flex items-center gap-1 text-xs text-neutral-600">
-            <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span className="truncate">
-              {accommodation.location.neighborhood}, {accommodation.location.city}
-              {accommodation.location.landmark ? ` · ${accommodation.location.landmark}` : ''}
-            </span>
+          {/* 2. Bairro, Cidade & Distância Preliminar */}
+          <div className="flex items-center gap-1.5 flex-wrap text-xs text-neutral-600">
+            <div className="flex items-center gap-1 min-w-0">
+              <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="truncate">
+                {accommodation.location.neighborhood}, {accommodation.location.city}
+              </span>
+            </div>
+            {accommodation.distanceKm !== undefined && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/90 shrink-0 shadow-2xs">
+                <Navigation2 className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                <span>{formatDistance(accommodation.distanceKm)}</span>
+              </span>
+            )}
+            {accommodation.location.landmark && (
+              <span className="text-[11px] text-neutral-400 truncate">
+                · {accommodation.location.landmark}
+              </span>
+            )}
           </div>
 
           {/* 3. Preço & Rating (Inline minimal clean layout) */}

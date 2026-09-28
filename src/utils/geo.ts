@@ -27,15 +27,33 @@ function deg2rad(deg: number): number {
 }
 
 /**
- * Formats distance in km or m for readability in Mozambique.
+ * Formats distance in km or m for high readability in Mozambique:
+ * e.g. "a 150 metros de si", "a 500 metros de si", "a 1.2 km de si", "a 5 km de si".
  */
 export function formatDistance(distanceKm?: number): string {
   if (distanceKm === undefined || isNaN(distanceKm)) {
-    return '-- km';
+    return 'a poucos metros de si';
   }
   if (distanceKm < 1) {
-    const meters = Math.round(distanceKm * 1000);
-    return `${meters} m`;
+    const meters = Math.max(50, Math.round(distanceKm * 1000));
+    return `a ${meters} metros de si`;
+  }
+  if (distanceKm < 10) {
+    return `a ${distanceKm.toFixed(1)} km de si`;
+  }
+  return `a ${Math.round(distanceKm)} km de si`;
+}
+
+/**
+ * Short concise distance string without suffix (e.g. "150m", "1.2 km")
+ */
+export function formatDistanceShort(distanceKm?: number): string {
+  if (distanceKm === undefined || isNaN(distanceKm)) {
+    return '--';
+  }
+  if (distanceKm < 1) {
+    const meters = Math.max(50, Math.round(distanceKm * 1000));
+    return `${meters}m`;
   }
   if (distanceKm < 10) {
     return `${distanceKm.toFixed(1)} km`;
