@@ -24,6 +24,7 @@ import { TourGuide, UserLocationState } from '../types';
 import { INITIAL_TOUR_GUIDES } from '../data/tourGuides';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
+import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 
 interface TourGuidesTabProps {
   onBackToHome?: () => void;
@@ -230,6 +231,13 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Indicador de Tempo no Pacote Guias Turísticos */}
+      <PackagesTimeIndicator
+        moduleName="Guias Turísticos"
+        packageTitle="Pacote Guia Turístico & Excursões de Moçambique"
+        variant="banner"
+      />
 
       {/* Security Status Line */}
       <div className="p-2.5 sm:p-3 rounded-2xl bg-emerald-50 border border-emerald-200/90 flex items-center gap-2 text-xs text-emerald-950">

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { X, Building2, CheckCircle2, ShieldCheck, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
+import { X, Building2, CheckCircle2, ShieldCheck, Plus, ArrowRight, ArrowLeft, FileText } from 'lucide-react';
 import { Accommodation, AccommodationType, AmenityId } from '../types';
 import { AMENITIES_CATALOG } from '../utils/amenities';
 import { TermsModal } from './TermsModal';
+import { PackagesTimeIndicator } from './PackagesTimeIndicator';
+import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 
 interface RegisterAccommodationModalProps {
   isOpen: boolean;
@@ -43,6 +45,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
   // Onboard terms acceptance
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -149,7 +152,17 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                     O seu estabelecimento já está visível no directório com contacto directo por WhatsApp e chamada telefónica.
                   </p>
                 </div>
-                <div className="pt-2">
+
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBillingModalOpen(true)}
+                    className="w-full h-11 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                  >
+                    <FileText className="w-4 h-4 text-neutral-800" />
+                    <span>Ver Fatura Oficial de Ativação (Bill)</span>
+                  </button>
+
                   <button
                     onClick={onClose}
                     className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer touch-manipulation"
@@ -235,6 +248,13 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
             ) : (
               /* Step 1: Form */
               <form onSubmit={handleProceedToTerms} className="space-y-3.5">
+                {/* Indicador de Tempo no Pacote Onde Dormir */}
+                <PackagesTimeIndicator
+                  moduleName="Onde Dormir"
+                  packageTitle="Pacote de Ativação e Registo no Diretório"
+                  variant="card"
+                />
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-xs font-bold text-neutral-700 block mb-1">
@@ -450,6 +470,39 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
       <TermsModal
         isOpen={isTermsModalOpen}
         onClose={() => setIsTermsModalOpen(false)}
+      />
+
+      {/* Fatura Oficial de Ativação do Alojamento (Bill) */}
+      <BillingInvoiceModal
+        isOpen={isBillingModalOpen}
+        onClose={() => setIsBillingModalOpen(false)}
+        invoiceData={{
+          moduleType: 'lodge',
+          serviceTitle: `Pacote de Ativação de Alojamento (${name || 'Novo Estabelecimento'})`,
+          serviceDescription: 'Ativação e registo no diretório Onde Dormir Moçambique com geolocalização e contacto direto WhatsApp.',
+          clientName: name || 'Proprietário de Alojamento',
+          clientPhone: phone || '+258 84 000 0000',
+          clientCity: city || 'Maputo',
+          clientProvince: city === 'Maputo' ? 'Maputo Cidade' : 'Moçambique',
+          itemDetails: [
+            {
+              description: `Ativação e Publicação no Diretório - ${name || 'Alojamento'} (${type})`,
+              quantity: 1,
+              unitPriceMzn: 1500,
+              totalMzn: 1500
+            },
+            {
+              description: 'Emissão de Selo de Verificação e Dossiê Comercial',
+              quantity: 1,
+              unitPriceMzn: 300,
+              totalMzn: 300
+            }
+          ],
+          subtotalMzn: 1800,
+          ivaRate: 0.16,
+          ivaAmountMzn: 288,
+          totalMzn: 2088
+        }}
       />
     </>
   );

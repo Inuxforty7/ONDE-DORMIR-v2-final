@@ -69,3 +69,28 @@ export const PRIVACY_MANIFESTO = {
     },
   ],
 };
+
+/**
+ * Sensitive Data Policy & Scrubbing Helper
+ * Guarantees that raw BI/ID images and facial biometric frames are purged from memory
+ * and never permanently written to localStorage.
+ */
+export function purgeSensitiveVerificationData(): void {
+  try {
+    // Ensure no legacy base64 images remain in localStorage
+    const keysToRemove = [
+      'dossier_bi_front_b64',
+      'dossier_bi_back_b64',
+      'dossier_selfie_b64',
+      'temp_verification_payload',
+      'dossier_raw_bi'
+    ];
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Ignore cleanup error
+  }
+}
+

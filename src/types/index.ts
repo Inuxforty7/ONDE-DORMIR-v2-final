@@ -101,6 +101,7 @@ export interface CarRental {
   category: '4x4' | 'suv' | 'economico' | 'carrinha' | 'executivo';
   categoryLabel: string;
   photo: string;
+  photos?: string[]; // Galeria de até 5 fotografias (frente, laterais, traseira, interior e bagageira)
   seats: number;
   transmission: 'Automático' | 'Manual';
   fuel: 'Gasóleo' | 'Gasolina';

@@ -23,7 +23,10 @@ import {
   Layers,
   CreditCard,
   Eye,
-  EyeOff
+  EyeOff,
+  Image as ImageIcon,
+  ChevronLeft,
+  FileText
 } from 'lucide-react';
 import { CarRental, UserLocationState, CarOwnerFleetAccount } from '../types';
 import { INITIAL_CAR_RENTALS } from '../data/carRentals';
@@ -31,6 +34,8 @@ import { TermsModal } from './TermsModal';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { OwnerFleetManagerModal } from './OwnerFleetManagerModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
+import { PackagesTimeIndicator } from './PackagesTimeIndicator';
+import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 
 interface RentACarTabProps {
   onBackToHome?: () => void;
@@ -215,6 +220,11 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // Photo gallery and billing modal states
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [billingInvoiceData, setBillingInvoiceData] = useState<Partial<BillingInvoiceData> | undefined>(undefined);
 
   // Owner Fleet Manager Modal
   const [isFleetManagerOpen, setIsFleetManagerOpen] = useState(false);
@@ -427,9 +437,37 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 +
               </span>
             </button>
+
+            {/* Faturação Oficial / Bill */}
+            <button
+              onClick={() => {
+                setBillingInvoiceData({
+                  moduleType: 'rentacar',
+                  serviceTitle: 'Ativação & Aluguer de Viatura Rent-a-Car',
+                  clientName: verifiedDossier ? verifiedDossier.fullName : 'Locatário / Utilizador da Plataforma',
+                  clientNuitOrBi: verifiedDossier ? `BI: ${verifiedDossier.biNumber}` : 'Consumidor Final',
+                  clientPhone: verifiedDossier ? verifiedDossier.phone : '+258 84 000 0000',
+                  clientProvince: selectedProvince !== 'all' ? selectedProvince : 'Maputo Cidade',
+                  clientCity: selectedCity !== 'all' ? selectedCity : 'Maputo',
+                });
+                setIsBillingModalOpen(true);
+              }}
+              className="h-10 px-3 bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 active:scale-95 font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              title="Consultar faturação e recibo fiscal"
+            >
+              <FileText className="w-3.5 h-3.5 text-neutral-600" />
+              <span>Faturação (Bill)</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Indicador de Tempo no Pacote Rent-a-Car */}
+      <PackagesTimeIndicator
+        moduleName="Rent-a-Car"
+        packageTitle="Pacote Rent-a-Car & Frotas de Moçambique"
+        variant="banner"
+      />
 
       {/* Security Status Line */}
       <div className="p-2.5 sm:p-3 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-center gap-2 text-xs text-amber-950">
@@ -573,7 +611,10 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
         {filteredVehicles.map((car) => (
           <div
             key={car.id}
-            onClick={() => setSelectedVehicle(car)}
+            onClick={() => {
+              setSelectedVehicle(car);
+              setSelectedPhotoIndex(0);
+            }}
             className="bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
           >
             {/* Photo */}
@@ -593,6 +634,12 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 {car.verified && (
                   <span className="text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Verificado
+                  </span>
+                )}
+                {car.photos && car.photos.length > 1 && (
+                  <span className="text-[10px] font-extrabold bg-black/75 backdrop-blur-xs text-white px-2 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3 text-amber-400" />
+                    <span>{car.photos.length} fotos</span>
                   </span>
                 )}
               </div>
@@ -681,21 +728,94 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             </div>
 
             <div className="p-4 space-y-3.5 max-h-[80vh] overflow-y-auto">
-              <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200">
-                <img
-                  src={selectedVehicle.photo}
-                  alt={selectedVehicle.model}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-                  <span className="text-xs font-bold bg-orange-600 text-white px-2 py-0.5 rounded-lg">
-                    {selectedVehicle.categoryLabel}
-                  </span>
-                </div>
-                <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg text-xs font-extrabold">
-                  {selectedVehicle.ratePerDay ? `${selectedVehicle.ratePerDay.toLocaleString()} MT / dia` : 'Consulte'}
-                </div>
-              </div>
+              {/* Multi-Photo Carousel Gallery (1 a 5 fotografias) */}
+              {(() => {
+                const vehiclePhotos = (selectedVehicle.photos && selectedVehicle.photos.length > 0)
+                  ? selectedVehicle.photos
+                  : [selectedVehicle.photo];
+                const activePhoto = vehiclePhotos[selectedPhotoIndex] || selectedVehicle.photo;
+                const photoAngleLabels = ['Frente', 'Lateral', 'Traseira', 'Interior', 'Bagageira'];
+
+                return (
+                  <div className="space-y-2">
+                    <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-200 group">
+                      <img
+                        src={activePhoto}
+                        alt={`${selectedVehicle.model} - Foto ${selectedPhotoIndex + 1}`}
+                        className="w-full h-full object-cover transition-opacity duration-200"
+                      />
+
+                      {/* Top Badges */}
+                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+                        <span className="text-xs font-bold bg-orange-600 text-white px-2 py-0.5 rounded-lg shadow-xs">
+                          {selectedVehicle.categoryLabel}
+                        </span>
+                        {vehiclePhotos.length > 1 && (
+                          <span className="text-[10px] font-extrabold bg-black/75 backdrop-blur-xs text-white px-2 py-0.5 rounded-lg shadow-xs">
+                            {selectedPhotoIndex + 1}/{vehiclePhotos.length} • {photoAngleLabels[selectedPhotoIndex] || 'Detalhe'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Price Badge */}
+                      <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg text-xs font-extrabold z-10">
+                        {selectedVehicle.ratePerDay ? `${selectedVehicle.ratePerDay.toLocaleString()} MT / dia` : 'Consulte'}
+                      </div>
+
+                      {/* Prev / Next Controls if > 1 photo */}
+                      {vehiclePhotos.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPhotoIndex((prev) => (prev > 0 ? prev - 1 : vehiclePhotos.length - 1));
+                            }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center cursor-pointer transition-all z-10 shadow-md"
+                            title="Foto anterior"
+                          >
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPhotoIndex((prev) => (prev < vehiclePhotos.length - 1 ? prev + 1 : 0));
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center cursor-pointer transition-all z-10 shadow-md"
+                            title="Próxima foto"
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Thumbnail navigation strip (1 to 5 photos) */}
+                    {vehiclePhotos.length > 1 && (
+                      <div className="grid grid-cols-5 gap-1.5 pt-0.5">
+                        {vehiclePhotos.map((pUrl, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => setSelectedPhotoIndex(pIdx)}
+                            className={`relative aspect-4/3 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                              selectedPhotoIndex === pIdx
+                                ? 'border-orange-600 scale-102 shadow-xs'
+                                : 'border-neutral-200 opacity-60 hover:opacity-100'
+                            }`}
+                          >
+                            <img src={pUrl} alt={`Ângulo ${pIdx + 1}`} className="w-full h-full object-cover" />
+                            <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[8px] font-black uppercase text-center py-0.5 tracking-tight truncate px-0.5">
+                              {photoAngleLabels[pIdx] || `Foto ${pIdx + 1}`}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div>
                 <h2 className="text-base sm:text-lg font-black text-neutral-900">{selectedVehicle.model}</h2>
@@ -800,6 +920,13 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
           setIsVerificationOpen(true);
         }}
         availableCities={citiesList}
+      />
+
+      {/* Official Billing & Invoice Modal (Bill) */}
+      <BillingInvoiceModal
+        isOpen={isBillingModalOpen}
+        onClose={() => setIsBillingModalOpen(false)}
+        invoiceData={billingInvoiceData}
       />
     </div>
   );

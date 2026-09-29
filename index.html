@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <script>
+      // Suppress Vite HMR WebSocket connection errors in restricted iframe sandbox
+      window.addEventListener('unhandledrejection', function(event) {
+        if (!event) return;
+        var r = event.reason;
+        var msg = (r && (r.message || r.stack || (typeof r === 'string' ? r : ''))) || '';
+        if (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        if (!event) return;
+        var msg = (event.message || '') + '';
+        if (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+    </script>
     <title>Onde Dormir Moçambique - Encontre onde dormir, quem o possa guiar e como pode se deslocar</title>
     <meta name="description" content="Onde Dormir Moçambique: Encontre onde dormir, quem o possa guiar e como pode se deslocar. Hotéis, pensões, guias turísticos e rent-a-car em Moçambique." />
     <meta property="og:title" content="Onde Dormir Moçambique" />

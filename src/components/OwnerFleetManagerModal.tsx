@@ -18,10 +18,13 @@ import {
   ChevronRight, 
   Sparkles,
   RefreshCw,
-  Info
+  Info,
+  Image as ImageIcon
 } from 'lucide-react';
 import { CarRental, CarOwnerFleetAccount } from '../types';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
+import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
+import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 
 interface OwnerFleetManagerModalProps {
   isOpen: boolean;
@@ -56,7 +59,12 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
   const [depositAmount, setDepositAmount] = useState('10000');
   const [withDriverAvailable, setWithDriverAvailable] = useState(true);
   const [description, setDescription] = useState('');
-  const [carPhoto, setCarPhoto] = useState('https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80');
+  // Galeria de até 5 fotografias da viatura
+  const [carPhotos, setCarPhotos] = useState<string[]>([
+    'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80',
+  ]);
   const [livretePhoto, setLivretePhoto] = useState('');
   const [tituloPropriedadePhoto, setTituloPropriedadePhoto] = useState('');
 
@@ -67,14 +75,21 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccessCarId, setPaymentSuccessCarId] = useState<string | null>(null);
 
+  // Billing & Invoice modal state
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [selectedInvoiceData, setSelectedInvoiceData] = useState<Partial<BillingInvoiceData> | undefined>(undefined);
+
   if (!isOpen) return null;
 
   const MONTHLY_FEE_PER_VEHICLE = 1000; // 1.000 MT por viatura ativa / mês conforme o cliente explicou
 
-  // Handle adding vehicle to fleet
+  // Handle adding vehicle to fleet with 1 to 5 photos
   const handleAddVehicle = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ownerFleet) return;
+
+    const validPhotos = carPhotos.filter(Boolean);
+    const coverPhoto = validPhotos[0] || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80';
 
     const newCar: CarRental = {
       id: `car-owner-${Date.now()}`,
@@ -85,7 +100,8 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
         category === '4x4' ? '4x4 Todo-o-Terreno' : 
         category === 'suv' ? 'SUV Familiar' : 
         category === 'carrinha' ? 'Pickup 4x4' : 'Económico Sedan',
-      photo: carPhoto,
+      photo: coverPhoto,
+      photos: validPhotos.length > 0 ? validPhotos : [coverPhoto],
       seats: Number(seats),
       transmission,
       fuel,
@@ -590,6 +606,95 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
                     </div>
                   </div>
 
+                  {/* GALERIA DE FOTOGRAFIAS DA VIATURA (ATÉ 5 FOTOS: FRENTE, LATERAIS, TRASEIRA, INTERIOR) */}
+                  <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-neutral-900">
+                        <Camera className="w-4 h-4 text-orange-600" />
+                        <span>Galeria da Viatura (1 a 5 Fotografias Detalhadas)</span>
+                      </div>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
+                        {carPhotos.filter(Boolean).length} de 5 Fotos Carregadas
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      Carregue fotos reais para demonstrar a viatura em detalhe (frente/capô, laterais, traseira, interior/painel e bagageira). A primeira foto será a capa principal.
+                    </p>
+
+                    {/* 5 Slots Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                      {[
+                        { label: '1. Frente (Capa) *', desc: 'Vista Frontal' },
+                        { label: '2. Lateral', desc: 'Lateral do Carro' },
+                        { label: '3. Traseira', desc: 'Vista Traseira' },
+                        { label: '4. Interior', desc: 'Painel & Bancos' },
+                        { label: '5. Bagageira', desc: 'Mala / Detalhe' },
+                      ].map((slot, idx) => {
+                        const photoUrl = carPhotos[idx];
+                        return (
+                          <div 
+                            key={idx}
+                            className={`p-2 rounded-xl border flex flex-col items-center justify-between text-center relative transition-all ${
+                              photoUrl ? 'bg-white border-orange-300 shadow-2xs' : 'bg-neutral-100/70 border-dashed border-neutral-300'
+                            }`}
+                          >
+                            <span className="text-[10px] font-black text-neutral-800 block truncate w-full">
+                              {slot.label}
+                            </span>
+
+                            {photoUrl ? (
+                              <div className="my-1.5 w-full aspect-4/3 rounded-lg overflow-hidden border border-neutral-200 relative group">
+                                <img src={photoUrl} alt={slot.label} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = [...carPhotos];
+                                    next[idx] = '';
+                                    setCarPhotos(next.filter(Boolean));
+                                  }}
+                                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                  title="Remover foto"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="my-1.5 w-full aspect-4/3 rounded-lg bg-neutral-200/50 flex flex-col items-center justify-center text-neutral-400">
+                                <Camera className="w-5 h-5 mb-0.5" />
+                                <span className="text-[9px] font-semibold">{slot.desc}</span>
+                              </div>
+                            )}
+
+                            {/* Upload / Replace button */}
+                            <label className="w-full h-7 rounded-lg bg-neutral-150 hover:bg-neutral-200 active:scale-95 text-neutral-700 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors">
+                              <Upload className="w-3 h-3 text-orange-600" />
+                              <span>{photoUrl ? 'Trocar' : 'Carregar'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      const res = event.target?.result as string;
+                                      const next = [...carPhotos];
+                                      next[idx] = res;
+                                      setCarPhotos(next.filter(Boolean));
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* DOCUMENTOS OBRIGATÓRIOS DO VEÍCULO: LIVRETE E TÍTULO DE PROPRIEDADE */}
                   <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2.5">
                     <div className="flex items-center gap-1.5 text-xs font-black text-neutral-900">
@@ -676,6 +781,13 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
               {/* TAB 3: MONTHLY SUBSCRIPTION MANAGEMENT */}
               {activeSubTab === 'subscription' && (
                 <div className="space-y-4">
+                  {/* Seniority Indicator inside Rent-a-Car package */}
+                  <PackagesTimeIndicator
+                    moduleName="Rent-a-Car"
+                    packageTitle="Pacote Ativação de Frota Rent-a-Car"
+                    variant="card"
+                  />
+
                   <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
                     <div className="font-black text-sm flex items-center gap-1.5 text-amber-900">
                       <CreditCard className="w-4 h-4 text-amber-700" />
@@ -697,6 +809,50 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
                         {(activeCount * MONTHLY_FEE_PER_VEHICLE).toLocaleString()} MT
                       </strong>
                     </div>
+                  </div>
+
+                  {/* Faturação Oficial Button */}
+                  <div className="p-3 bg-neutral-900 text-white rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+                    <div>
+                      <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-amber-400" />
+                        <span>Faturação e Comprovativo Fiscal Oficial (Bill)</span>
+                      </span>
+                      <p className="text-[11px] text-neutral-300 mt-0.5">
+                        Emitida em conformidade pelo operador com NUIT 401298450 e IVA 16%.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedInvoiceData({
+                          moduleType: 'rentacar',
+                          serviceTitle: `Subscrição Mensal de Frota Rent-a-Car (${activeCount} Viaturas)`,
+                          clientName: ownerFleet.fullName,
+                          clientNuitOrBi: `BI/NUIT: ${ownerFleet.biNumber}`,
+                          clientPhone: ownerFleet.phone,
+                          clientProvince: ownerFleet.province,
+                          clientCity: ownerFleet.city,
+                          itemDetails: ownerFleet.vehicles.map((vh) => ({
+                            description: `Mensalidade de Visibilidade - ${vh.model} (${vh.plateNumber || 'Frota'})`,
+                            quantity: 1,
+                            unitPriceMzn: MONTHLY_FEE_PER_VEHICLE,
+                            totalMzn: MONTHLY_FEE_PER_VEHICLE
+                          })),
+                          subtotalMzn: Math.max(1, activeCount) * MONTHLY_FEE_PER_VEHICLE,
+                          ivaRate: 0.16,
+                          ivaAmountMzn: Math.round(Math.max(1, activeCount) * MONTHLY_FEE_PER_VEHICLE * 0.16),
+                          totalMzn: Math.round(Math.max(1, activeCount) * MONTHLY_FEE_PER_VEHICLE * 1.16),
+                          paymentMethod: paymentProvider === 'emola' ? 'e-Mola' : 'M-Pesa',
+                        });
+                        setIsBillingModalOpen(true);
+                      }}
+                      className="h-9 px-4 bg-amber-400 hover:bg-amber-300 active:scale-95 text-neutral-950 font-black text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Ver Fatura Oficial (Bill)</span>
+                    </button>
                   </div>
 
                   <div className="space-y-2">
@@ -839,6 +995,13 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Official Billing & Invoice Modal (Bill) */}
+        <BillingInvoiceModal
+          isOpen={isBillingModalOpen}
+          onClose={() => setIsBillingModalOpen(false)}
+          invoiceData={selectedInvoiceData}
+        />
       </div>
     </div>
   );

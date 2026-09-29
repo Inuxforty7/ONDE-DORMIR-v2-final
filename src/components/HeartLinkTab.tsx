@@ -379,7 +379,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       setIsRegisterOpen(false);
       setIsVisibilityModalOpen(true);
     } else {
-      // Modo Anónimo: 100% Mahala / Grátis
+      // Modo Anónimo: 100% Grátis
       const updatedVis: UserVisibilityData = {
         mode: 'anonymous',
         isUnlocked: false
@@ -577,7 +577,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
           </div>
         ) : (
-          /* Estado 2: Modo Anónimo (100% Mahala) */
+          /* Estado 2: Modo Anónimo (100% Grátis) */
           <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white p-3.5 sm:p-4 border-neutral-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
@@ -589,7 +589,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     Você está no Modo Anónimo
                   </span>
                   <span className="text-[10px] font-black bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
-                    100% Mahala (Grátis)
+                    100% Grátis
                   </span>
                 </div>
                 <p className="text-xs text-neutral-300 mt-0.5 leading-snug">
@@ -940,7 +940,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               <div className="px-4 py-2 bg-neutral-100 border-t border-neutral-200 flex items-center justify-between text-[11px] text-neutral-700 font-medium">
                 <span className="flex items-center gap-1.5 font-bold text-neutral-900">
                   <EyeOff className="w-3.5 h-3.5 text-neutral-600" />
-                  <span>Navegando no Modo Anónimo (100% Mahala)</span>
+                  <span>Navegando no Modo Anónimo (100% Grátis)</span>
                 </span>
                 <span className="text-[10px] text-neutral-500">Seu perfil não é visto</span>
               </div>
@@ -1150,7 +1150,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     Escolha de Visibilidade
                   </span>
                   <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
-                    Cadastro 100% Mahala
+                    Cadastro 100% Grátis
                   </span>
                 </div>
 

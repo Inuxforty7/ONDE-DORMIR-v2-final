@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
+import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 
 export interface VisibilityPlan {
   id: 'vis_24h' | 'vis_7d' | 'vis_30d';
@@ -183,7 +184,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                       Como funciona a Visibilidade no HeartLink?
                     </p>
                     <p className="leading-relaxed text-neutral-700">
-                      • <strong>Cadastro 100% Mahala (Grátis):</strong> Qualquer pessoa se cadastra gratuitamente e pode navegar no <em>Modo Anónimo</em>, vendo todos e mandando mensagens sem aparecer na vitrine.
+                      • <strong>Cadastro 100% Grátis:</strong> Qualquer pessoa se cadastra gratuitamente e pode navegar no <em>Modo Anónimo</em>, vendo todos e mandando mensagens sem aparecer na vitrine.
                     </p>
                     <p className="leading-relaxed text-neutral-700">
                       • <strong>Desbloquear a Visibilidade:</strong> Para o seu perfil <strong>aparecer na vitrine pública</strong>, ser visto e cortejado por centenas de pretendentes, desbloqueie um dos pacotes abaixo.
@@ -215,6 +216,13 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   </div>
                 )}
               </div>
+
+              {/* Indicador de Tempo no Pacote HeartLink */}
+              <PackagesTimeIndicator
+                moduleName="HeartLink"
+                packageTitle="Pacote HeartLink • Passes VIP & Visibilidade"
+                variant="card"
+              />
 
               {/* 3 Packages Cards */}
               <div className="space-y-2.5">
