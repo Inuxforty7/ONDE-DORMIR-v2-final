@@ -23,7 +23,6 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
-import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 
 export interface BillingInvoiceData {
   invoiceNumber: string;
@@ -146,18 +145,6 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
 
         {/* Invoice Printable Document Body */}
         <div className="p-5 sm:p-7 overflow-y-auto space-y-6 text-neutral-800 text-xs sm:text-sm print:p-0 print:m-0">
-          
-          {/* Seniority Indicator inside Package Bill */}
-          <div className="print:hidden">
-            <PackagesTimeIndicator
-              moduleName={
-                inv.moduleType === 'rentacar' ? 'Rent-a-Car' : 
-                inv.moduleType === 'lodge' ? 'Onde Dormir' : 'Onde Dormir'
-              }
-              packageTitle={`Subscrição Ativa • Fatura ${inv.invoiceNumber}`}
-              variant="card"
-            />
-          </div>
 
           {/* Header of Invoice */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-5 border-b border-neutral-200">

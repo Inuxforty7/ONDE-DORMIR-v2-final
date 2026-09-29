@@ -19,12 +19,13 @@ import {
   Sparkles,
   RefreshCw,
   Info,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Clock
 } from 'lucide-react';
 import { CarRental, CarOwnerFleetAccount } from '../types';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
-import { PackagesTimeIndicator } from './PackagesTimeIndicator';
+import { getPlatformTenureText } from '../utils/tenure';
 
 interface OwnerFleetManagerModalProps {
   isOpen: boolean;
@@ -781,12 +782,23 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
               {/* TAB 3: MONTHLY SUBSCRIPTION MANAGEMENT */}
               {activeSubTab === 'subscription' && (
                 <div className="space-y-4">
-                  {/* Seniority Indicator inside Rent-a-Car package */}
-                  <PackagesTimeIndicator
-                    moduleName="Rent-a-Car"
-                    packageTitle="Pacote Ativação de Frota Rent-a-Car"
-                    variant="card"
-                  />
+                  {/* Seniority Indicator as Fleet Owner */}
+                  <div className="bg-white p-3.5 rounded-2xl border border-neutral-200/90 shadow-2xs flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
+                        <Clock className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-neutral-400 block">Antiguidade do Proprietário</span>
+                        <span className="text-xs font-extrabold text-neutral-900">
+                          {getPlatformTenureText(ownerFleet?.verifiedAt, ownerFleet?.platformTenure, ownerFleet?.ownerId)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      Frota Ativa
+                    </span>
+                  </div>
 
                   <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
                     <div className="font-black text-sm flex items-center gap-1.5 text-amber-900">

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Accommodation, AmenityId } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
+import { getPlatformTenureText } from '../utils/tenure';
 import { AMENITIES_CATALOG, ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
 import { analyticsService } from '../services/analyticsService';
 import { propertyService } from '../services/propertyService';
@@ -216,8 +217,8 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                 </div>
               )}
 
-              {/* ⭐⭐⭐⭐ 4.5 Rating */}
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-800 pt-0.5">
+              {/* ⭐⭐⭐⭐ 4.5 Rating & Tenure */}
+              <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm font-bold text-neutral-800 pt-0.5">
                 <div className="flex items-center text-amber-400">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -234,6 +235,13 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                 </div>
                 <span className="font-black text-neutral-950">{rating.toFixed(1)}</span>
                 <span className="text-neutral-500 font-medium">({reviewsCount} avaliações)</span>
+
+                <span className="text-neutral-300">•</span>
+
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                  <Clock className="w-3 h-3 text-emerald-600" />
+                  <span>{getPlatformTenureText(accommodation.registeredAt, accommodation.platformTenure, accommodation.id)}</span>
+                </span>
               </div>
             </div>
 

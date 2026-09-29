@@ -3,7 +3,6 @@ import { X, Building2, CheckCircle2, ShieldCheck, Plus, ArrowRight, ArrowLeft, F
 import { Accommodation, AccommodationType, AmenityId } from '../types';
 import { AMENITIES_CATALOG } from '../utils/amenities';
 import { TermsModal } from './TermsModal';
-import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 
 interface RegisterAccommodationModalProps {
@@ -248,13 +247,6 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
             ) : (
               /* Step 1: Form */
               <form onSubmit={handleProceedToTerms} className="space-y-3.5">
-                {/* Indicador de Tempo no Pacote Onde Dormir */}
-                <PackagesTimeIndicator
-                  moduleName="Onde Dormir"
-                  packageTitle="Pacote de Ativação e Registo no Diretório"
-                  variant="card"
-                />
-
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-xs font-bold text-neutral-700 block mb-1">

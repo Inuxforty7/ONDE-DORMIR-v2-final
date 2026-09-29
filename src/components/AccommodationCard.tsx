@@ -14,6 +14,7 @@ import {
 import { Accommodation } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
 import { ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
+import { getPlatformTenureText } from '../utils/tenure';
 
 interface AccommodationCardProps {
   accommodation: Accommodation;
@@ -130,6 +131,12 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           <h3 className="font-extrabold text-neutral-900 text-base leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
             {accommodation.name}
           </h3>
+
+          {/* 🕒 Antiguidade / Tempo na Plataforma */}
+          <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-neutral-100/90 border border-neutral-200/70 px-2 py-0.5 rounded-md w-fit">
+            <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
+            <span>{getPlatformTenureText(accommodation.registeredAt, accommodation.platformTenure, accommodation.id)}</span>
+          </div>
 
           {/* 2. Bairro, Cidade & Distância Preliminar */}
           <div className="flex items-center gap-1.5 flex-wrap text-xs text-neutral-600">

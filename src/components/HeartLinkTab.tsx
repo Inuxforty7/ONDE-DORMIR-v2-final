@@ -36,6 +36,7 @@ import { BiometricVerificationModal, VerificationDossier } from './BiometricVeri
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
+import { getPlatformTenureText } from '../utils/tenure';
 
 interface HeartLinkTabProps {
   onBackToHome?: () => void;
@@ -834,6 +835,12 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
               <div className="p-2.5 space-y-2 flex-1 flex flex-col justify-between">
                 <div className="space-y-1">
+                  {/* 🕒 Antiguidade no HeartLink */}
+                  <div className="flex items-center gap-1 text-[10px] font-semibold text-neutral-600 bg-neutral-100/90 border border-neutral-200/80 px-1.5 py-0.5 rounded-md w-fit">
+                    <Clock className="w-2.5 h-2.5 text-rose-500 shrink-0" />
+                    <span>{getPlatformTenureText(profile.registeredAt, profile.platformTenure, profile.id)}</span>
+                  </div>
+
                   <div className="flex flex-wrap gap-1">
                     {profile.intentions.map((intentId) => {
                       const found = intentionsList.find((i) => i.id === intentId);
@@ -902,11 +909,18 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
 
             <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
-              {selectedProfile.profession && (
-                <div className="text-xs font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg w-fit">
-                  💼 {selectedProfile.profession}
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedProfile.profession && (
+                  <div className="text-xs font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg w-fit">
+                    💼 {selectedProfile.profession}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 text-xs text-neutral-600 font-semibold bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-lg w-fit">
+                  <Clock className="w-3.5 h-3.5 text-rose-600" />
+                  <span>{getPlatformTenureText(selectedProfile.registeredAt, selectedProfile.platformTenure, selectedProfile.id)}</span>
                 </div>
-              )}
+              </div>
 
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-0.5">

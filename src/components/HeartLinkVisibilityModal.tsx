@@ -16,7 +16,6 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
-import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 
 export interface VisibilityPlan {
   id: 'vis_24h' | 'vis_7d' | 'vis_30d';
@@ -216,13 +215,6 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   </div>
                 )}
               </div>
-
-              {/* Indicador de Tempo no Pacote HeartLink */}
-              <PackagesTimeIndicator
-                moduleName="HeartLink"
-                packageTitle="Pacote HeartLink • Passes VIP & Visibilidade"
-                variant="card"
-              />
 
               {/* 3 Packages Cards */}
               <div className="space-y-2.5">

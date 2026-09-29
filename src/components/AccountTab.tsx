@@ -8,14 +8,15 @@ import {
   FileText,
   Lock,
   UserCheck,
-  Server
+  Server,
+  Clock
 } from 'lucide-react';
 import { UserLocationState } from '../types';
 import { Logo } from './Logo';
 import { TermsModal } from './TermsModal';
 import { authService, AuthUser } from '../services/authService';
 import { UserRole } from '../types/rbac';
-import { PackagesTimeIndicator } from './PackagesTimeIndicator';
+import { getPlatformTenureText } from '../utils/tenure';
 import { BillingInvoiceModal } from './BillingInvoiceModal';
 
 interface AccountTabProps {
@@ -82,12 +83,23 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         </div>
       </div>
 
-      {/* Indicador de Tempo do Utilizador nos 4 Pacotes */}
-      <PackagesTimeIndicator
-        moduleName="Todos os Pacotes"
-        packageTitle="Os 4 Pacotes da Plataforma"
-        variant="card"
-      />
+      {/* Indicador de Antiguidade da Conta do Utilizador na Plataforma */}
+      <div className="bg-white p-4 rounded-3xl border border-neutral-200/90 shadow-2xs flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Antiguidade do Perfil</h3>
+            <p className="text-sm font-extrabold text-neutral-900 mt-0.5">
+              {getPlatformTenureText('2024-03-15', undefined, 'user-account')}
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md border border-emerald-200">
+          Ativo
+        </span>
+      </div>
 
       {/* For Property Owners CTA */}
       <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 text-white rounded-3xl p-5 sm:p-6 space-y-3 shadow-md">

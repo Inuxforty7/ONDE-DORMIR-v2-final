@@ -22,7 +22,6 @@ import {
 import { Accommodation, AccommodationType, AmenityId, UserLocationState } from '../types';
 import { AccommodationCard } from './AccommodationCard';
 import { ACCOMMODATION_TYPE_LABELS, AMENITIES_CATALOG } from '../utils/amenities';
-import { PackagesTimeIndicator } from './PackagesTimeIndicator';
 
 interface ExploreTabProps {
   accommodations: Accommodation[];
@@ -256,13 +255,6 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           </button>
         )}
       </div>
-
-      {/* Indicador de Tempo no Pacote Onde Dormir */}
-      <PackagesTimeIndicator
-        moduleName="Onde Dormir"
-        packageTitle="Pacote Onde Dormir • Hospedagens de Moçambique"
-        variant="banner"
-      />
 
       {/* Compact Search and Province Filter Bar */}
       <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">

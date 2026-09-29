@@ -59,6 +59,8 @@ export interface Accommodation {
   featured?: boolean;
   isOpen24h?: boolean;
   notes?: string;
+  registeredAt?: string;
+  platformTenure?: string;
 }
 
 export interface UserLocationState {
@@ -92,6 +94,8 @@ export interface TourGuide {
   bio: string;
   ratePerDay?: number;
   featured?: boolean;
+  registeredAt?: string;
+  platformTenure?: string;
 }
 
 export interface CarRental {
@@ -128,6 +132,8 @@ export interface CarRental {
   isActiveSubscription?: boolean; // Se a taxa mensal desta viatura está paga
   subscriptionExpiresAt?: string; // Data em que expira a mensalidade desta viatura
   monthlyFee?: number; // Taxa mensal (ex: 1000 MT)
+  registeredAt?: string;
+  platformTenure?: string;
 }
 
 export interface CarOwnerFleetAccount {
@@ -143,6 +149,8 @@ export interface CarOwnerFleetAccount {
   city: string;
   province: string;
   verifiedAt: string;
+  registeredAt?: string;
+  platformTenure?: string;
   vehicles: CarRental[];
 }
 
@@ -174,6 +182,8 @@ export interface HeartLinkProfile {
   preferredAccommodations?: string[];
   likesReceived?: number;
   isOnline?: boolean;
+  registeredAt?: string;
+  platformTenure?: string;
 }
 
 export interface HeartLinkUserAccount {
