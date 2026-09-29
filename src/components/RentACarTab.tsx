@@ -392,7 +392,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 </span>
               </div>
               <p className="text-xs text-orange-100 font-medium">
-                Aluguer de viaturas com verificação de locatários
+                A viatura certa para cada destino.
               </p>
             </div>
           </div>

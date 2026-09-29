@@ -457,7 +457,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 </span>
               </div>
               <p className="text-xs text-pink-100 font-medium">
-                Amizade e relacionamentos sérios com segurança mútua
+                A sua privacidade é a nossa prioridade.
               </p>
             </div>
           </div>

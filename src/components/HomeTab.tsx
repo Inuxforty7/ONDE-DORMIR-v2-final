@@ -199,8 +199,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
         {/* Space revealing the turquoise ocean bay, boats and palm trees behind */}
         <div className="w-full py-4 text-center">
-          <span className="text-[11px] font-semibold text-white/80 drop-shadow-md">
-            Moçambique • O Seu Portal de Turismo, Guias e Viaturas
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white/90 drop-shadow-md">
+            POWERED BY ÁGUIA SOLUÇÕES & SERVIÇOS - CONEXÕES RÁPIDAS, SU, LDA
           </span>
         </div>
       </div>

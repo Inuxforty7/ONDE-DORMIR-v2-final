@@ -216,7 +216,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </span>
               </div>
               <p className="text-xs text-emerald-100 font-medium">
-                Guias credenciados e passeios em Moçambique
+                Explore com quem conhece o caminho.
               </p>
             </div>
           </div>

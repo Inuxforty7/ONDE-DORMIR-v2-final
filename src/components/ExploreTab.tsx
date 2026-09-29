@@ -243,7 +243,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             </h2>
           </div>
           <p className="text-[11px] sm:text-xs text-sky-100 font-medium mt-1 leading-snug">
-            Encontre onde dormir, quem o possa guiar e como pode se deslocar.
+            A sua segurança é a nossa prioridade.
           </p>
         </div>
         {onBackToHome && (
