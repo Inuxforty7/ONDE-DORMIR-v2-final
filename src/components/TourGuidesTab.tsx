@@ -19,12 +19,14 @@ import {
   ShieldCheck, 
   Camera, 
   FileCheck,
-  Clock
+  Clock,
+  Home
 } from 'lucide-react';
 import { TourGuide, UserLocationState } from '../types';
 import { INITIAL_TOUR_GUIDES } from '../data/tourGuides';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
+import { TermsModal } from './TermsModal';
 import { getPlatformTenureText } from '../utils/tenure';
 
 interface TourGuidesTabProps {
@@ -77,10 +79,15 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   
   // Verification & Registration Modals
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [verifiedDossier, setVerifiedDossier] = useState<VerificationDossier | null>(() => {
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
   });
+
+  const handleStartGuideRegistration = () => {
+    setIsVerificationOpen(true);
+  };
 
   // Available specialties
   const specialtiesList = [
@@ -195,15 +202,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {onBackToHome && (
-              <button
-                onClick={onBackToHome}
-                className="w-10 h-10 rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-all border border-white/30"
-                title="Voltar ao início"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
             <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
               <Compass className="w-6 h-6" />
             </div>
@@ -224,7 +222,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           </div>
 
           <button
-            onClick={() => setIsVerificationOpen(true)}
+            onClick={handleStartGuideRegistration}
             className="w-full sm:w-auto h-10 px-4 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
@@ -361,78 +359,81 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       </div>
 
       {/* Guides Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 items-stretch">
         {filteredGuides.map((guide) => (
           <div
             key={guide.id}
             onClick={() => setSelectedGuide(guide)}
-            className="bg-white rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3"
+            className="bg-white rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full space-y-3 group active:scale-[0.99] touch-manipulation"
           >
-            <div className="flex items-start gap-3">
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-900 shadow-2xs">
-                <img
-                  src={guide.photo}
-                  alt={guide.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                {guide.age && (
-                  <span className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-white text-[11px] font-black px-1.5 py-0.5 rounded-md leading-none shadow-sm border border-white/20">
-                    {guide.age}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1">
-                  <h3 className="font-extrabold text-base text-neutral-900 truncate">
-                    {guide.name}{guide.age ? `, ${guide.age}` : ''}
-                  </h3>
-                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-                    <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verificado
-                  </span>
+            <div className="space-y-2.5">
+              <div className="flex items-start gap-3">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-900 shadow-2xs">
+                  <img
+                    src={guide.photo}
+                    alt={guide.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                  {guide.age && (
+                    <span className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-white text-[11px] font-black px-1.5 py-0.5 rounded-md leading-none shadow-sm border border-white/20">
+                      {guide.age}
+                    </span>
+                  )}
                 </div>
-
-                <div className="flex items-center gap-1 text-xs text-neutral-600 mt-0.5">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>{guide.city}, {guide.province}</span>
-                </div>
-
-                {/* 🕒 Antiguidade do Guia na Plataforma */}
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-neutral-100/90 border border-neutral-200/80 px-2 py-0.5 rounded-md w-fit mt-1">
-                  <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
-                  <span>{getPlatformTenureText(guide.registeredAt, guide.platformTenure, guide.id)}</span>
-                </div>
-
-                <div className="flex items-center gap-2 mt-1.5 text-xs">
-                  <div className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                    <span>{guide.rating.toFixed(1)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="font-extrabold text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors">
+                      {guide.name}{guide.age ? `, ${guide.age}` : ''}
+                    </h3>
+                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verificado
+                    </span>
                   </div>
-                  <span className="text-neutral-400">•</span>
-                  <span className="text-neutral-600 font-medium">
-                    {guide.experienceYears} anos exp.
-                  </span>
+
+                  <div className="flex items-center gap-1 text-xs text-neutral-600 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>{guide.city}, {guide.province}</span>
+                  </div>
+
+                  {/* 🕒 Antiguidade do Guia na Plataforma */}
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-neutral-100/90 border border-neutral-200/80 px-2 py-0.5 rounded-md w-fit mt-1">
+                    <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>{getPlatformTenureText(guide.registeredAt, guide.platformTenure, guide.id)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-1.5 text-xs">
+                    <div className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                      <span>{guide.rating.toFixed(1)}</span>
+                    </div>
+                    <span className="text-neutral-400">•</span>
+                    <span className="text-neutral-600 font-medium">
+                      {guide.experienceYears} anos exp.
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              <div className="flex flex-wrap gap-1">
+                {guide.specialties.slice(0, 2).map((spec, i) => (
+                  <span
+                    key={i}
+                    className="text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-md"
+                  >
+                    {spec}
+                  </span>
+                ))}
+              </div>
+
+              <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
+                {guide.bio}
+              </p>
             </div>
 
-            <div className="flex flex-wrap gap-1">
-              {guide.specialties.slice(0, 2).map((spec, i) => (
-                <span
-                  key={i}
-                  className="text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-md"
-                >
-                  {spec}
-                </span>
-              ))}
-            </div>
-
-            <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
-              {guide.bio}
-            </p>
-
-            <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
+            {/* Bottom Actions - Aligned with mt-auto */}
+            <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center justify-between gap-2">
               <div>
                 <span className="font-black text-sm text-neutral-900">
                   {guide.ratePerDay?.toLocaleString('pt-MZ')} MT<span className="text-[11px] text-neutral-400 font-normal">/dia</span>
@@ -447,7 +448,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                  className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation cursor-pointer"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>WhatsApp</span>
@@ -455,7 +456,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 <a
                   href={`tel:${guide.phone}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-9 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors"
+                  className="h-9 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors touch-manipulation cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   <span>Ligar</span>
@@ -584,6 +585,17 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         onClose={() => setIsVerificationOpen(false)}
         purpose="tourguide"
         onVerificationComplete={handleVerificationComplete}
+      />
+
+      {/* Official Terms and Conditions Modal */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        onAccept={() => {
+          setIsTermsModalOpen(false);
+          setIsVerificationOpen(true);
+        }}
+        contextText="Ao registar-se como Guia Turístico no Onde Dormir Moçambique, confirme a leitura e aceitação dos Termos Gerais."
       />
     </div>
   );

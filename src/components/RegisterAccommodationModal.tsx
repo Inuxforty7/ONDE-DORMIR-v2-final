@@ -42,7 +42,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
   ]);
 
   // Onboard terms acceptance
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
 
@@ -207,7 +207,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                       className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 w-5 h-5 accent-emerald-600 shrink-0"
                     />
                     <div className="text-xs sm:text-sm text-neutral-700 leading-normal">
-                      <span>Li e concordo com os </span>
+                      <span>Declaro que li e aceito os </span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -216,9 +216,9 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                         }}
                         className="text-emerald-700 font-bold underline hover:text-emerald-800 cursor-pointer"
                       >
-                        Termos e Condições de Uso
+                        Termos e Condições Gerais
                       </button>{' '}
-                      <span>do directório Onde Dormir Moçambique.</span>
+                      <span>do directório Onde Dormir Moçambique (Águia Soluções & Serviços).</span>
                     </div>
                   </label>
                 </div>
@@ -462,6 +462,11 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
       <TermsModal
         isOpen={isTermsModalOpen}
         onClose={() => setIsTermsModalOpen(false)}
+        onAccept={() => {
+          setAgreedToTerms(true);
+          setIsTermsModalOpen(false);
+        }}
+        contextText="Ao registar um alojamento no Onde Dormir Moçambique, confirme a leitura e aceitação dos Termos Gerais."
       />
 
       {/* Fatura Oficial de Ativação do Alojamento (Bill) */}

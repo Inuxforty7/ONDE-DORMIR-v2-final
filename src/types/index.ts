@@ -74,7 +74,68 @@ export interface UserLocationState {
   error?: string | null;
 }
 
-export type ActiveTab = 'home' | 'explore' | 'guides' | 'rentacar' | 'heartlink' | 'map' | 'saved' | 'account';
+export type ActiveTab = 'home' | 'explore' | 'guides' | 'rentacar' | 'heartlink' | 'loveshop' | 'map' | 'saved' | 'account';
+
+export type LoveShopCategoryId = 
+  | 'todos' 
+  | 'presentes' 
+  | 'noivado' 
+  | 'casamento' 
+  | 'aliancas' 
+  | 'relogios' 
+  | 'brincos' 
+  | 'sapatos' 
+  | 'malas';
+
+export interface LoveShopStore {
+  id: string;
+  name: string;
+  slogan: string;
+  logo: string;
+  coverImage?: string;
+  verified: boolean;
+  rating: number;
+  reviewsCount: number;
+  salesCount: number; // ex: 1250 vendas com sucesso
+  city: string;
+  province: string;
+  address?: string;
+  phone: string;
+  whatsapp: string;
+  ownerName: string;
+  ownerNuitOrBi?: string;
+  monthlyFee: number; // 1000 MT
+  isSubscriptionActive: boolean;
+  hasPromoBadge?: boolean;
+  isCatPromoHero?: boolean;
+  registeredAt?: string;
+  platformTenure?: string;
+}
+
+export interface LoveShopProduct {
+  id: string;
+  storeId: string;
+  storeName: string;
+  storeVerified?: boolean;
+  name: string;
+  description: string;
+  category: LoveShopCategoryId;
+  categoryLabel: string;
+  price: number;
+  originalPrice?: number;
+  photo: string;
+  photos?: string[];
+  inStock: boolean;
+  isFeatured?: boolean;
+  isHotPromo?: boolean;
+  discountPercent?: number;
+  city: string;
+  province: string;
+  phone: string;
+  whatsapp: string;
+  registeredAt?: string;
+  platformTenure?: string;
+}
 
 export interface TourGuide {
   id: string;

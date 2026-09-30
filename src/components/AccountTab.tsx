@@ -225,15 +225,15 @@ export const AccountTab: React.FC<AccountTabProps> = ({
           className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left cursor-pointer touch-manipulation"
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-bold text-neutral-900">Termos e Condições de Uso</div>
-              <div className="text-xs text-neutral-500 mt-0.5 font-medium">Directrizes e responsabilidade</div>
+              <div className="text-xs sm:text-sm font-bold text-neutral-900">Termos e Condições Gerais</div>
+              <div className="text-xs text-neutral-500 mt-0.5 font-medium">Águia Soluções & Serviços - Conexões Rápidas, SU, LDA</div>
             </div>
           </div>
-          <span className="text-xs text-neutral-600 font-semibold px-2">Ler</span>
+          <span className="text-xs text-blue-700 font-bold bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">Ler</span>
         </button>
 
         {/* Faturação & Recibos Oficiais (Bill) */}

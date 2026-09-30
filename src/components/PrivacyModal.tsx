@@ -1,5 +1,6 @@
-import React from 'react';
-import { X, ShieldCheck, EyeOff, UserX, Lock, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ShieldCheck, EyeOff, UserX, Lock, MessageSquare, Scale } from 'lucide-react';
+import { TermsModal } from './TermsModal';
 
 interface PrivacyModalProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface PrivacyModalProps {
 }
 
 export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -86,6 +89,24 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
                 </p>
               </div>
             </div>
+
+            {/* Official Legal Terms Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsTermsModalOpen(true)}
+                className="w-full p-3.5 rounded-2xl bg-blue-50/80 hover:bg-blue-100 border border-blue-200 text-blue-900 flex items-center justify-between text-xs font-bold transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-2 text-left">
+                  <Scale className="w-4 h-4 text-blue-700 shrink-0" />
+                  <div>
+                    <span className="block font-black">Termos e Condições Gerais</span>
+                    <span className="text-[10.5px] text-blue-700/80 font-medium">Águia Soluções & Serviços, SU, LDA</span>
+                  </div>
+                </div>
+                <span className="text-xs font-black text-blue-600 group-hover:translate-x-0.5 transition-transform">Ler →</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -99,6 +120,12 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
           </button>
         </div>
       </div>
+
+      {/* Official Legal Terms Modal */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+      />
     </div>
   );
 };

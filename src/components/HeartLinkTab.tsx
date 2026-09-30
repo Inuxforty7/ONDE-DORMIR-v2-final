@@ -28,7 +28,8 @@ import {
   Eye,
   EyeOff,
   Clock,
-  Zap
+  Zap,
+  Home
 } from 'lucide-react';
 import { HeartLinkProfile, HeartLinkIntention, Accommodation, UserLocationState } from '../types';
 import { INITIAL_HEARTLINK_PROFILES } from '../data/heartLinkProfiles';
@@ -36,6 +37,7 @@ import { BiometricVerificationModal, VerificationDossier } from './BiometricVeri
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
+import { HeartLinkBubblingHearts } from './HeartLinkBubblingHearts';
 import { getPlatformTenureText } from '../utils/tenure';
 
 interface HeartLinkTabProps {
@@ -435,15 +437,6 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {onBackToHome && (
-              <button
-                onClick={onBackToHome}
-                className="w-10 h-10 rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-all border border-white/30"
-                title="Voltar ao início"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
               <HeartLinkTwoHeartsIcon className="w-8 h-8" variant="white" showStitches={true} />
             </div>
@@ -1354,6 +1347,9 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         targetItemName={pendingAction?.profile?.name}
         onVerificationComplete={handleVerificationComplete}
       />
+
+      {/* Floating Bubbling Hearts in Corner (Activate / Deactivate) */}
+      <HeartLinkBubblingHearts />
     </div>
   );
 };

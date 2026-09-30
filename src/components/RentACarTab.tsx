@@ -27,7 +27,8 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   FileText,
-  Clock
+  Clock,
+  Home
 } from 'lucide-react';
 import { CarRental, UserLocationState, CarOwnerFleetAccount } from '../types';
 import { INITIAL_CAR_RENTALS } from '../data/carRentals';
@@ -380,15 +381,6 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
       <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {onBackToHome && (
-              <button
-                onClick={onBackToHome}
-                className="w-10 h-10 rounded-2xl bg-white/20 hover:bg-white/30 text-white flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-all border border-white/30"
-                title="Voltar ao início"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
             <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
               <Car className="w-6 h-6" />
             </div>
@@ -601,7 +593,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
       </div>
 
       {/* Vehicles Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
         {filteredVehicles.map((car) => (
           <div
             key={car.id}
@@ -609,10 +601,10 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
               setSelectedVehicle(car);
               setSelectedPhotoIndex(0);
             }}
-            className="bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+            className="bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation"
           >
             {/* Photo */}
-            <div className="relative aspect-16/10 bg-neutral-900 overflow-hidden">
+            <div className="relative aspect-[16/10] sm:aspect-[16/9] bg-neutral-900 overflow-hidden shrink-0">
               <img
                 src={car.photo}
                 alt={car.model}
@@ -621,7 +613,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
-              <div className="absolute top-2.5 left-2.5 flex gap-1.5">
+              <div className="absolute top-2.5 left-2.5 flex gap-1.5 flex-wrap">
                 <span className="text-[11px] font-extrabold bg-orange-600 text-white px-2.5 py-0.5 rounded-lg shadow-xs">
                   {car.categoryLabel}
                 </span>
@@ -638,7 +630,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 )}
               </div>
 
-              <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg text-xs font-extrabold">
+              <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg text-xs font-extrabold shadow-sm">
                 {car.ratePerDay ? `${car.ratePerDay.toLocaleString()} MT / dia` : 'Consulte Valor'}
               </div>
             </div>
@@ -691,15 +683,15 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between gap-2">
+              {/* Footer - Fixed to bottom with mt-auto */}
+              <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
                   {car.withDriverAvailable ? '✓ Motorista' : '✓ Self-Drive'}
                 </span>
 
                 <button
                   onClick={(e) => handleBookVehicle(car, e)}
-                  className="h-9 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  className="h-9 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer touch-manipulation"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>Alugar</span>
@@ -958,6 +950,8 @@ const RegisterCarModal: React.FC<RegisterCarModalProps> = ({ onClose, onRegister
   const [ratePerDay, setRatePerDay] = useState('');
   const [description, setDescription] = useState('');
   const [withDriverAvailable, setWithDriverAvailable] = useState(true);
+  const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1045,11 +1039,52 @@ const RegisterCarModal: React.FC<RegisterCarModalProps> = ({ onClose, onRegister
             <textarea rows={2} placeholder="Condições de caução, seguro, km..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-2.5 bg-neutral-50 rounded-xl text-xs border border-neutral-200" />
           </div>
 
-          <button type="submit" className="w-full h-11 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all">
+          {/* Terms Acceptance Checkbox */}
+          <div className="pt-1">
+            <label className="flex items-start gap-2.5 cursor-pointer p-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-0.5 rounded text-orange-600 focus:ring-orange-500 w-4.5 h-4.5 accent-orange-600 shrink-0 cursor-pointer"
+              />
+              <div className="text-xs text-neutral-700 leading-snug">
+                <span>Declaro que li e aceito os </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsTermsModalOpen(true);
+                  }}
+                  className="text-orange-700 font-bold underline hover:text-orange-900 cursor-pointer"
+                >
+                  Termos e Condições Gerais
+                </button>{' '}
+                <span>do Onde Dormir Moçambique (Águia Soluções & Serviços).</span>
+              </div>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!agreedToTerms}
+            className="w-full h-11 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
+          >
             Publicar Viatura
           </button>
         </form>
       </div>
+
+      {/* Official Terms and Conditions Modal */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        onAccept={() => {
+          setAgreedToTerms(true);
+          setIsTermsModalOpen(false);
+        }}
+        contextText="Ao registar uma viatura no Rent-a-Car, confirme a leitura e aceitação dos Termos Gerais."
+      />
     </div>
   );
 };

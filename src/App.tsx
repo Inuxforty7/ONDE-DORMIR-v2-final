@@ -5,18 +5,19 @@ import { calculateDistanceKm, MozLocationPreset, findNearestPresetLocation, MOZ_
 import { getSavedAccommodationIds, toggleSaveAccommodation, clearSavedAccommodations } from './utils/privacy';
 
 import { Header } from './components/Header';
-import { BottomNav } from './components/BottomNav';
 import { HomeTab } from './components/HomeTab';
 import { ExploreTab } from './components/ExploreTab';
 import { TourGuidesTab } from './components/TourGuidesTab';
 import { RentACarTab } from './components/RentACarTab';
 import { HeartLinkTab } from './components/HeartLinkTab';
+import { LoveShopTab } from './components/LoveShopTab';
 import { MapView } from './components/MapView';
 import { SavedTab } from './components/SavedTab';
 import { AccountTab } from './components/AccountTab';
 import { AccommodationDetailModal } from './components/AccommodationDetailModal';
 import { LocationModal } from './components/LocationModal';
 import { PrivacyModal } from './components/PrivacyModal';
+import { TermsModal } from './components/TermsModal';
 import { RegisterAccommodationModal } from './components/RegisterAccommodationModal';
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
   // Modals state
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
   // User location state (persisted in localStorage, defaults to Inhambane for instant localized experience)
@@ -298,6 +300,7 @@ export default function App() {
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
             onRequestGps={handleRequestGps}
             onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
+            onOpenTermsModal={() => setIsTermsModalOpen(true)}
             onNavigateToExplore={handleNavigateToExplore}
             onNavigateToTab={handleNavigateToTab}
             onNavigateToMap={() => handleNavigateToTab('map')}
@@ -352,6 +355,16 @@ export default function App() {
             accommodations={accommodationsWithDistance}
             onSelectAccommodation={setSelectedAccommodation}
             onNavigateToExplore={() => handleNavigateToTab('explore')}
+          />
+        )}
+
+        {activeTab === 'loveshop' && (
+          <LoveShopTab
+            onBackToHome={() => handleNavigateToTab('home')}
+            userLocation={userLocation}
+            onOpenLocationModal={() => setIsLocationModalOpen(true)}
+            onSelectProvince={handleSelectProvince}
+            onSelectAllMozambique={handleSelectAllMozambique}
           />
         )}
 
@@ -420,6 +433,12 @@ export default function App() {
         onClose={() => setIsPrivacyModalOpen(false)}
       />
 
+      {/* Official Terms and Conditions Modal (Viewable from footer anytime) */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+      />
+
       {/* Register Accommodation Modal */}
       <RegisterAccommodationModal
         isOpen={isRegisterModalOpen}
@@ -427,13 +446,6 @@ export default function App() {
         onAddAccommodation={handleAddAccommodation}
         userCoordsLat={userLocation.coords?.lat}
         userCoordsLng={userLocation.coords?.lng}
-      />
-
-      {/* Bottom Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onChangeTab={handleNavigateToTab}
-        savedCount={savedIds.length}
       />
 
       {/* Floating Toast Notification */}

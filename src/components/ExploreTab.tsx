@@ -17,7 +17,8 @@ import {
   Sparkles,
   ArrowLeft,
   RotateCcw,
-  Check
+  Check,
+  Home
 } from 'lucide-react';
 import { Accommodation, AccommodationType, AmenityId, UserLocationState } from '../types';
 import { AccommodationCard } from './AccommodationCard';
@@ -246,29 +247,11 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             A sua segurança é a nossa prioridade.
           </p>
         </div>
-        {onBackToHome && (
-          <button
-            onClick={onBackToHome}
-            className="h-8 px-3 bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold rounded-xl border border-white/20 transition-all shrink-0 cursor-pointer"
-          >
-            Menu Início
-          </button>
-        )}
       </div>
 
       {/* Compact Search and Province Filter Bar */}
       <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">
         <div className="flex items-center gap-2">
-          {onBackToHome && (
-            <button
-              onClick={onBackToHome}
-              className="w-10 h-10 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center shrink-0 cursor-pointer transition-colors"
-              title="Voltar ao início"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
-
           {/* Search Input */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
@@ -512,7 +495,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
       {/* Accommodations Grid */}
       {filteredList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
           {filteredList.map((item) => (
             <AccommodationCard
               key={item.id}

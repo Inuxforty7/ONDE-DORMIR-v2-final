@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
+import { TermsModal } from './TermsModal';
 
 export interface VisibilityPlan {
   id: 'vis_24h' | 'vis_7d' | 'vis_30d';
@@ -92,6 +93,8 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
   );
   const [step, setStep] = useState<'select_plan' | 'payment_processing' | 'success'>('select_plan');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -331,6 +334,32 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 </p>
               </div>
 
+              {/* Terms Acceptance Checkbox (Adults 18+ and HeartLink Terms) */}
+              <div className="pt-1">
+                <label className="flex items-start gap-2.5 cursor-pointer p-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 rounded text-rose-600 focus:ring-rose-500 w-4.5 h-4.5 accent-rose-600 shrink-0 cursor-pointer"
+                  />
+                  <div className="text-xs text-neutral-700 leading-snug">
+                    <span>Declaro que sou maior de 18 anos e aceito os </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsTermsModalOpen(true);
+                      }}
+                      className="text-rose-700 font-bold underline hover:text-rose-900 cursor-pointer"
+                    >
+                      Termos e Condições Gerais
+                    </button>{' '}
+                    <span>do Onde Dormir Moçambique (Cláusula 11 - HeartLink).</span>
+                  </div>
+                </label>
+              </div>
+
               {/* Action Buttons */}
               <div className="pt-2 flex flex-col sm:flex-row gap-2">
                 <button
@@ -343,7 +372,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 <button
                   type="button"
                   onClick={handleConfirmPayment}
-                  disabled={phoneNumber.length < 8}
+                  disabled={phoneNumber.length < 8 || !agreedToTerms}
                   className="flex-1 h-12 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
                   <span>Pagar {selectedPlan.priceMt} MT e Desbloquear</span>
@@ -407,6 +436,17 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
 
         </div>
       </div>
+
+      {/* Official Terms and Conditions Modal */}
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        onAccept={() => {
+          setAgreedToTerms(true);
+          setIsTermsModalOpen(false);
+        }}
+        contextText="Para desbloquear visibilidade no HeartLink, confirme a leitura e aceitação dos Termos Gerais (Adultos 18+)."
+      />
     </div>
   );
 };

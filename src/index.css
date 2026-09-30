@@ -60,6 +60,75 @@
   border: none !important;
 }
 
+/* Waving Cat Mascot & Bubbling Heart Animations */
+@keyframes cat-paw-wave {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(-18deg) scale(1.05);
+  }
+  35% {
+    transform: rotate(14deg) scale(1.02);
+  }
+  55% {
+    transform: rotate(-16deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(10deg) scale(1.02);
+  }
+}
+
+@keyframes cat-bob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes heart-bubble-float {
+  0% {
+    transform: translateY(0) scale(0.5) rotate(-10deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-100px) scale(1.2) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+@keyframes heart-pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 8px rgba(244, 63, 94, 0.4));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 4px 16px rgba(244, 63, 94, 0.8));
+  }
+}
+
+.animate-cat-bob {
+  animation: cat-bob 3s ease-in-out infinite;
+}
+
+.animate-paw-wave {
+  transform-origin: 75% 75%;
+  animation: cat-paw-wave 1.6s ease-in-out infinite;
+}
+
+.animate-heart-pulse-glow {
+  animation: heart-pulse-glow 2s ease-in-out infinite;
+}
+
 /* Leaflet controls styling */
 .leaflet-control-zoom {
   border-radius: 12px !important;

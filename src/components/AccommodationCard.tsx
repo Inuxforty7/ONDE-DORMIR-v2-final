@@ -47,7 +47,7 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
   const reviewsCount = accommodation.reviewsCount || 20;
 
   return (
-    <div className={`bg-white rounded-3xl border transition-all overflow-hidden flex flex-col group ${
+    <div className={`bg-white rounded-3xl border transition-all overflow-hidden flex flex-col h-full group ${
       accommodation.isPremium 
         ? 'border-amber-300 ring-2 ring-amber-400/20 shadow-sm' 
         : 'border-neutral-200/90 hover:border-emerald-300 shadow-2xs hover:shadow-md'
@@ -55,7 +55,7 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
       {/* Top Image area */}
       <div 
         onClick={() => onSelect(accommodation)}
-        className="relative aspect-16/10 sm:aspect-16/9 bg-neutral-900 overflow-hidden cursor-pointer"
+        className="relative aspect-[16/10] sm:aspect-[16/9] bg-neutral-900 overflow-hidden cursor-pointer shrink-0"
       >
         <img
           src={accommodation.photos[0]}
@@ -177,8 +177,8 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           </div>
         </div>
 
-        {/* Action Row */}
-        <div className="pt-2 border-t border-neutral-100 flex items-center gap-2">
+        {/* Action Row - Fixed to card bottom with mt-auto */}
+        <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center gap-2">
           {/* WhatsApp Direct */}
           <a
             href={whatsappUrl}
