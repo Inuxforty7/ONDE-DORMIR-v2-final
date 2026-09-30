@@ -132,6 +132,16 @@ export interface LoveShopStore {
   platformTenure?: string;
 }
 
+export interface ProductMediaItem {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+  label: string; // e.g., '1. Vista Frontal (Principal)', '2. Ângulo Lateral (Perfil)', '3. Interior (Aberto / Compartimentos)', '4. Vista Traseira & Acabamentos', '5. Vídeo Demonstrativo (30s-60s)'
+  shortLabel: string; // 'Frente', 'Lateral', 'Aberto', 'Traseira', 'Vídeo 🎬'
+  duration?: string; // e.g., '0:45 min'
+  thumbnail?: string;
+}
+
 export interface LoveShopProduct {
   id: string;
   storeId: string;
@@ -143,8 +153,19 @@ export interface LoveShopProduct {
   categoryLabel: string;
   price: number;
   originalPrice?: number;
-  photo: string;
-  photos?: string[];
+  photo: string; // Imagem principal frontal
+  photos?: string[]; // Até 4 posições (Frente, Lateral, Aberto, Traseira)
+  photoAngles?: {
+    front?: string; // Posição 1: Frente
+    side?: string;  // Posição 2: Lateral
+    open?: string;  // Posição 3: Aberto / Interior
+    back?: string;  // Posição 4: Traseira
+  };
+  videoUrl?: string; // Posição 5: Vídeo demonstrativo (30s a 1 min)
+  videoDuration?: string; // e.g., '0:45 min', '0:30 min', '1:00 min'
+  videoThumbnail?: string;
+  videoTitle?: string;
+  mediaGallery?: ProductMediaItem[];
   inStock: boolean;
   isFeatured?: boolean;
   isHotPromo?: boolean;

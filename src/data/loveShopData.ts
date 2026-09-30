@@ -168,11 +168,17 @@ export const INITIAL_LOVE_SHOP_PRODUCTS: LoveShopProduct[] = [
     price: 18500,
     originalPrice: 22000,
     discountPercent: 16,
-    photo: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1000&q=80',
     photos: [
-      'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1000&q=80', // 1. Frente / Par Completo
+      'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=1000&q=80', // 2. Perfil Lateral / Espessura do Ouro
+      'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1000&q=80', // 3. Estojo Aberto / Apresentação
+      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1000&q=80', // 4. Detalhes de Gravação Interna
     ],
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoDuration: '0:30 min',
+    videoThumbnail: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1000&q=80',
+    videoTitle: 'Apresentação em 360 Graus: Brilho do Ouro 18K e Estojo Luxo',
     inStock: true,
     isFeatured: true,
     isHotPromo: true,
@@ -351,13 +357,29 @@ export const INITIAL_LOVE_SHOP_PRODUCTS: LoveShopProduct[] = [
     storeName: 'Boutique Glamour Moçambique',
     storeVerified: true,
     name: 'Bolsa Estruturada de Couro Premium com Alça Dourada',
-    description: 'Bolsa de mão e transversal em couro genuíno texturizado com detalhes em metal dourado antiferrugem. Compartimento interno espaçoso com fecho magnético de alta precisão. O presente perfeito.',
+    description: 'Bolsa de mão e transversal em couro genuíno texturizado com detalhes em metal dourado antiferrugem. Compartimento interno espaçoso com divisórias inteligentes, forro em camurça e fecho magnético de alta precisão. O presente perfeito.',
     category: 'malas',
     categoryLabel: 'Malas & Bolsas',
     price: 4900,
     originalPrice: 6200,
     discountPercent: 21,
-    photo: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1000&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1000&q=80', // 1. Frente
+      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1000&q=80', // 2. Lateral / Perfil
+      'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=1000&q=80', // 3. Interior / Aberto
+      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=1000&q=80', // 4. Traseira & Acabamentos
+    ],
+    photoAngles: {
+      front: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1000&q=80',
+      side: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1000&q=80',
+      open: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=1000&q=80',
+      back: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=1000&q=80',
+    },
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoDuration: '0:45 min',
+    videoThumbnail: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1000&q=80',
+    videoTitle: 'Demonstração ao Vivo: Abertura de Fecho, Divisórias e Acabamento em Couro',
     inStock: true,
     isFeatured: true,
     city: 'Matola',
@@ -379,7 +401,17 @@ export const INITIAL_LOVE_SHOP_PRODUCTS: LoveShopProduct[] = [
     price: 3200,
     originalPrice: 3900,
     discountPercent: 18,
-    photo: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=1000&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=1000&q=80',
+      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1000&q=80',
+    ],
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoDuration: '0:35 min',
+    videoThumbnail: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=1000&q=80',
+    videoTitle: 'Demonstração de Brilho dos Cristais e Fecho Magnético',
     inStock: true,
     isFeatured: false,
     city: 'Maputo',
