@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Gift } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface LoveShopHeaderBannerProps {
   searchQuery: string;
@@ -12,43 +12,63 @@ export const LoveShopHeaderBanner: React.FC<LoveShopHeaderBannerProps> = ({
   onSearchChange,
 }) => {
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden shadow-lg bg-gradient-to-r from-[#800a26] via-[#941132] to-[#a31539] text-white border border-rose-700/50 p-4 sm:p-5.5 min-h-[160px] flex flex-col justify-between">
+    <div className="relative w-full rounded-3xl overflow-hidden shadow-xl bg-[#67001a] text-white border border-rose-800/40 p-4 sm:p-5.5 min-h-[160px] sm:min-h-[175px] flex flex-col justify-between group">
       
-      {/* Background Decorative Soft Radial Glows */}
-      <div className="absolute -top-12 -right-12 w-48 h-48 bg-rose-400/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
-      
-      {/* Top Row: Title, Slogan & Decorative Badge */}
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl sm:text-3xl select-none shrink-0 filter drop-shadow-sm">❤️</span>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-sm leading-tight">
-              Love Shop
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm font-medium text-rose-100/90 leading-tight">
-            Presentes que aproximam corações.
-          </p>
-        </div>
+      {/* 
+        Scenic Romantic Background on Right Side:
+        White gift box with satin red bow, velvety red roses, glowing candles, red heart and perfume bottle in bokeh
+      */}
+      <div className="absolute inset-y-0 right-0 w-3/5 sm:w-7/12 pointer-events-none overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80"
+          alt="Presentes românticos Love Shop"
+          className="w-full h-full object-cover object-center scale-105 group-hover:scale-110 transition-transform duration-700"
+          loading="lazy"
+        />
+        {/* Horizontal blend gradient from left to right */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#67001a] via-[#67001a]/70 to-transparent" />
+        {/* Soft top & bottom vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#67001a]/80 via-transparent to-black/25" />
 
-        {/* Subtle Romantic Accent Pill */}
-        <div className="hidden xs:flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-rose-100 shadow-2xs shrink-0">
-          <Gift className="w-3.5 h-3.5 text-amber-300" />
-          <span>Presentes Especiais</span>
+        {/* Ambient floating romantic bokeh heart particles */}
+        <div className="absolute top-3 right-12 w-4 h-4 text-rose-300/40 animate-pulse text-xs select-none">
+          ❤️
+        </div>
+        <div className="absolute bottom-6 right-20 w-3 h-3 text-pink-300/35 animate-ping text-[10px] select-none">
+          ✨
         </div>
       </div>
 
-      {/* Middle Row: Search Bar Input */}
-      <div className="relative z-10 my-2.5 sm:my-3">
-        <div className="relative w-full">
+      {/* Top Left: Logo & Slogan (Faithfully matching image.png) */}
+      <div className="relative z-10 space-y-1.5 max-w-[65%] sm:max-w-xs">
+        {/* Heart + Love Shop */}
+        <div className="flex items-center gap-2">
+          <span className="text-2xl sm:text-3xl select-none shrink-0 filter drop-shadow-md">
+            ❤️
+          </span>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight drop-shadow-md leading-none">
+            <span className="text-white">Love </span>
+            <span className="bg-gradient-to-r from-pink-200 via-rose-200 to-pink-300 bg-clip-text text-transparent">Shop</span>
+          </h1>
+        </div>
+
+        {/* Slogan on 2 lines matching the print: "Presentes que aproximam / corações." */}
+        <div className="text-xs sm:text-sm font-extrabold leading-snug drop-shadow-md">
+          <div className="text-white">Presentes que aproximam</div>
+          <div className="text-pink-200 font-black">corações.</div>
+        </div>
+      </div>
+
+      {/* Middle/Bottom: White Pill Search Bar Input (Exact match to image.png) */}
+      <div className="relative z-10 pt-3 sm:pt-4 max-w-[260px] sm:max-w-xs md:max-w-sm">
+        <div className="relative w-full shadow-lg rounded-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-600 shrink-0" />
           <input
             type="text"
-            placeholder="Buscar presentes, flores, perfumes, joias..."
+            placeholder="Buscar produtos ou lojas..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full h-10 sm:h-11 pl-10 pr-9 rounded-2xl bg-white text-neutral-900 placeholder:text-neutral-400 text-xs sm:text-sm font-semibold shadow-xs border border-white/90 focus:outline-none focus:ring-2 focus:ring-amber-300 transition-all"
+            className="w-full h-9 sm:h-10 pl-9 pr-8 rounded-full bg-white text-neutral-900 placeholder:text-neutral-400 text-xs sm:text-sm font-semibold shadow-inner border border-white/90 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all touch-manipulation"
           />
           {searchQuery && (
             <button
@@ -60,22 +80,6 @@ export const LoveShopHeaderBanner: React.FC<LoveShopHeaderBannerProps> = ({
             </button>
           )}
         </div>
-      </div>
-
-      {/* Bottom Row: Quick Suggestion Tags */}
-      <div className="relative z-10 flex items-center gap-1.5 flex-wrap pt-0.5">
-        <span className="text-[10.5px] sm:text-xs font-bold text-rose-200/80 uppercase tracking-wider hidden xs:inline">
-          Ideias:
-        </span>
-        {['Alianças', 'Relógios', 'Perfumes', 'Flores', 'Chocolates', 'Peluches'].map((tag) => (
-          <button
-            key={tag}
-            onClick={() => onSearchChange(tag)}
-            className="text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs border border-white/10"
-          >
-            {tag}
-          </button>
-        ))}
       </div>
 
     </div>

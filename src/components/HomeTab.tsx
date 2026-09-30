@@ -215,7 +215,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   <span className="truncate">Love Shop</span>
                 </div>
                 <div className="text-[11px] sm:text-xs text-purple-100 font-medium mt-0.5 truncate">
-                  Encontre o presente perfeito para quem é especial.
+                  Presentes que aproximam corações.
                 </div>
               </div>
             </div>
