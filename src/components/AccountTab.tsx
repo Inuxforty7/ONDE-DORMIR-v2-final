@@ -157,7 +157,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         {/* Role Switcher for Architecture Evaluation */}
         <div className="pt-1">
           <div className="text-[11px] font-bold text-neutral-500 mb-1.5">Simular Papel para Teste de Permissões:</div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
             {(['USER', 'OWNER', 'ADMIN', 'SUPER_ADMIN'] as UserRole[]).map((r) => (
               <button
                 key={r}

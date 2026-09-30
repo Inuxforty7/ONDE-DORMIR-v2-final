@@ -115,7 +115,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   }, [products, selectedCategory, searchQuery]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pt-2 pb-28 space-y-3.5 animate-in fade-in duration-200">
+    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-3 sm:px-4 pt-2 pb-28 space-y-3.5 animate-in fade-in duration-200">
       
       {/* 1. Crimson Hero Banner with Search Bar (Exact match to Image 3) */}
       <LoveShopHeaderBanner
@@ -251,15 +251,15 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3 items-stretch">
             {filteredProducts.map((prod) => (
               <div
                 key={prod.id}
                 onClick={() => setSelectedProduct(prod)}
-                className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+                className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation"
               >
                 {/* Photo */}
-                <div className="relative aspect-square bg-neutral-900 overflow-hidden">
+                <div className="relative aspect-square bg-neutral-900 overflow-hidden shrink-0">
                   <img
                     src={prod.photo}
                     alt={prod.name}
@@ -286,8 +286,8 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                     </h3>
                   </div>
 
-                  {/* Price & Action */}
-                  <div className="pt-1 border-t border-neutral-100 flex items-center justify-between">
+                  {/* Price & Action - Fixed with mt-auto */}
+                  <div className="pt-1.5 mt-auto border-t border-neutral-100 flex items-center justify-between">
                     <div>
                       <span className="text-xs sm:text-sm font-black text-rose-600 block">
                         {prod.price.toLocaleString('pt-MZ')} MT
@@ -302,7 +302,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                         );
                         window.open(`https://wa.me/${prod.whatsapp}?text=${msg}`, '_blank');
                       }}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer touch-manipulation"
                       title="Comprar no WhatsApp"
                     >
                       <MessageCircle className="w-3.5 h-3.5 fill-white" />

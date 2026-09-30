@@ -774,14 +774,14 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
           {filteredProfiles.map((profile) => (
             <div
               key={profile.id}
               onClick={() => setSelectedProfile(profile)}
-              className="group bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              className="group bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full active:scale-[0.99] touch-manipulation"
             >
-              <div className="relative aspect-4/5 w-full bg-neutral-900 overflow-hidden">
+              <div className="relative aspect-[4/5] w-full bg-neutral-900 overflow-hidden shrink-0">
                 <img
                   src={profile.photo}
                   alt={profile.name}
@@ -851,7 +851,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
                 <button
                   onClick={(e) => handleOpenChat(profile, e)}
-                  className="w-full h-8 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  className="w-full h-8 mt-auto bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs touch-manipulation"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>Conversar</span>
