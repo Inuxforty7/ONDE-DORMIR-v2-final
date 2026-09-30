@@ -113,8 +113,43 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-neutral-300 relative my-auto flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150 print:p-0 print:m-0 print:bg-white print:static print:overflow-visible">
+      
+      {/* Inline Print Stylesheet for exact A4 & PDF rendering */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 12mm;
+          }
+          body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          header, nav, footer, .print\\:hidden {
+            display: none !important;
+          }
+          .print-invoice-card {
+            box-shadow: none !important;
+            border: 1px solid #d4d4d8 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            border-radius: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .print-invoice-body {
+            padding: 16px !important;
+            overflow: visible !important;
+          }
+        }
+      `}} />
+
+      <div className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-neutral-300 relative my-auto flex flex-col max-h-[92vh] print-invoice-card">
         
         {/* Top Actions Bar (No-Print) */}
         <div className="bg-neutral-900 text-white p-3.5 sm:p-4 flex items-center justify-between print:hidden">
@@ -128,11 +163,11 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="h-8 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-700"
+              className="h-8 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-700 active:scale-95"
               title="Imprimir ou Guardar em PDF"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Imprimir / PDF</span>
+              <span>Imprimir / PDF</span>
             </button>
             <button
               onClick={onClose}
@@ -144,7 +179,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
         </div>
 
         {/* Invoice Printable Document Body */}
-        <div className="p-5 sm:p-7 overflow-y-auto space-y-6 text-neutral-800 text-xs sm:text-sm print:p-0 print:m-0">
+        <div className="p-5 sm:p-7 overflow-y-auto space-y-6 text-neutral-800 text-xs sm:text-sm print-invoice-body">
 
           {/* Header of Invoice */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-5 border-b border-neutral-200">

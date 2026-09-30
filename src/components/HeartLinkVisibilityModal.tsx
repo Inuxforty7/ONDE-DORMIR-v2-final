@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { TermsModal } from './TermsModal';
+import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
+import { FileText } from 'lucide-react';
 
 export interface VisibilityPlan {
   id: 'vis_24h' | 'vis_7d' | 'vis_30d';
@@ -95,6 +97,8 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
   const [isProcessing, setIsProcessing] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState<BillingInvoiceData | null>(null);
 
   if (!isOpen) return null;
 
@@ -120,6 +124,38 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         paymentMethod: paymentMethod
       };
 
+      // Prepare official billing invoice
+      const invoiceNum = `INV-HL-${Math.floor(100000 + Math.random() * 900000)}`;
+      const invoiceData: BillingInvoiceData = {
+        invoiceNumber: invoiceNum,
+        issueDate: new Date().toLocaleDateString('pt-MZ'),
+        dueDate: new Date(now.getTime() + selectedPlan.durationHours * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
+        status: 'PAID',
+        moduleType: 'general',
+        serviceTitle: `HeartLink • ${selectedPlan.name}`,
+        serviceDescription: `Subscrição de Visibilidade Pública HeartLink (${selectedPlan.durationLabel})`,
+        clientName: `Utilizador HeartLink (+258 ${phoneNumber})`,
+        clientNuitOrBi: 'Consumidor Final (18+)',
+        clientPhone: `+258 ${phoneNumber}`,
+        clientProvince: 'Moçambique',
+        clientCity: 'Moçambique',
+        itemDetails: [
+          {
+            description: `Ativação ${selectedPlan.name} • Visibilidade Pública HeartLink`,
+            quantity: 1,
+            unitPriceMzn: selectedPlan.priceMt,
+            totalMzn: selectedPlan.priceMt,
+          },
+        ],
+        subtotalMzn: selectedPlan.priceMt,
+        ivaRate: 0,
+        ivaAmountMzn: 0,
+        totalMzn: selectedPlan.priceMt,
+        paymentMethod: paymentMethod === 'mpesa' ? 'M-Pesa' : 'e-Mola',
+        transactionReference: `TX-HL-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      };
+
+      setGeneratedInvoice(invoiceData);
       onSaveVisibility(newVisibility);
       setIsProcessing(false);
       setStep('success');
@@ -423,14 +459,27 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
-              >
-                <span>Ver Meu Perfil na Vitrine</span>
-                <Check className="w-4 h-4" />
-              </button>
+              <div className="pt-2 space-y-2">
+                {generatedInvoice && (
+                  <button
+                    type="button"
+                    onClick={() => setIsInvoiceOpen(true)}
+                    className="w-full h-11 bg-amber-400 hover:bg-amber-300 text-neutral-950 font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Ver Fatura Oficial & Recibo (Bill)</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
+                >
+                  <span>Ver Meu Perfil na Vitrine</span>
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -447,6 +496,15 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         }}
         contextText="Para desbloquear visibilidade no HeartLink, confirme a leitura e aceitação dos Termos Gerais (Adultos 18+)."
       />
+
+      {/* Official Billing & Invoice Modal */}
+      {generatedInvoice && (
+        <BillingInvoiceModal
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+          invoiceData={generatedInvoice}
+        />
+      )}
     </div>
   );
 };

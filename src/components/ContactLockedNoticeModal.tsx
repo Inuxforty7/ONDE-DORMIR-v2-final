@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { LockedContactTarget } from '../types/contactUnlock';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
+import { FileText } from 'lucide-react';
 
 interface ContactLockedNoticeModalProps {
   target: LockedContactTarget | null;
@@ -27,6 +29,8 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
 }) => {
   const [isSimulatingUnlock, setIsSimulatingUnlock] = useState(false);
   const [unlockedSuccess, setUnlockedSuccess] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState<BillingInvoiceData | null>(null);
 
   if (!isOpen || !target) return null;
 
@@ -36,14 +40,44 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
       contactUnlockService.unlockContact(target.id);
       setIsSimulatingUnlock(false);
       setUnlockedSuccess(true);
+
+      const fee = target.unlockFee || 1000;
+      const invoiceNum = `INV-FT-${Math.floor(100000 + Math.random() * 900000)}`;
+      const inv: BillingInvoiceData = {
+        invoiceNumber: invoiceNum,
+        issueDate: new Date().toLocaleDateString('pt-MZ'),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
+        status: 'PAID',
+        moduleType: 'general',
+        serviceTitle: `Desbloqueio de Contacto • ${target.moduleLabel}`,
+        serviceDescription: `Subscrição Mensal de Ativação do Contacto Directo WhatsApp / Chamada (${target.name})`,
+        clientName: `${target.name} (Proprietário)`,
+        clientNuitOrBi: '400123890',
+        clientPhone: target.phone || target.whatsapp || '+258 84 123 4567',
+        clientProvince: 'Moçambique',
+        clientCity: 'Moçambique',
+        itemDetails: [
+          {
+            description: `Ativação de Contacto Directo (${target.name} • ${target.moduleLabel})`,
+            quantity: 1,
+            unitPriceMzn: fee,
+            totalMzn: fee,
+          },
+        ],
+        subtotalMzn: fee,
+        ivaRate: 0,
+        ivaAmountMzn: 0,
+        totalMzn: fee,
+        paymentMethod: 'M-Pesa',
+        transactionReference: `TX-MZ-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      };
+
+      setGeneratedInvoice(inv);
+
       if (onUnlockedSuccess) {
         onUnlockedSuccess(target.id);
       }
-      setTimeout(() => {
-        setUnlockedSuccess(false);
-        onClose();
-      }, 1800);
-    }, 800);
+    }, 900);
   };
 
   return (
@@ -132,39 +166,60 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
 
           {/* Success State when Unlocked */}
           {unlockedSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2.5 text-xs text-emerald-900 font-bold animate-in fade-in">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>Contacto desbloqueado com sucesso! Acesso ao WhatsApp libertado.</span>
+            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-2 text-xs text-emerald-900 font-bold animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>Contacto desbloqueado com sucesso! Acesso ao WhatsApp libertado.</span>
+              </div>
+              {generatedInvoice && (
+                <button
+                  type="button"
+                  onClick={() => setIsInvoiceOpen(true)}
+                  className="w-full h-10 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Ver Fatura Oficial & Recibo (Bill)</span>
+                </button>
+              )}
             </div>
           )}
 
           {/* Action Buttons */}
           <div className="pt-2 space-y-2">
-            <button
-              onClick={handleSimulateUnlock}
-              disabled={isSimulatingUnlock || unlockedSuccess}
-              className="w-full h-11 px-4 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50 touch-manipulation"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>
-                {isSimulatingUnlock 
-                  ? 'A validar taxa de 1.000 MT...' 
-                  : unlockedSuccess
-                    ? 'Desbloqueado ✓'
+            {!unlockedSuccess ? (
+              <button
+                onClick={handleSimulateUnlock}
+                disabled={isSimulatingUnlock}
+                className="w-full h-11 px-4 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50 touch-manipulation"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>
+                  {isSimulatingUnlock 
+                    ? 'A validar taxa de 1.000 MT...' 
                     : 'Desbloquear Perfil (Taxa 1.000 MT / Fatura)'}
-              </span>
-            </button>
+                </span>
+              </button>
+            ) : null}
 
             <button
               onClick={onClose}
               className="w-full h-10 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs rounded-2xl transition-colors cursor-pointer"
             >
-              Compreendido, fechar aviso
+              {unlockedSuccess ? 'Concluir' : 'Compreendido, fechar aviso'}
             </button>
           </div>
 
         </div>
       </div>
+
+      {/* Official Billing Invoice Modal */}
+      {generatedInvoice && (
+        <BillingInvoiceModal
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+          invoiceData={generatedInvoice}
+        />
+      )}
     </div>
   );
 };

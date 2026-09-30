@@ -29,6 +29,7 @@ import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { TermsModal } from './TermsModal';
 import { getPlatformTenureText } from '../utils/tenure';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 
 interface TourGuidesTabProps {
   onBackToHome?: () => void;
@@ -81,6 +82,8 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   // Verification & Registration Modals
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState<BillingInvoiceData | null>(null);
   const [verifiedDossier, setVerifiedDossier] = useState<VerificationDossier | null>(() => {
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
@@ -192,9 +195,42 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       featured: true
     };
 
+    // Prepare Official Billing Invoice
+    const invoiceNum = `INV-GT-${Math.floor(100000 + Math.random() * 900000)}`;
+    const invData: BillingInvoiceData = {
+      invoiceNumber: invoiceNum,
+      issueDate: new Date().toLocaleDateString('pt-MZ'),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
+      status: 'PAID',
+      moduleType: 'general',
+      serviceTitle: 'Credenciamento & Ativação de Guia Turístico',
+      serviceDescription: `Subscrição Mensal e Credenciamento Profissional (${dossier.fullName})`,
+      clientName: `${dossier.fullName} (Guia Turístico)`,
+      clientNuitOrBi: dossier.biNumber,
+      clientPhone: dossier.phone,
+      clientProvince: dossier.province,
+      clientCity: dossier.city,
+      itemDetails: [
+        {
+          description: `Ativação no Diretório de Guias Turísticos (${dossier.city})`,
+          quantity: 1,
+          unitPriceMzn: 1000,
+          totalMzn: 1000,
+        },
+      ],
+      subtotalMzn: 1000,
+      ivaRate: 0,
+      ivaAmountMzn: 0,
+      totalMzn: 1000,
+      paymentMethod: 'M-Pesa',
+      transactionReference: `TX-GT-${Math.floor(10000000 + Math.random() * 90000000)}`,
+    };
+
+    setGeneratedInvoice(invData);
     setGuides((prev) => [newG, ...prev]);
     const custom = JSON.parse(localStorage.getItem('onde_dormir_custom_guides') || '[]');
     localStorage.setItem('onde_dormir_custom_guides', JSON.stringify([newG, ...custom]));
+    setIsInvoiceOpen(true);
   };
 
   return (
@@ -670,6 +706,15 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         }}
         contextText="Ao registar-se como Guia Turístico no Onde Dormir Moçambique, confirme a leitura e aceitação dos Termos Gerais."
       />
+
+      {/* Official Billing & Activation Invoice Modal (Bill) */}
+      {generatedInvoice && (
+        <BillingInvoiceModal
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+          invoiceData={generatedInvoice}
+        />
+      )}
     </div>
   );
 };

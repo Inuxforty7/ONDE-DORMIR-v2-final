@@ -148,3 +148,48 @@
 .leaflet-control-zoom a:hover {
   background-color: #f5f5f5 !important;
 }
+
+/* Global Print Styles for Official Bills and Invoices */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation, headers, footers and app chrome when printing invoice */
+  header,
+  nav,
+  footer,
+  aside,
+  .print\:hidden,
+  button:not(.print-include) {
+    display: none !important;
+  }
+
+  /* Unconstrain modal overlay so the invoice occupies 100% of the printed page */
+  .fixed {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .print-invoice-card {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+}
+
