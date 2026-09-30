@@ -295,7 +295,26 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                   </div>
                 )}
 
-                {accommodation.verificationStatus === 'unverified' && (
+                {(accommodation.verificationStatus === 'pending' || accommodation.isPendingVerification) && (
+                  <div className="p-3 rounded-xl sm:rounded-2xl border bg-amber-500/10 border-amber-400 text-neutral-900 ring-1 ring-amber-400/30 flex items-start gap-2.5">
+                    <div className="text-lg sm:text-xl shrink-0">⏳</div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs sm:text-sm font-black text-neutral-900">
+                          Verificação Pendente (BI & Selfie em Análise)
+                        </span>
+                        <span className="text-[9px] font-black uppercase bg-amber-500 text-zinc-950 px-2 py-0.5 rounded-md shrink-0">
+                          Em Análise
+                        </span>
+                      </div>
+                      <p className="text-[11px] sm:text-xs text-neutral-600 mt-0.5 leading-snug">
+                        O proprietário submeteu o documento de identificação (BI/Passaporte) e a validação facial. A equipa de auditoria está a analisar os dados antes da emissão do selo definitivo.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {accommodation.verificationStatus === 'unverified' && !accommodation.isPendingVerification && (
                   <div className="p-3 rounded-xl sm:rounded-2xl border bg-neutral-100 border-neutral-300 text-neutral-900 flex items-start gap-2.5">
                     <div className="text-lg sm:text-xl shrink-0">⚪</div>
                     <div className="flex-1">

@@ -56,27 +56,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       {/* Main Content Container matching the mobile screen mockup with adaptive viewport */}
       <div className="relative z-10 w-full max-w-md sm:max-w-lg mx-auto px-3.5 sm:px-5 pt-2 sm:pt-4 pb-20 sm:pb-24 flex flex-col items-center justify-between min-h-[calc(100dvh-65px)]">
         
-        {/* TOP BRAND HEADER - IDENTICAL TO PRINT */}
+        {/* TOP BRAND HEADER - IDENTICAL TO REFERENCE IMAGE */}
         <div className="w-full flex flex-col items-center text-center pt-1 sm:pt-3 space-y-2 sm:space-y-2.5">
           
-          {/* Logo & Stacked Typography Group */}
-          <div className="flex items-center justify-center gap-2.5 sm:gap-3">
-            {/* Logo Emblem Icon */}
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shadow-2xl overflow-hidden shrink-0 filter drop-shadow-lg">
-              <Logo size="xl" showText={false} />
-            </div>
-
-            {/* ONDE DORMIR MOÇAMBIQUE Stacked */}
-            <div className="flex flex-col text-left justify-center">
-              <div className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-none drop-shadow-md">
-                <span className="text-white drop-shadow-md">ONDE </span>
-                <span className="text-amber-400 drop-shadow-md">DORMIR</span>
-              </div>
-              <div className="text-[11px] sm:text-xs md:text-sm font-black tracking-[0.24em] sm:tracking-[0.28em] uppercase text-white/95 leading-tight mt-0.5 sm:mt-1 drop-shadow-md">
-                MOÇAMBIQUE
-              </div>
-            </div>
-          </div>
+          {/* Official Logo with Vector Emblem & Typography */}
+          <Logo size="xl" showText={true} theme="dark" />
 
           {/* Slogan exactly as written on the print */}
           <p className="text-xs sm:text-sm font-semibold text-white/95 max-w-xs drop-shadow-lg leading-snug px-2 text-center">
@@ -116,134 +100,202 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           </div>
         </div>
 
-        {/* 5 MAIN COLOR-CODED BUTTONS - EXACTLY LIKE THE PRINT */}
-        <div className="w-full space-y-2 sm:space-y-2.5 pt-3 sm:pt-5">
+        {/* 5 MAIN COLOR-CODED BUTTONS - EXACTLY LIKE THE REFERENCE IMAGE */}
+        <div className="w-full space-y-2.5 sm:space-y-3 pt-3 sm:pt-4">
           
           {/* 1. ONDE DORMIR (Blue) */}
           <button
             onClick={() => onNavigateToTab('explore')}
-            className="w-full group bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 active:scale-[0.98] text-white rounded-2xl p-3 sm:p-3.5 border border-white/35 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation backdrop-blur-xs"
+            className="w-full group bg-gradient-to-r from-[#0055EE] to-[#003CB3] hover:from-[#0066FF] hover:to-[#0044CC] active:scale-[0.98] text-white rounded-[22px] p-3 sm:p-3.5 border-2 border-white/90 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation"
           >
             <div className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0">
-              {/* White glyph on translucent square */}
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/>
+              {/* White bed silhouette icon matching reference */}
+              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-[#0039A6]/40 border border-white/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Tall Headboard */}
+                  <rect x="4" y="7" width="3.5" height="18" rx="1.75" fill="white" />
+                  {/* Pillow / Head */}
+                  <circle cx="11.5" cy="13" r="2.5" fill="white" />
+                  {/* Sleeping Body / Mattress */}
+                  <path d="M14 12h10.5c1.9 0 3.5 1.6 3.5 3.5v2.5H14v-6z" fill="white" />
+                  {/* Bed Frame & Legs */}
+                  <path d="M7 18h21v3.5h-2.5v2.5h-2.5v-2.5H11v2.5H8.5v-2.5H7V18z" fill="white" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <div className="font-black text-sm sm:text-base tracking-wide uppercase leading-tight drop-shadow-xs truncate">
+                <div className="font-black text-base sm:text-lg tracking-wide uppercase leading-tight drop-shadow-xs truncate">
                   ONDE DORMIR
                 </div>
-                <div className="text-[11px] sm:text-xs text-blue-100 font-medium mt-0.5 truncate">
+                <div className="text-xs sm:text-sm text-white/90 font-medium mt-0.5 truncate">
                   Hotéis, pensões, residenciais
                 </div>
               </div>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
+              <ChevronRight className="w-6 h-6 text-white stroke-[3]" />
             </div>
           </button>
 
           {/* 2. GUIA TURÍSTICO (Green) */}
           <button
             onClick={() => onNavigateToTab('guides')}
-            className="w-full group bg-gradient-to-r from-emerald-600 via-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 active:scale-[0.98] text-white rounded-2xl p-3 sm:p-3.5 border border-white/35 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation backdrop-blur-xs"
+            className="w-full group bg-gradient-to-r from-[#009E4F] to-[#007A3D] hover:from-[#00B359] hover:to-[#008F47] active:scale-[0.98] text-white rounded-[22px] p-3 sm:p-3.5 border-2 border-white/90 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation"
           >
             <div className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0">
-              {/* Traveler guide icon in safari hat */}
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  {/* Safari Hat & Guide Silhouette matching print */}
-                  <path d="M12 2c-2.8 0-4 1.5-4 1.5l-1.5.5C5.6 4.3 4 5.2 4 6c0 .8 3.6 1.5 8 1.5s8-.7 8-1.5c0-.8-1.6-1.7-2.5-2l-1.5-.5S14.8 2 12 2zm0 6.5c-1.9 0-3.5.7-3.5 2.5 0 1.2.9 2.2 2 2.4V14l-2.5 1.5C6.8 16.2 6 17.5 6 19v3h12v-3c0-1.5-.8-2.8-2-3.5L13.5 14v-.6c1.1-.2 2-1.2 2-2.4 0-1.8-1.6-2.5-3.5-2.5z"/>
+              {/* Traveler guide in safari hat icon matching reference */}
+              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-[#005C2B]/40 border border-white/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Safari Hat Crown */}
+                  <path d="M11 8.5c0-2 2-3 5-3s5 1 5 3v1.5h-10V8.5z" fill="white" />
+                  {/* Safari Hat Brim */}
+                  <path d="M5.5 10c0-.8 4.7-1.5 10.5-1.5s10.5.7 10.5 1.5-4.7 1.5-10.5 1.5S5.5 10.8 5.5 10z" fill="white" />
+                  {/* Guide Face */}
+                  <path d="M11.5 12c0 2.5 2 4.5 4.5 4.5s4.5-2 4.5-4.5h-9z" fill="white" />
+                  {/* Guide Torso & Explorer Vest */}
+                  <path d="M9.5 18c-2.5 1.2-3.5 3-3.5 5.5v3.5h20v-3.5c0-2.5-1-4.3-3.5-5.5l-4.5 3.5c-1.2.9-2.8.9-4 0l-4.5-3.5z" fill="white" />
+                  {/* Vest Collar / Lapels */}
+                  <path d="M14.5 19.5h3v7h-3z" fill="white" opacity="0.35" />
+                  <circle cx="16" cy="22" r="0.85" fill="white" />
+                  <circle cx="16" cy="24.5" r="0.85" fill="white" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <div className="font-black text-sm sm:text-base tracking-wide uppercase leading-tight drop-shadow-xs truncate">
+                <div className="font-black text-base sm:text-lg tracking-wide uppercase leading-tight drop-shadow-xs truncate">
                   GUIA TURÍSTICO
                 </div>
-                <div className="text-[11px] sm:text-xs text-emerald-100 font-medium mt-0.5 truncate">
+                <div className="text-xs sm:text-sm text-white/90 font-medium mt-0.5 truncate">
                   Guias locais e passeios
                 </div>
               </div>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
+              <ChevronRight className="w-6 h-6 text-white stroke-[3]" />
             </div>
           </button>
 
           {/* 3. RENT-A-CAR (Orange) */}
           <button
             onClick={() => onNavigateToTab('rentacar')}
-            className="w-full group bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-400 hover:to-amber-500 active:scale-[0.98] text-white rounded-2xl p-3 sm:p-3.5 border border-white/35 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation backdrop-blur-xs"
+            className="w-full group bg-gradient-to-r from-[#FF5500] to-[#E64000] hover:from-[#FF6611] hover:to-[#F04800] active:scale-[0.98] text-white rounded-[22px] p-3 sm:p-3.5 border-2 border-white/90 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation"
           >
             <div className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0">
-              {/* Car Front Icon */}
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM7.5 15c-.83 0-1.5-.67-1.5-1.5S6.67 12 7.5 12s1.5.67 1.5 1.5S8.33 15 7.5 15zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+              {/* Front Car Silhouette matching reference */}
+              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-[#A82B00]/40 border border-white/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Slanted Windshield & Roof */}
+                  <path d="M10 7.5h12c1.4 0 2.6.9 3 2.3l1.8 5.2H5.2L7 9.8c.4-1.4 1.6-2.3 3-2.3z" fill="white" opacity="0.95"/>
+                  {/* Car Main Body */}
+                  <path d="M4.5 15c0-.8.7-1.5 1.5-1.5h20c.8 0 1.5.7 1.5 1.5v8c0 .8-.7 1.5-1.5 1.5H6c-.8 0-1.5-.7-1.5-1.5v-8z" fill="white"/>
+                  {/* Side Mirrors */}
+                  <path d="M4 14.5c-.8 0-1.5.4-1.5 1.1v1.8c0 .7.7 1.1 1.5 1.1h.5v-4H4zM28 14.5c.8 0 1.5.4 1.5 1.1v1.8c0 .7-.7 1.1-1.5 1.1h-.5v-4h.5z" fill="white"/>
+                  {/* Left & Right Headlights */}
+                  <circle cx="8.5" cy="18.5" r="2.2" fill="#E64000"/>
+                  <circle cx="23.5" cy="18.5" r="2.2" fill="#E64000"/>
+                  {/* Center Grille */}
+                  <rect x="12.5" y="18" width="7" height="2" rx="1" fill="#E64000" opacity="0.75"/>
+                  {/* Front Wheels */}
+                  <rect x="6.5" y="23" width="3.5" height="3" rx="1" fill="white"/>
+                  <rect x="22" y="23" width="3.5" height="3" rx="1" fill="white"/>
                 </svg>
               </div>
               <div className="min-w-0">
-                <div className="font-black text-sm sm:text-base tracking-wide uppercase leading-tight drop-shadow-xs truncate">
+                <div className="font-black text-base sm:text-lg tracking-wide uppercase leading-tight drop-shadow-xs truncate">
                   RENT-A-CAR
                 </div>
-                <div className="text-[11px] sm:text-xs text-orange-100 font-medium mt-0.5 truncate">
+                <div className="text-xs sm:text-sm text-white/90 font-medium mt-0.5 truncate">
                   Aluguer de viaturas
                 </div>
               </div>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
+              <ChevronRight className="w-6 h-6 text-white stroke-[3]" />
             </div>
           </button>
 
           {/* 4. HeartLink (Pink/Magenta/Red) */}
           <button
             onClick={() => onNavigateToTab('heartlink')}
-            className="w-full group bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] text-white rounded-2xl p-3 sm:p-3.5 border border-white/35 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation backdrop-blur-xs"
+            className="w-full group bg-gradient-to-r from-[#E91E63] to-[#C2185B] hover:from-[#F0286F] hover:to-[#D81B60] active:scale-[0.98] text-white rounded-[22px] p-3 sm:p-3.5 border-2 border-white/90 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation"
           >
             <div className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0">
-              {/* Two intertwined hearts icon */}
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                <HeartLinkTwoHeartsIcon className="w-6 h-6 sm:w-7 sm:h-7" variant="white" showStitches={true} />
+              {/* Twin Joined Outline Hearts matching reference */}
+              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-[#8A0033]/40 border border-white/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Big Left Heart Outline */}
+                  <path 
+                    d="M13 7C10.5 4.5 6.5 4.8 4.2 7.3c-2.4 2.6-2.2 6.8.6 9.7L13 25l5.5-5.3c-.9-1.3-1.5-2.9-1.5-4.7 0-3.6 2.9-6.5 6.5-6.5.6 0 1.2.1 1.7.3C24.4 6.8 22 5.2 19.5 5.2 17 5.2 14.5 6.3 13 7z" 
+                    fill="none" 
+                    stroke="white" 
+                    strokeWidth="2.6" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                  {/* Small Right Heart Outline */}
+                  <path 
+                    d="M23.5 11.5c-1.6-1.6-4.2-1.3-5.6.3-1.5 1.6-1.3 4.2.3 5.8l5.3 5 5.3-5c1.6-1.6 1.8-4.2.3-5.8-1.4-1.6-4-1.9-5.6-.3z" 
+                    fill="none" 
+                    stroke="white" 
+                    strokeWidth="2.4" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </div>
               <div className="min-w-0">
-                <div className="font-black text-sm sm:text-base tracking-wide leading-tight drop-shadow-xs truncate">
+                <div className="font-black text-base sm:text-lg tracking-wide leading-tight drop-shadow-xs truncate">
                   HeartLink
                 </div>
-                <div className="text-[11px] sm:text-xs text-pink-100 font-medium mt-0.5 truncate">
+                <div className="text-xs sm:text-sm text-white/90 font-medium mt-0.5 truncate">
                   Amizade, namoro e relacionamentos
                 </div>
               </div>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
+              <ChevronRight className="w-6 h-6 text-white stroke-[3]" />
             </div>
           </button>
 
           {/* 5. Love Shop (Purple/Violet) - 5.º Módulo Oficial */}
           <button
             onClick={() => onNavigateToTab('loveshop')}
-            className="w-full group bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 active:scale-[0.98] text-white rounded-2xl p-3 sm:p-3.5 border border-white/35 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation backdrop-blur-xs"
+            className="w-full group bg-gradient-to-r from-[#7B1FA2] to-[#512DA8] hover:from-[#8E24AA] hover:to-[#5E35B1] active:scale-[0.98] text-white rounded-[22px] p-3 sm:p-3.5 border-2 border-white/90 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation"
           >
             <div className="flex items-center gap-3 sm:gap-3.5 text-left min-w-0">
-              {/* Gift Box Icon matching print */}
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner text-xl sm:text-2xl">
-                🎁
+              {/* 3D Gift Box with Red Ribbon matching reference image */}
+              <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-[#3E0B59]/40 border border-white/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                <svg className="w-8 h-8 sm:w-9 sm:h-9" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Red Bow Fluffy Loops */}
+                  <path d="M24 16C20 10 13 9 13 13.5C13 18 20 17 24 17Z" fill="#FF1744" stroke="#D50000" strokeWidth="0.8"/>
+                  <path d="M24 16C28 10 35 9 35 13.5C35 18 28 17 24 17Z" fill="#FF1744" stroke="#D50000" strokeWidth="0.8"/>
+                  {/* Red Bow Knot Center */}
+                  <circle cx="24" cy="16.5" r="3" fill="#D50000"/>
+                  <circle cx="24" cy="16.5" r="1.8" fill="#FF5252"/>
+                  
+                  {/* Gift Box Lid (White with Red Center Ribbon) */}
+                  <rect x="8" y="17" width="32" height="7" rx="2" fill="#FFFFFF"/>
+                  <rect x="21.5" y="17" width="5" height="7" fill="#FF1744"/>
+
+                  {/* Gift Box Body (White with Red Vertical Ribbon) */}
+                  <path d="M10 24H38V37.5C38 39 36.8 40.5 35 40.5H13C11.2 40.5 10 39 10 37.5V24Z" fill="#F8FAFC"/>
+                  <path d="M10 24H13V38.5C11.5 38.5 10 37.5 10 36.5V24Z" fill="#E2E8F0"/>
+                  <path d="M38 24H35V38.5C36.5 38.5 38 37.5 38 36.5V24Z" fill="#CBD5E1"/>
+                  {/* Center Vertical Ribbon */}
+                  <rect x="21.5" y="24" width="5" height="16.5" fill="#FF1744"/>
+                  <rect x="22.5" y="24" width="1.5" height="16.5" fill="#FF5252" opacity="0.6"/>
+                </svg>
               </div>
               <div className="min-w-0">
-                <div className="font-black text-sm sm:text-base tracking-wide leading-tight drop-shadow-xs flex items-center gap-1.5 truncate">
-                  <span className="text-rose-300">❤️</span>
+                <div className="font-black text-base sm:text-lg tracking-wide leading-tight drop-shadow-xs flex items-center gap-1.5 truncate">
+                  <span className="text-rose-400">❤️</span>
                   <span className="truncate">Love Shop</span>
                 </div>
-                <div className="text-[11px] sm:text-xs text-purple-100 font-medium mt-0.5 truncate">
+                <div className="text-xs sm:text-sm text-white/90 font-medium mt-0.5 truncate">
                   Presentes que aproximam corações.
                 </div>
               </div>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform ml-2">
+              <ChevronRight className="w-6 h-6 text-white stroke-[3]" />
             </div>
           </button>
         </div>

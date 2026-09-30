@@ -112,7 +112,7 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, []);
 
-  // Update User Location marker
+  // Update User Location marker and auto-center on device
   useEffect(() => {
     if (!mapInstanceRef.current || !userCoords) return;
 
@@ -136,8 +136,16 @@ export const MapView: React.FC<MapViewProps> = ({
       userMarkerRef.current = L.marker([userCoords.lat, userCoords.lng], {
         icon: userIcon,
         zIndexOffset: 1000,
-      }).addTo(mapInstanceRef.current);
+      })
+        .bindPopup('<b>📍 O Seu Dispositivo (GPS Real)</b>')
+        .addTo(mapInstanceRef.current);
     }
+
+    // Pan map to device location with animation
+    mapInstanceRef.current.flyTo([userCoords.lat, userCoords.lng], 14, {
+      animate: true,
+      duration: 1,
+    });
   }, [userCoords]);
 
   // Update Accommodation Markers

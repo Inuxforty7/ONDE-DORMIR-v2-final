@@ -9,7 +9,9 @@ import {
   Lock,
   UserCheck,
   Server,
-  Clock
+  Clock,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 import { UserLocationState } from '../types';
 import { Logo } from './Logo';
@@ -20,6 +22,7 @@ import { getPlatformTenureText } from '../utils/tenure';
 import { BillingInvoiceModal } from './BillingInvoiceModal';
 
 interface AccountTabProps {
+  onBackToHome?: () => void;
   userLocation: UserLocationState;
   onOpenPrivacyModal: () => void;
   onOpenRegisterModal: () => void;
@@ -30,6 +33,7 @@ interface AccountTabProps {
 }
 
 export const AccountTab: React.FC<AccountTabProps> = ({
+  onBackToHome,
   userLocation,
   onOpenPrivacyModal,
   onOpenRegisterModal,
@@ -60,12 +64,12 @@ export const AccountTab: React.FC<AccountTabProps> = ({
   };
 
   return (
-    <div className="pb-32 pt-2 sm:pt-4 max-w-2xl mx-auto px-3.5 sm:px-4 space-y-4">
-      {/* Header Profile Summary */}
+    <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-2xl mx-auto px-3 sm:px-4 space-y-4">
+      {/* Header Profile Summary with High Contrast Light Logo */}
       <div className="bg-white rounded-3xl p-5 border border-neutral-200/90 shadow-2xs space-y-4">
         <div>
-          <Logo size="lg" />
-          <p className="text-xs sm:text-sm text-neutral-600 mt-2 leading-relaxed">
+          <Logo size="lg" theme="light" showText={true} />
+          <p className="text-xs sm:text-sm text-neutral-600 mt-2 leading-relaxed font-medium">
             Directório de hospedagens, guias locais, aluguer de viaturas e conexões.
           </p>
         </div>

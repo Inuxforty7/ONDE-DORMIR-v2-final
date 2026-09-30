@@ -21,7 +21,7 @@ export const SavedTab: React.FC<SavedTabProps> = ({
   const [confirmClear, setConfirmClear] = React.useState(false);
 
   return (
-    <div className="pb-32 pt-2 sm:pt-4 max-w-5xl mx-auto px-3.5 sm:px-4 space-y-4">
+    <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

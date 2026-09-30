@@ -22,7 +22,6 @@ export const LoveShopPromoCatMascot: React.FC<LoveShopPromoCatMascotProps> = ({
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isGreetingDismissed, setIsGreetingDismissed] = useState(false);
   const [isKeyboardOrInputActive, setIsKeyboardOrInputActive] = useState(false);
 
   // Auto-hide widget when typing on mobile keyboard or when dialogs are active
@@ -78,14 +77,6 @@ export const LoveShopPromoCatMascot: React.FC<LoveShopPromoCatMascotProps> = ({
     }
   };
 
-  // Auto-hide the initial greeting speech bubble after 6 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsGreetingDismissed(true);
-    }, 6500);
-    return () => clearTimeout(timer);
-  }, []);
-
   if (isKeyboardOrInputActive) {
     return null;
   }
@@ -98,24 +89,6 @@ export const LoveShopPromoCatMascot: React.FC<LoveShopPromoCatMascotProps> = ({
         {isActive ? (
           /* ACTIVE STATE: Waving Paw Cat Mascot with Animated Motion & Badges */
           <div className="flex flex-col items-end group">
-            
-            {/* Animated Speech Bubble / Notification */}
-            {!isGreetingDismissed && (
-              <div className="mb-1.5 mr-1 bg-white/95 backdrop-blur-md text-neutral-900 border-2 border-rose-400 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-[210px]">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-spin" />
-                <span className="text-[11px] font-black text-rose-700 leading-tight">
-                  Temos promoções ativas hoje! 🎁
-                </span>
-                <button
-                  onClick={() => setIsGreetingDismissed(true)}
-                  className="text-neutral-400 hover:text-neutral-700 ml-1 text-xs font-bold"
-                  title="Fechar mensagem"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-
             {/* Mascot Container */}
             <div className="relative flex items-center justify-end">
               

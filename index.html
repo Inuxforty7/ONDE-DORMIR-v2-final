@@ -5,23 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script>
       // Suppress Vite HMR WebSocket connection errors in restricted iframe sandbox
-      window.addEventListener('unhandledrejection', function(event) {
-        if (!event) return;
-        var r = event.reason;
-        var msg = (r && (r.message || r.stack || (typeof r === 'string' ? r : ''))) || '';
-        if (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      });
-      window.addEventListener('error', function(event) {
-        if (!event) return;
-        var msg = (event.message || '') + '';
-        if (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      });
+      (function() {
+        var filterMsg = function(msg) {
+          if (!msg) return false;
+          var str = String(msg).toLowerCase();
+          return str.indexOf('websocket') !== -1 || str.indexOf('[vite] failed to connect') !== -1 || str.indexOf('failed to connect to websocket') !== -1;
+        };
+        var origError = console.error;
+        console.error = function() {
+          for (var i = 0; i < arguments.length; i++) {
+            if (filterMsg(arguments[i])) return;
+          }
+          origError.apply(console, arguments);
+        };
+        var origWarn = console.warn;
+        console.warn = function() {
+          for (var i = 0; i < arguments.length; i++) {
+            if (filterMsg(arguments[i])) return;
+          }
+          origWarn.apply(console, arguments);
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+          if (!event) return;
+          var r = event.reason;
+          var msg = (r && (r.message || r.stack || (typeof r === 'string' ? r : ''))) || '';
+          if (filterMsg(msg)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        });
+        window.addEventListener('error', function(event) {
+          if (!event) return;
+          var msg = (event.message || '') + '';
+          if (filterMsg(msg)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        });
+      })();
     </script>
     <title>Onde Dormir Moçambique - Encontre onde dormir, quem o possa guiar e como pode se deslocar</title>
     <meta name="description" content="Onde Dormir Moçambique: Encontre onde dormir, quem o possa guiar e como pode se deslocar. Hotéis, pensões, guias turísticos e rent-a-car em Moçambique." />

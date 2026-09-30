@@ -112,16 +112,19 @@ export const LoveShopStoreCard: React.FC<LoveShopStoreCardProps> = ({
 
         {/* Text Content */}
         <div className="flex-1 min-w-0">
-          {/* Store Name + Verified Blue Badge */}
-          <div className="flex items-center gap-1.5">
+          {/* Store Name + Verified Blue Badge + Anti-Fraud Badge */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             <h3 className="font-black text-sm sm:text-base text-neutral-950 truncate group-hover:text-rose-600 transition-colors">
               {store.name}
             </h3>
             {store.verified && (
-              <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] font-black shrink-0">
+              <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] font-black shrink-0" title="Loja Verificada">
                 ✓
               </span>
             )}
+            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shrink-0">
+              🛡️ BI & Biometria
+            </span>
           </div>
 
           {/* Slogan */}

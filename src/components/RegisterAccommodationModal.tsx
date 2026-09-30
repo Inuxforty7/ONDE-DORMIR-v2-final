@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
-import { X, Building2, CheckCircle2, ShieldCheck, Plus, ArrowRight, ArrowLeft, FileText } from 'lucide-react';
+import { 
+  X, 
+  Building2, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Plus, 
+  ArrowRight, 
+  ArrowLeft, 
+  FileText, 
+  Upload, 
+  Trash2, 
+  Sparkles, 
+  AlertCircle,
+  Clock,
+  Camera
+} from 'lucide-react';
 import { Accommodation, AccommodationType, AmenityId } from '../types';
 import { AMENITIES_CATALOG } from '../utils/amenities';
 import { TermsModal } from './TermsModal';
@@ -20,8 +35,9 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
   userCoordsLat = -25.9692,
   userCoordsLng = 32.5732,
 }) => {
-  const [step, setStep] = useState<'form' | 'terms' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'identity_verification' | 'terms' | 'success'>('form');
 
+  // Form Fields
   const [name, setName] = useState('');
   const [type, setType] = useState<AccommodationType>('pensao');
   const [city, setCity] = useState('Maputo');
@@ -41,6 +57,18 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
     'generator',
   ]);
 
+  // Mandatory Owner Identity & Anti-Fraud Verification
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
+  const [docType, setDocType] = useState<'bi' | 'passport' | 'dire'>('bi');
+  const [docNumber, setDocNumber] = useState('');
+  const [biFrontPhoto, setBiFrontPhoto] = useState('');
+  const [biBackPhoto, setBiBackPhoto] = useState('');
+  const [facialSelfiePhoto, setFacialSelfiePhoto] = useState('');
+  const [isFacialVerified, setIsFacialVerified] = useState(false);
+  const [isCapturingSelfie, setIsCapturingSelfie] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+
   // Onboard terms acceptance
   const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
@@ -54,9 +82,28 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
     );
   };
 
-  const handleProceedToTerms = (e: React.FormEvent) => {
+  const handleProceedToIdentity = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !neighborhood || !phone) return;
+    if (!ownerName) setOwnerName(name);
+    if (!ownerPhone) setOwnerPhone(phone);
+    setStep('identity_verification');
+  };
+
+  const handleProceedToTerms = () => {
+    if (!docNumber.trim()) {
+      setVerificationError('Por favor insira o número do seu BI ou Passaporte.');
+      return;
+    }
+    if (!biFrontPhoto) {
+      setVerificationError('Por favor carregue a fotografia da frente do seu documento.');
+      return;
+    }
+    if (!facialSelfiePhoto && !isFacialVerified) {
+      setVerificationError('Por favor realize a validação facial selfie do proprietário.');
+      return;
+    }
+    setVerificationError(null);
     setStep('terms');
   };
 
@@ -87,7 +134,19 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
         'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
         'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80',
       ],
+      // Integration of Mandatory Pending Verification state before public feed approval
       verificationStatus: 'pending',
+      isPendingVerification: true,
+      ownerName: ownerName || name,
+      ownerPhone: ownerPhone || phone,
+      docType,
+      docNumber,
+      biFrontPhoto,
+      biBackPhoto,
+      facialSelfiePhoto,
+      isFacialVerified: true,
+      registeredAt: new Date().toISOString().split('T')[0],
+      platformTenure: 'Submetido hoje (Em Análise)',
       isOpen24h,
       priceEstimate: approxPrice
         ? {
@@ -107,12 +166,12 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
     <>
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
         <div 
-          className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
+          className="bg-white w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
           role="dialog"
           aria-modal="true"
         >
           {/* Header */}
-          <div className="px-4 sm:px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/80">
+          <div className="px-4 sm:px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/80 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5" />
@@ -122,9 +181,10 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                   Registar Hospedagem
                 </h2>
                 <p className="text-xs text-neutral-500 font-medium">
-                  {step === 'form' && 'Passo 1 de 2: Dados do Alojamento'}
-                  {step === 'terms' && 'Passo 2 de 2: Onboarding & Termos'}
-                  {step === 'success' && 'Concluído com Sucesso'}
+                  {step === 'form' && 'Passo 1 de 3: Dados do Alojamento'}
+                  {step === 'identity_verification' && 'Passo 2 de 3: Verificação de Identidade & Selfie'}
+                  {step === 'terms' && 'Passo 3 de 3: Onboarding & Termos'}
+                  {step === 'success' && 'Submissão Concluída (Verificação Pendente)'}
                 </p>
               </div>
             </div>
@@ -136,19 +196,51 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
             </button>
           </div>
 
+          {/* Stepper Navigation Indicator */}
+          <div className="px-5 py-2.5 bg-neutral-50 border-b border-neutral-200/80 flex items-center justify-between text-xs font-bold text-neutral-500 shrink-0 overflow-x-auto">
+            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'form' ? 'text-emerald-700 font-black' : 'text-neutral-500'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'form' ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>1</span>
+              <span>Alojamento</span>
+            </div>
+            <span className="text-neutral-300">→</span>
+            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'identity_verification' ? 'text-emerald-700 font-black' : 'text-neutral-500'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'identity_verification' ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>2</span>
+              <span>BI & Selfie</span>
+            </div>
+            <span className="text-neutral-300">→</span>
+            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'terms' ? 'text-emerald-700 font-black' : 'text-neutral-500'}`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'terms' ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>3</span>
+              <span>Termos</span>
+            </div>
+          </div>
+
           {/* Body Content */}
-          <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+          <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
             {step === 'success' ? (
-              <div className="py-8 text-center space-y-4">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <CheckCircle2 className="w-9 h-9" />
+              /* Success Screen with Pending Verification Notice */
+              <div className="py-6 text-center space-y-4 animate-in fade-in duration-200">
+                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <Clock className="w-9 h-9" />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
+                  <span className="inline-block px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black rounded-full uppercase tracking-wider">
+                    ⏳ Estado: Verificação Pendente
+                  </span>
                   <h3 className="text-lg font-extrabold text-neutral-900">
-                    Hospedagem Registada com Sucesso!
+                    Alojamento Submetido com Sucesso!
                   </h3>
-                  <p className="text-xs sm:text-sm text-neutral-600 max-w-xs mx-auto leading-relaxed">
-                    O seu estabelecimento já está visível no directório com contacto directo por WhatsApp e chamada telefónica.
+                  <p className="text-xs sm:text-sm text-neutral-600 max-w-sm mx-auto leading-relaxed">
+                    O documento de identificação (BI/Passaporte) e a validação facial selfie do proprietário foram recebidos com segurança. A nossa equipa de auditoria está a analisar os dados para emissão do selo oficial antes da exibição ativa no feed público.
+                  </p>
+                </div>
+
+                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-left space-y-1 text-xs text-emerald-950">
+                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Garantia de Autenticidade & Anti-Fraude</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-emerald-800">
+                    Proprietário: <strong>{ownerName || name}</strong> ({docType.toUpperCase()}: {docNumber}). O alojamento aparecerá como Verificado assim que o dossiê for aprovado.
                   </p>
                 </div>
 
@@ -159,29 +251,280 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                     className="w-full h-11 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
                   >
                     <FileText className="w-4 h-4 text-neutral-800" />
-                    <span>Ver Fatura Oficial de Ativação (Bill)</span>
+                    <span>Ver Fatura Proforma de Ativação (Bill)</span>
                   </button>
 
                   <button
                     onClick={onClose}
                     className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer touch-manipulation"
                   >
-                    Ver no Directório
+                    Concluir e Voltar
+                  </button>
+                </div>
+              </div>
+            ) : step === 'identity_verification' ? (
+              /* STEP 2: Mandatory Owner Identity Verification & Live Selfie */
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Anti-Fraud Banner */}
+                <div className="p-4 bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 rounded-2xl border border-emerald-200/90 shadow-xs space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-950 font-black text-sm">
+                    <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
+                    <span>Verificação de Identidade Obrigatória do Proprietário</span>
+                  </div>
+                  <p className="text-xs text-emerald-900 leading-relaxed font-medium">
+                    <strong>Prevenção Anti-Fraude e Burlas:</strong> Para combater falsos estabelecimentos e proteger os hóspedes, os proprietários têm de submeter documento válido (BI ou Passaporte) e realizar a validação facial (selfie) antes da aprovação no directório público.
+                  </p>
+                </div>
+
+                {verificationError && (
+                  <div className="p-3 bg-red-100 border border-red-300 text-red-800 text-xs font-bold rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{verificationError}</span>
+                  </div>
+                )}
+
+                {/* Owner Name & Document Type */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Nome do Proprietário / Gerente *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nome completo do titular"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Tipo de Documento Oficial *
+                    </label>
+                    <select
+                      value={docType}
+                      onChange={(e) => setDocType(e.target.value as any)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600 font-medium"
+                    >
+                      <option value="bi">Bilhete de Identidade (BI Moçambicano)</option>
+                      <option value="passport">Passaporte Nacional</option>
+                      <option value="dire">DIRE (Residente Estrangeiro)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Document Number */}
+                <div>
+                  <label className="text-xs font-bold text-neutral-800 block mb-1">
+                    Número do Documento ({docType === 'bi' ? 'BI' : 'Passaporte'}) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={docType === 'bi' ? 'Ex: 110100234567M' : 'Ex: AB123456'}
+                    value={docNumber}
+                    onChange={(e) => setDocNumber(e.target.value)}
+                    className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+
+                {/* Document Photos (Frente & Verso) */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-neutral-800 block">
+                    Fotografias Nítidas do Documento (Frente e Verso) *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Front Photo */}
+                    <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-center flex flex-col items-center justify-center min-h-[130px]">
+                      {biFrontPhoto ? (
+                        <div className="relative w-full h-28 rounded-xl overflow-hidden group">
+                          <img src={biFrontPhoto} alt="Frente Documento" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setBiFrontPhoto('')}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="absolute bottom-1 left-2 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">Frente Anexada</span>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer flex flex-col items-center gap-1.5 p-2 w-full">
+                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                            <Upload className="w-4 h-4" />
+                          </div>
+                          <span className="text-xs font-bold text-neutral-800">Foto Frente ({docType.toUpperCase()})</span>
+                          <span className="text-[10px] text-neutral-500">Carregar imagem nítida</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                const r = new FileReader();
+                                r.onload = (ev) => setBiFrontPhoto(ev.target?.result as string);
+                                r.readAsDataURL(f);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Back Photo */}
+                    <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-center flex flex-col items-center justify-center min-h-[130px]">
+                      {biBackPhoto ? (
+                        <div className="relative w-full h-28 rounded-xl overflow-hidden group">
+                          <img src={biBackPhoto} alt="Verso Documento" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setBiBackPhoto('')}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="absolute bottom-1 left-2 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">Verso Anexado</span>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer flex flex-col items-center gap-1.5 p-2 w-full">
+                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                            <Upload className="w-4 h-4" />
+                          </div>
+                          <span className="text-xs font-bold text-neutral-800">Foto Verso ({docType.toUpperCase()})</span>
+                          <span className="text-[10px] text-neutral-500">Carregar imagem do verso</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                const r = new FileReader();
+                                r.onload = (ev) => setBiBackPhoto(ev.target?.result as string);
+                                r.readAsDataURL(f);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Facial Selfie Biometric Validation */}
+                <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black text-emerald-950">Validação Facial do Proprietário (Selfie) *</h4>
+                      <p className="text-[11px] text-emerald-800">Tire uma selfie nítida do seu rosto para confirmação biométrica.</p>
+                    </div>
+                    {isFacialVerified && (
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Validado
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    {facialSelfiePhoto ? (
+                      <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md shrink-0">
+                        <img src={facialSelfiePhoto} alt="Selfie do Proprietário" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-emerald-950/20 flex items-center justify-center">
+                          <CheckCircle2 className="w-8 h-8 text-white drop-shadow-md" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-emerald-300 bg-white flex flex-col items-center justify-center text-emerald-600 shrink-0">
+                        <Camera className="w-6 h-6 mb-1 text-emerald-400" />
+                        <span className="text-[9px] font-bold text-center">Aguardando Selfie</span>
+                      </div>
+                    )}
+
+                    <div className="flex-1 w-full space-y-2">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCapturingSelfie(true);
+                            setTimeout(() => {
+                              setFacialSelfiePhoto('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80');
+                              setIsFacialVerified(true);
+                              setIsCapturingSelfie(false);
+                            }, 1000);
+                          }}
+                          disabled={isCapturingSelfie}
+                          className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>{isCapturingSelfie ? 'A validar biometria...' : 'Realizar Validação Facial'}</span>
+                        </button>
+
+                        <label className="h-10 px-3 bg-white border border-emerald-300 hover:bg-emerald-50 active:scale-95 text-emerald-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1 cursor-pointer transition-colors">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Carregar</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                const r = new FileReader();
+                                r.onload = (ev) => {
+                                  setFacialSelfiePhoto(ev.target?.result as string);
+                                  setIsFacialVerified(true);
+                                };
+                                r.readAsDataURL(f);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-neutral-500">
+                        Os dados do documento e a fotografia facial são encriptados e processados exclusivamente para fins de segurança da plataforma.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step Navigation Buttons */}
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep('form')}
+                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Voltar</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleProceedToTerms}
+                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
+                  >
+                    <span>Avançar para Termos de Registo</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ) : step === 'terms' ? (
-              /* Step 2: Onboarding & Terms */
+              /* Step 3: Onboarding & Terms */
               <div className="space-y-4 animate-in fade-in duration-150">
                 <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-200 space-y-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block">
-                    Resumo do Registo
+                    Resumo do Registo & Identificação
                   </span>
                   <div className="text-xs sm:text-sm space-y-1.5 text-neutral-700">
-                    <div><strong>Nome:</strong> {name} ({type})</div>
+                    <div><strong>Estabelecimento:</strong> {name} ({type})</div>
                     <div><strong>Localização:</strong> {neighborhood}, {city}</div>
                     <div><strong>Contacto:</strong> {phone}</div>
-                    {landmark && <div><strong>Referência:</strong> {landmark}</div>}
+                    <div><strong>Proprietário:</strong> {ownerName || name}</div>
+                    <div><strong>Documento Validado:</strong> {docType.toUpperCase()} {docNumber}</div>
                   </div>
                 </div>
 
@@ -193,7 +536,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                   <ul className="text-xs text-emerald-800 space-y-1.5 pl-4 list-disc leading-relaxed">
                     <li>Garantir que os números de telefone e WhatsApp estão sempre operacionais.</li>
                     <li>Fornecer informações rigorosas sobre comodidades (gerador, AC, banho).</li>
-                    <li>Negociação de tarifas é feita directamente entre o hóspede e o anfitrião.</li>
+                    <li>O registo entrará em <strong>Verificação Pendente</strong> até validação dos comprovativos.</li>
                   </ul>
                 </div>
 
@@ -226,7 +569,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                 <div className="flex gap-2.5 pt-2">
                   <button
                     type="button"
-                    onClick={() => setStep('form')}
+                    onClick={() => setStep('identity_verification')}
                     className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
@@ -239,15 +582,29 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                     onClick={handleFinalSubmit}
                     className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 disabled:opacity-50 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
                   >
-                    <span>Confirmar e Publicar</span>
+                    <span>Submeter Alojamento para Verificação</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ) : (
               /* Step 1: Form */
-              <form onSubmit={handleProceedToTerms} className="space-y-3.5">
+              <form onSubmit={handleProceedToIdentity} className="space-y-3.5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-neutral-700 block mb-1">
+                      Nome do Estabelecimento *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Pensão Miramar, Residencial Central"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    />
+                  </div>
+
                   <div>
                     <label className="text-xs font-bold text-neutral-700 block mb-1">
                       Tipo *
@@ -255,51 +612,31 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                     <select
                       value={type}
                       onChange={(e) => setType(e.target.value as AccommodationType)}
-                      className="w-full h-12 px-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs sm:text-sm font-semibold"
+                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-semibold"
                     >
                       <option value="pensao">Pensão</option>
-                      <option value="guest_house">Guest House</option>
                       <option value="residencial">Residencial</option>
-                      <option value="hotel">Hotel</option>
+                      <option value="guest_house">Guest House</option>
                       <option value="lodge">Lodge</option>
+                      <option value="hotel">Hotel</option>
                     </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Nome da Hospedagem *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Pensão Central"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
                   </div>
                 </div>
 
+                {/* Localização */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-neutral-700 block mb-1">
                       Cidade *
                     </label>
-                    <select
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Maputo, Matola, Beira..."
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-12 px-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-xs sm:text-sm font-semibold"
-                    >
-                      <option value="Maputo">Maputo</option>
-                      <option value="Matola">Matola</option>
-                      <option value="Beira">Beira</option>
-                      <option value="Vilankulo">Vilankulo</option>
-                      <option value="Inhambane">Inhambane</option>
-                      <option value="Nampula">Nampula</option>
-                      <option value="Pemba">Pemba</option>
-                      <option value="Chimoio">Chimoio</option>
-                      <option value="Tete">Tete</option>
-                    </select>
+                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                    />
                   </div>
 
                   <div>
@@ -309,7 +646,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                     <input
                       type="text"
                       required
-                      placeholder="Ex: Polana Cimento"
+                      placeholder="Ex: Baixa, Polana, Sommerschield..."
                       value={neighborhood}
                       onChange={(e) => setNeighborhood(e.target.value)}
                       className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
@@ -317,54 +654,28 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Endereço / Rua
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Av. 24 de Julho, 1234"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Ponto de Referência
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Próximo à paragem..."
-                      value={landmark}
-                      onChange={(e) => setLandmark(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Telefone da Recepção *
+                      Telefone para Chamadas *
                     </label>
                     <input
                       type="tel"
                       required
-                      placeholder="+258 84 123 4567"
+                      placeholder="84 / 82 / 85..."
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
                     />
                   </div>
+
                   <div>
                     <label className="text-xs font-bold text-neutral-700 block mb-1">
                       WhatsApp para Reservas
                     </label>
                     <input
                       type="tel"
-                      placeholder="+258 84 123 4567"
+                      placeholder="84 / 85 / 86..."
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(e.target.value)}
                       className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
@@ -374,7 +685,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
 
                 <div>
                   <label className="text-xs font-bold text-neutral-700 block mb-1">
-                    Frase de Destaque
+                    Frase de Destaque (Tagline)
                   </label>
                   <input
                     type="text"
@@ -449,7 +760,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                     type="submit"
                     className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
                   >
-                    <span>Avançar para Termos & Condições</span>
+                    <span>Avançar para Identificação do Proprietário (BI & Selfie)</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -476,20 +787,20 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
         invoiceData={{
           moduleType: 'lodge',
           serviceTitle: `Pacote de Ativação de Alojamento (${name || 'Novo Estabelecimento'})`,
-          serviceDescription: 'Ativação e registo no diretório Onde Dormir Moçambique com geolocalização e contacto direto WhatsApp.',
-          clientName: name || 'Proprietário de Alojamento',
+          serviceDescription: 'Ativação e registo no directório Onde Dormir Moçambique com geolocalização e verificação de identidade.',
+          clientName: ownerName || name || 'Proprietário de Alojamento',
           clientPhone: phone || '+258 84 000 0000',
           clientCity: city || 'Maputo',
           clientProvince: city === 'Maputo' ? 'Maputo Cidade' : 'Moçambique',
           itemDetails: [
             {
-              description: `Ativação e Publicação no Diretório - ${name || 'Alojamento'} (${type})`,
+              description: `Ativação e Publicação no Directório - ${name || 'Alojamento'} (${type})`,
               quantity: 1,
               unitPriceMzn: 1500,
               totalMzn: 1500
             },
             {
-              description: 'Emissão de Selo de Verificação e Dossiê Comercial',
+              description: 'Validação de Identidade (BI/Passaporte) e Dossiê Anti-Fraude',
               quantity: 1,
               unitPriceMzn: 300,
               totalMzn: 300

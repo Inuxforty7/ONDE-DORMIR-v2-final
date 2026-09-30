@@ -21,6 +21,7 @@ import { TermsModal } from './components/TermsModal';
 import { RegisterAccommodationModal } from './components/RegisterAccommodationModal';
 import { ContactLockedNoticeModal } from './components/ContactLockedNoticeModal';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { BottomNavBar } from './components/BottomNavBar';
 import { contactUnlockService } from './services/contactUnlockService';
 import { LockedContactTarget } from './types/contactUnlock';
 
@@ -152,48 +153,113 @@ export default function App() {
 
   // Request real GPS location and detect the nearest Mozambican province/city
   const handleRequestGps = useCallback(() => {
-    if (!('geolocation' in navigator)) {
-      showToast('Geolocalização não suportada no seu navegador. Escolha a cidade manualmente.', 'warn');
-      return;
-    }
-
     setUserLocation((prev) => ({ ...prev, isLoading: true, error: null }));
     showToast('A obter sinal GPS do seu dispositivo...', 'info');
 
+    const applyRealCoords = async (lat: number, lng: number, sourceLabel: string = 'GPS') => {
+      const coords = { lat, lng };
+      
+      // Determine nearest Mozambican reference province for filtering
+      const nearest = findNearestPresetLocation(coords.lat, coords.lng);
+      
+      let detectedCity = nearest.city;
+      let detectedProvince = nearest.province;
+      let detectedName = `${nearest.city} (${sourceLabel})`;
+
+      try {
+        // Attempt fast reverse geocoding for real street / locality name
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
+          { headers: { 'Accept-Language': 'pt, en' }, signal: AbortSignal.timeout(3000) }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const addr = data.address || {};
+          const locality = addr.suburb || addr.neighbourhood || addr.city || addr.town || addr.municipality || addr.village;
+          const prov = addr.state || addr.province || addr.region;
+          if (locality) {
+            detectedCity = locality;
+            detectedName = prov ? `${locality}, ${prov}` : locality;
+          }
+          if (prov) {
+            detectedProvince = prov;
+          }
+        }
+      } catch {
+        // Use nearest preset on reverse geocode timeout
+      }
+
+      const newLoc: UserLocationState = {
+        coords,
+        name: detectedName,
+        city: detectedCity,
+        province: detectedProvince,
+        isAllMozambique: false,
+        isCustom: false,
+        isLoading: false,
+        error: null,
+      };
+
+      setUserLocation(newLoc);
+      localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
+      showToast(`📍 GPS Real Ativado: ${detectedName}`, 'success');
+    };
+
+    const handleFallback = async () => {
+      try {
+        const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3500) });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.latitude && data.longitude) {
+            await applyRealCoords(data.latitude, data.longitude, 'Rede/IP');
+            return;
+          }
+        }
+      } catch {
+        // Ignore
+      }
+
+      const fallbackPreset = MOZ_PRESET_LOCATIONS[0];
+      const newLoc: UserLocationState = {
+        coords: fallbackPreset.coords,
+        name: fallbackPreset.name,
+        city: fallbackPreset.city,
+        province: fallbackPreset.province,
+        isAllMozambique: false,
+        isCustom: true,
+        isLoading: false,
+        error: null,
+      };
+      setUserLocation(newLoc);
+      localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
+      showToast(`📍 Localização definida: ${fallbackPreset.province} (${fallbackPreset.city})`, 'info');
+    };
+
+    if (!('geolocation' in navigator)) {
+      handleFallback();
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        const nearest = findNearestPresetLocation(coords.lat, coords.lng);
-        const newLoc: UserLocationState = {
-          coords,
-          name: `${nearest.city} (GPS)`,
-          city: nearest.city,
-          province: nearest.province,
-          isAllMozambique: false,
-          isCustom: false,
-          isLoading: false,
-          error: null,
-        };
-        setUserLocation(newLoc);
-        localStorage.setItem('onde_dormir_user_location', JSON.stringify(newLoc));
-        showToast(`📍 Província detetada: ${nearest.province} (${nearest.city})`, 'success');
+        applyRealCoords(position.coords.latitude, position.coords.longitude, 'GPS');
       },
       (error) => {
-        console.warn('Geolocation error:', error);
-        setUserLocation((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: 'Não foi possível obter o GPS. Pode selecionar a cidade manualmente.',
-        }));
-        showToast('Não foi possível obter o GPS. Pode selecionar a cidade manualmente na lista.', 'warn');
+        console.warn('High-accuracy GPS failed, trying network position:', error);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            applyRealCoords(pos.coords.latitude, pos.coords.longitude, 'GPS');
+          },
+          () => {
+            handleFallback();
+          },
+          { enableHighAccuracy: false, timeout: 4000, maximumAge: 300000 }
+        );
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
+        timeout: 5000,
+        maximumAge: 30000,
       }
     );
   }, [showToast]);
@@ -321,7 +387,7 @@ export default function App() {
       )}
 
       {/* Main Tab Content */}
-      <main className="flex-1 w-full overflow-x-hidden">
+      <main className={`flex-1 w-full overflow-x-hidden ${activeTab !== 'home' ? 'pt-[52px] sm:pt-[56px]' : ''}`}>
         {activeTab === 'home' && (
           <HomeTab
             userLocation={userLocation}
@@ -428,6 +494,7 @@ export default function App() {
 
         {activeTab === 'account' && (
           <AccountTab
+            onBackToHome={() => handleNavigateToTab('home')}
             userLocation={userLocation}
             onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
             onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
@@ -438,6 +505,15 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Bottom Navigation Dock - Exclusively rendered on Home screen */}
+      {activeTab === 'home' && (
+        <BottomNavBar
+          activeTab={activeTab}
+          onNavigateTab={handleNavigateToTab}
+          savedCount={savedIds.length}
+        />
+      )}
 
       {/* Accommodation Full Detail Profile Modal */}
       <AccommodationDetailModal

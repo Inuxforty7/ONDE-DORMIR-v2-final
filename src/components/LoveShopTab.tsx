@@ -139,7 +139,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   }, [products, selectedCategory, searchQuery]);
 
   return (
-    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-3 sm:px-4 pt-2 pb-28 space-y-3.5 animate-in fade-in duration-200">
+    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-3 sm:px-4 pt-2 pb-16 sm:pb-20 space-y-3.5 animate-in fade-in duration-200">
       
       {/* 1. Crimson Hero Banner with Search Bar (Exact match to Image 3) */}
       <LoveShopHeaderBanner

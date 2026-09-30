@@ -62,6 +62,16 @@ export interface Accommodation {
   registeredAt?: string;
   platformTenure?: string;
   isContactUnlocked?: boolean;
+  // Mandatory Identity & Anti-Fraud Verification
+  ownerName?: string;
+  ownerPhone?: string;
+  docType?: 'bi' | 'passport' | 'dire';
+  docNumber?: string;
+  biFrontPhoto?: string;
+  biBackPhoto?: string;
+  facialSelfiePhoto?: string;
+  isFacialVerified?: boolean;
+  isPendingVerification?: boolean;
 }
 
 export interface UserLocationState {
@@ -95,6 +105,14 @@ export interface LoveShopStore {
   logo: string;
   coverImage?: string;
   verified: boolean;
+  isIdentityVerified?: boolean;
+  verifiedDocType?: 'bi' | 'passport' | 'dire';
+  verifiedDocNumber?: string;
+  biFrontPhoto?: string;
+  biBackPhoto?: string;
+  facialSelfiePhoto?: string;
+  isFacialVerified?: boolean;
+  antiFraudBadge?: string;
   rating: number;
   reviewsCount: number;
   salesCount: number; // ex: 1250 vendas com sucesso

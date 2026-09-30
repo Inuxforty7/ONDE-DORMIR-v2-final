@@ -104,6 +104,10 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
               <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs">
                 <ShieldCheck className="w-3 h-3" /> Verificado
               </span>
+            ) : accommodation.verificationStatus === 'pending' || accommodation.isPendingVerification ? (
+              <span className="flex items-center gap-1 text-[11px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-md shadow-xs">
+                <Clock className="w-3 h-3" /> Verificação Pendente
+              </span>
             ) : null}
 
             {accommodation.isOpen24h && (

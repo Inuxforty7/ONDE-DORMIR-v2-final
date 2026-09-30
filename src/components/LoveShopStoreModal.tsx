@@ -95,18 +95,31 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
           </div>
 
           {/* Store Info Bar */}
-          <div className="p-4 bg-neutral-50 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-700">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>{store.address ? `${store.address} • ` : ''}{store.city}, {store.province}</span>
+          <div className="p-4 bg-neutral-50 border-b border-neutral-200 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-700">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{store.address ? `${store.address} • ` : ''}{store.city}, {store.province}</span>
+              </div>
+
+              {store.platformTenure && (
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-white border border-neutral-200 px-2 py-0.5 rounded-md">
+                  <Clock className="w-3 h-3 text-emerald-600" />
+                  <span>{store.platformTenure}</span>
+                </div>
+              )}
             </div>
 
-            {store.platformTenure && (
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-white border border-neutral-200 px-2 py-0.5 rounded-md">
-                <Clock className="w-3 h-3 text-emerald-600" />
-                <span>{store.platformTenure}</span>
+            {/* Anti-Fraud Verified Shield Banner */}
+            <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-[11px] font-bold">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Loja Oficial Verificada Anti-Fraude • BI & Biometria do Titular Validados</span>
               </div>
-            )}
+              <span className="text-[10px] font-black text-emerald-700 bg-emerald-200/60 px-2 py-0.5 rounded-md">
+                100% Autêntica
+              </span>
+            </div>
           </div>
 
           {/* Products from this Store */}
