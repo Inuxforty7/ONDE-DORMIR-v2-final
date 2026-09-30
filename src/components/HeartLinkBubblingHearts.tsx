@@ -25,6 +25,51 @@ export const HeartLinkBubblingHearts: React.FC = () => {
 
   const [bubbles, setBubbles] = useState<FloatingBubble[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [isKeyboardOrInputActive, setIsKeyboardOrInputActive] = useState(false);
+
+  // Auto-hide widget when typing on mobile keyboard
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        setIsKeyboardOrInputActive(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+          setIsKeyboardOrInputActive(false);
+        }
+      }, 150);
+    };
+
+    const handleViewportResize = () => {
+      if (window.visualViewport && window.visualViewport.height < window.innerHeight * 0.78) {
+        setIsKeyboardOrInputActive(true);
+      } else {
+        setTimeout(() => {
+          if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+            setIsKeyboardOrInputActive(false);
+          }
+        }, 150);
+      }
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
+
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      }
+    };
+  }, []);
 
   // Generate continuous bubbling hearts stream when active
   useEffect(() => {
@@ -66,6 +111,10 @@ export const HeartLinkBubblingHearts: React.FC = () => {
       // ignore
     }
   };
+
+  if (isKeyboardOrInputActive) {
+    return null;
+  }
 
   return (
     <>

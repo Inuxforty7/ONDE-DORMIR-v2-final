@@ -23,6 +23,51 @@ export const LoveShopPromoCatMascot: React.FC<LoveShopPromoCatMascotProps> = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGreetingDismissed, setIsGreetingDismissed] = useState(false);
+  const [isKeyboardOrInputActive, setIsKeyboardOrInputActive] = useState(false);
+
+  // Auto-hide widget when typing on mobile keyboard or when dialogs are active
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        setIsKeyboardOrInputActive(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+          setIsKeyboardOrInputActive(false);
+        }
+      }, 150);
+    };
+
+    const handleViewportResize = () => {
+      if (window.visualViewport && window.visualViewport.height < window.innerHeight * 0.78) {
+        setIsKeyboardOrInputActive(true);
+      } else {
+        setTimeout(() => {
+          if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+            setIsKeyboardOrInputActive(false);
+          }
+        }, 150);
+      }
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
+
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      }
+    };
+  }, []);
 
   const togglePromo = (active: boolean) => {
     setIsActive(active);
@@ -41,10 +86,14 @@ export const LoveShopPromoCatMascot: React.FC<LoveShopPromoCatMascotProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  if (isKeyboardOrInputActive) {
+    return null;
+  }
+
   return (
     <>
       {/* CORNER FLOATING PROMO MASCOT WIDGET */}
-      <div className="fixed bottom-5 right-3.5 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end pointer-events-auto select-none">
+      <div className="fixed bottom-5 right-3.5 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end pointer-events-auto select-none transition-all">
         
         {isActive ? (
           /* ACTIVE STATE: Waving Paw Cat Mascot with Animated Motion & Badges */

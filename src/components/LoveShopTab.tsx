@@ -27,6 +27,7 @@ import { RegisterLoveShopStoreModal } from './RegisterLoveShopStoreModal';
 import { LoveShopProductDetailModal } from './LoveShopProductDetailModal';
 import { LoveShopStoreModal } from './LoveShopStoreModal';
 import { LoveShopPromoCatMascot } from './LoveShopPromoCatMascot';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface LoveShopTabProps {
   onBackToHome?: () => void;
@@ -63,7 +64,19 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
     return INITIAL_LOVE_SHOP_STORES;
   });
 
-  const [products] = useState<LoveShopProduct[]>(INITIAL_LOVE_SHOP_PRODUCTS);
+  // Products state (includes initial items + custom store catalog products)
+  const [products, setProducts] = useState<LoveShopProduct[]>(() => {
+    const saved = localStorage.getItem('onde_dormir_loveshop_custom_products');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return [...parsed, ...INITIAL_LOVE_SHOP_PRODUCTS];
+      } catch (e) {
+        // fallback
+      }
+    }
+    return INITIAL_LOVE_SHOP_PRODUCTS;
+  });
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,13 +89,24 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   const [selectedStore, setSelectedStore] = useState<LoveShopStore | null>(null);
   const [viewAllStores, setViewAllStores] = useState(false);
 
-  // Handle Add Store
-  const handleAddStore = (newStore: LoveShopStore) => {
+  // Handle Add Store with its 15 to 25 catalog products
+  const handleAddStore = (newStore: LoveShopStore, newProducts?: LoveShopProduct[]) => {
     setStores((prev) => {
       const updated = [newStore, ...prev];
       localStorage.setItem('onde_dormir_loveshop_stores', JSON.stringify(updated.filter((s) => s.id.startsWith('store-'))));
       return updated;
     });
+
+    if (newProducts && newProducts.length > 0) {
+      setProducts((prev) => {
+        const updated = [...newProducts, ...prev];
+        localStorage.setItem(
+          'onde_dormir_loveshop_custom_products',
+          JSON.stringify(updated.filter((p) => p.storeId.startsWith('store-')))
+        );
+        return updated;
+      });
+    }
   };
 
   // Filtered Stores
@@ -297,6 +321,22 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        const allowed = contactUnlockService.triggerContactAttempt(
+                          {
+                            id: prod.storeId || prod.id,
+                            name: `${prod.name} (${prod.storeName})`,
+                            photo: prod.photo,
+                            whatsapp: prod.whatsapp,
+                            phone: prod.phone,
+                            module: 'loveshop',
+                            moduleLabel: 'Love Shop',
+                            unlockFee: 1000,
+                          },
+                          prod.isContactUnlocked
+                        );
+                        if (!allowed) {
+                          return;
+                        }
                         const msg = encodeURIComponent(
                           `Olá! Vi o produto "${prod.name}" (${prod.price.toLocaleString('pt-MZ')} MT) na Love Shop do Onde Dormir Moçambique e gostaria de encomendar.`
                         );
@@ -316,17 +356,17 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
       </div>
 
       {/* 5. Vendedores & Lojistas Registration Banner */}
-      <div className="bg-gradient-to-r from-neutral-900 to-neutral-850 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5 text-rose-400 text-[10px] font-bold uppercase tracking-wider">
             <Store className="w-3.5 h-3.5" />
-            <span>Área do Comerciante Love Shop</span>
+            <span>Área do Comerciante Love Shop • Mínimo 15 a 25 Fotos</span>
           </div>
           <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
-            Tem uma loja de presentes, joias ou moda?
+            Tem uma loja de presentes, joias ou perfumes?
           </h3>
           <p className="text-[11px] text-neutral-300 mt-0.5">
-            Registo comercial com taxa fixa de <strong>1.000 MT/mês</strong> e fatura emitida no sistema.
+            Taxa única de <strong>1.000 MT/mês</strong> com capacidade garantida de <strong>15 até 25 fotos/artigos</strong> no seu catálogo e fatura fiscal oficial.
           </p>
         </div>
 
@@ -335,7 +375,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
           className="h-10 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Registar Minha Loja</span>
+          <span>Registar Loja (15-25 Fotos)</span>
         </button>
       </div>
 

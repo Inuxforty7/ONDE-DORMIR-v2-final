@@ -19,6 +19,10 @@ import { LocationModal } from './components/LocationModal';
 import { PrivacyModal } from './components/PrivacyModal';
 import { TermsModal } from './components/TermsModal';
 import { RegisterAccommodationModal } from './components/RegisterAccommodationModal';
+import { ContactLockedNoticeModal } from './components/ContactLockedNoticeModal';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { contactUnlockService } from './services/contactUnlockService';
+import { LockedContactTarget } from './types/contactUnlock';
 
 export default function App() {
   // State for accommodations list
@@ -62,6 +66,32 @@ export default function App() {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [lockedTargetNotice, setLockedTargetNotice] = useState<LockedContactTarget | null>(null);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(() => contactUnlockService.getUnreadCount());
+
+  // Listen for global contact-locked event and notification count changes
+  React.useEffect(() => {
+    const handleLockedEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<LockedContactTarget>;
+      if (customEvent.detail) {
+        setLockedTargetNotice(customEvent.detail);
+        showToast('⚠️ Contacto não desbloqueado pelo proprietário', 'warn');
+      }
+    };
+
+    const handleServiceChange = () => {
+      setUnreadCount(contactUnlockService.getUnreadCount());
+    };
+
+    window.addEventListener('onde-dormir-contact-locked', handleLockedEvent);
+    const unsub = contactUnlockService.subscribe(handleServiceChange);
+
+    return () => {
+      window.removeEventListener('onde-dormir-contact-locked', handleLockedEvent);
+      unsub();
+    };
+  }, [showToast]);
 
   // User location state (persisted in localStorage, defaults to Inhambane for instant localized experience)
   const [userLocation, setUserLocation] = useState<UserLocationState>(() => {
@@ -285,6 +315,8 @@ export default function App() {
           onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
           activeTab={activeTab}
           onNavigateHome={() => setActiveTab('home')}
+          onOpenNotifications={() => setIsNotificationsOpen(true)}
+          unreadCount={unreadCount}
         />
       )}
 
@@ -305,6 +337,8 @@ export default function App() {
             onNavigateToTab={handleNavigateToTab}
             onNavigateToMap={() => handleNavigateToTab('map')}
             onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
+            unreadCount={unreadCount}
           />
         )}
 
@@ -446,6 +480,19 @@ export default function App() {
         onAddAccommodation={handleAddAccommodation}
         userCoordsLat={userLocation.coords?.lat}
         userCoordsLng={userLocation.coords?.lng}
+      />
+
+      {/* Contact Locked Notice Modal (Triggered on clicking locked contact) */}
+      <ContactLockedNoticeModal
+        target={lockedTargetNotice}
+        isOpen={!!lockedTargetNotice}
+        onClose={() => setLockedTargetNotice(null)}
+      />
+
+      {/* System Opportunity Notification Center Modal */}
+      <NotificationCenterModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
       />
 
       {/* Floating Toast Notification */}

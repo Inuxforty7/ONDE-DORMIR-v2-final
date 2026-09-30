@@ -28,6 +28,7 @@ import { BiometricVerificationModal, VerificationDossier } from './BiometricVeri
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { TermsModal } from './TermsModal';
 import { getPlatformTenureText } from '../utils/tenure';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface TourGuidesTabProps {
   onBackToHome?: () => void;
@@ -445,7 +446,25 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   href={`https://wa.me/${guide.whatsapp}?text=${encodeURIComponent(
                     `Olá ${guide.name}! Encontrei o seu perfil no Onde Dormir Moçambique e gostaria de agendar uma excursão em ${guide.city}.`
                   )}`}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const allowed = contactUnlockService.triggerContactAttempt(
+                      {
+                        id: guide.id,
+                        name: guide.name,
+                        photo: guide.photo,
+                        phone: guide.phone,
+                        whatsapp: guide.whatsapp,
+                        module: 'guide',
+                        moduleLabel: 'Guia Turístico',
+                        unlockFee: 1000,
+                      },
+                      guide.isContactUnlocked
+                    );
+                    if (!allowed) {
+                      e.preventDefault();
+                    }
+                  }}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation cursor-pointer"
@@ -455,7 +474,25 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </a>
                 <a
                   href={`tel:${guide.phone}`}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const allowed = contactUnlockService.triggerContactAttempt(
+                      {
+                        id: guide.id,
+                        name: guide.name,
+                        photo: guide.photo,
+                        phone: guide.phone,
+                        whatsapp: guide.whatsapp,
+                        module: 'guide',
+                        moduleLabel: 'Guia Turístico',
+                        unlockFee: 1000,
+                      },
+                      guide.isContactUnlocked
+                    );
+                    if (!allowed) {
+                      e.preventDefault();
+                    }
+                  }}
                   className="h-9 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors touch-manipulation cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5" />
@@ -557,7 +594,25 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             <div className="p-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center gap-2">
               <a
                 href={`tel:${selectedGuide.phone}`}
-                className="h-11 px-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                onClick={(e) => {
+                  const allowed = contactUnlockService.triggerContactAttempt(
+                    {
+                      id: selectedGuide.id,
+                      name: selectedGuide.name,
+                      photo: selectedGuide.photo,
+                      phone: selectedGuide.phone,
+                      whatsapp: selectedGuide.whatsapp,
+                      module: 'guide',
+                      moduleLabel: 'Guia Turístico',
+                      unlockFee: 1000,
+                    },
+                    selectedGuide.isContactUnlocked
+                  );
+                  if (!allowed) {
+                    e.preventDefault();
+                  }
+                }}
+                className="h-11 px-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Ligar</span>
@@ -567,9 +622,27 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 href={`https://wa.me/${selectedGuide.whatsapp}?text=${encodeURIComponent(
                   `Olá ${selectedGuide.name}! Encontrei o seu perfil no Onde Dormir Moçambique e gostaria de agendar uma excursão em ${selectedGuide.city}.`
                 )}`}
+                onClick={(e) => {
+                  const allowed = contactUnlockService.triggerContactAttempt(
+                    {
+                      id: selectedGuide.id,
+                      name: selectedGuide.name,
+                      photo: selectedGuide.photo,
+                      phone: selectedGuide.phone,
+                      whatsapp: selectedGuide.whatsapp,
+                      module: 'guide',
+                      moduleLabel: 'Guia Turístico',
+                      unlockFee: 1000,
+                    },
+                    selectedGuide.isContactUnlocked
+                  );
+                  if (!allowed) {
+                    e.preventDefault();
+                  }
+                }}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Contactar no WhatsApp</span>

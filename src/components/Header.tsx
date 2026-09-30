@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Navigation, Shield, ChevronDown, ArrowLeft, Home } from 'lucide-react';
+import { MapPin, Navigation, Shield, ChevronDown, ArrowLeft, Home, Bell } from 'lucide-react';
 import { UserLocationState } from '../types';
 import { Logo } from './Logo';
 
@@ -10,6 +10,8 @@ interface HeaderProps {
   onOpenPrivacyModal: () => void;
   activeTab: string;
   onNavigateHome?: () => void;
+  onOpenNotifications?: () => void;
+  unreadCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPrivacyModal,
   activeTab,
   onNavigateHome,
+  onOpenNotifications,
+  unreadCount = 0,
 }) => {
   return (
     <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-2.5 sm:px-4 py-2 sm:py-2.5 transition-all">
@@ -86,6 +90,23 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             />
           </button>
+
+          {/* Notification Bell Button (Matches image.png) */}
+          {onOpenNotifications && (
+            <button
+              onClick={onOpenNotifications}
+              className="relative w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-xl bg-neutral-100 hover:bg-amber-50 text-neutral-700 hover:text-amber-800 border border-neutral-200/90 hover:border-amber-300 transition-all flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+              title="Notificações do Sistema & Oportunidades"
+              aria-label="Notificações"
+            >
+              <Bell className="w-4 h-4 text-neutral-700" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs animate-pulse">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </header>

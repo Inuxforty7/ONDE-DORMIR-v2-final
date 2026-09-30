@@ -15,6 +15,7 @@ import { Accommodation } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
 import { ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
 import { getPlatformTenureText } from '../utils/tenure';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface AccommodationCardProps {
   accommodation: Accommodation;
@@ -184,7 +185,25 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const allowed = contactUnlockService.triggerContactAttempt(
+                {
+                  id: accommodation.id,
+                  name: accommodation.name,
+                  photo: accommodation.photos?.[0],
+                  phone: accommodation.phone,
+                  whatsapp: accommodation.whatsapp,
+                  module: 'accommodation',
+                  moduleLabel: 'Onde Dormir',
+                  unlockFee: 1000,
+                },
+                accommodation.isContactUnlocked
+              );
+              if (!allowed) {
+                e.preventDefault();
+              }
+            }}
             className="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation"
             title="Contactar a recepção no WhatsApp"
           >
@@ -195,7 +214,25 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           {/* Phone */}
           <a
             href={`tel:${accommodation.phone}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const allowed = contactUnlockService.triggerContactAttempt(
+                {
+                  id: accommodation.id,
+                  name: accommodation.name,
+                  photo: accommodation.photos?.[0],
+                  phone: accommodation.phone,
+                  whatsapp: accommodation.whatsapp,
+                  module: 'accommodation',
+                  moduleLabel: 'Onde Dormir',
+                  unlockFee: 1000,
+                },
+                accommodation.isContactUnlocked
+              );
+              if (!allowed) {
+                e.preventDefault();
+              }
+            }}
             className="h-10 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0 touch-manipulation"
             title="Ligar para a recepção"
             aria-label="Ligar para a recepção"

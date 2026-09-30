@@ -39,6 +39,7 @@ import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
 import { HeartLinkBubblingHearts } from './HeartLinkBubblingHearts';
 import { getPlatformTenureText } from '../utils/tenure';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface HeartLinkTabProps {
   onBackToHome?: () => void;
@@ -264,6 +265,24 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   // Open WhatsApp with KYC Check
   const handleOpenWhatsApp = (profile: HeartLinkProfile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+
+    const allowed = contactUnlockService.triggerContactAttempt(
+      {
+        id: profile.id,
+        name: profile.name,
+        photo: profile.photo,
+        phone: profile.phone,
+        whatsapp: profile.whatsapp,
+        module: 'heartlink',
+        moduleLabel: 'HeartLink',
+        unlockFee: 500,
+      },
+      profile.isContactUnlocked
+    );
+    if (!allowed) {
+      return;
+    }
+
     if (!verifiedDossier) {
       setPendingAction({ type: 'whatsapp', profile });
       setIsVerificationOpen(true);

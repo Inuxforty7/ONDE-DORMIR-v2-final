@@ -61,6 +61,7 @@ export interface Accommodation {
   notes?: string;
   registeredAt?: string;
   platformTenure?: string;
+  isContactUnlocked?: boolean;
 }
 
 export interface UserLocationState {
@@ -106,6 +107,7 @@ export interface LoveShopStore {
   ownerNuitOrBi?: string;
   monthlyFee: number; // 1000 MT
   isSubscriptionActive: boolean;
+  isContactUnlocked?: boolean;
   hasPromoBadge?: boolean;
   isCatPromoHero?: boolean;
   registeredAt?: string;
@@ -135,6 +137,7 @@ export interface LoveShopProduct {
   whatsapp: string;
   registeredAt?: string;
   platformTenure?: string;
+  isContactUnlocked?: boolean;
 }
 
 export interface TourGuide {
@@ -157,6 +160,7 @@ export interface TourGuide {
   featured?: boolean;
   registeredAt?: string;
   platformTenure?: string;
+  isContactUnlocked?: boolean;
 }
 
 export interface CarRental {
@@ -195,6 +199,7 @@ export interface CarRental {
   monthlyFee?: number; // Taxa mensal (ex: 1000 MT)
   registeredAt?: string;
   platformTenure?: string;
+  isContactUnlocked?: boolean;
 }
 
 export interface CarOwnerFleetAccount {
@@ -245,6 +250,7 @@ export interface HeartLinkProfile {
   isOnline?: boolean;
   registeredAt?: string;
   platformTenure?: string;
+  isContactUnlocked?: boolean;
 }
 
 export interface HeartLinkUserAccount {

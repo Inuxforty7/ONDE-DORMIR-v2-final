@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   ChevronRight,
-  MapPin
+  MapPin,
+  Bell
 } from 'lucide-react';
 import { Accommodation, AccommodationType, ActiveTab, UserLocationState } from '../types';
 import { Logo } from './Logo';
@@ -22,6 +23,8 @@ interface HomeTabProps {
   onNavigateToTab: (tab: ActiveTab) => void;
   onNavigateToMap: () => void;
   onOpenRegisterModal: () => void;
+  onOpenNotifications?: () => void;
+  unreadCount?: number;
 }
 
 export const HomeTab: React.FC<HomeTabProps> = ({
@@ -30,6 +33,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onOpenPrivacyModal,
   onOpenTermsModal,
   onNavigateToTab,
+  onOpenNotifications,
+  unreadCount = 0,
 }) => {
   return (
     <div className="relative min-h-[calc(100vh-65px)] w-full flex flex-col justify-between overflow-hidden">
@@ -78,19 +83,37 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             Encontre onde dormir, quem o pode guiar e como se deslocar.
           </p>
 
-          {/* Optional Quick Province Pill */}
-          <button
-            onClick={onOpenLocationModal}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/35 text-white text-[11px] font-bold transition-all active:scale-95 shadow-md cursor-pointer"
-            title="Alterar Província"
-          >
-            <MapPin className="w-3 h-3 text-emerald-300 shrink-0" />
-            <span className="truncate max-w-[200px]">
-              {userLocation.isAllMozambique
-                ? 'Moçambique (Todas as Províncias)'
-                : `${userLocation.province || userLocation.name}`}
-            </span>
-          </button>
+          {/* Quick Province Pill & Notification Bell Row */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenLocationModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/35 text-white text-[11px] font-bold transition-all active:scale-95 shadow-md cursor-pointer"
+              title="Alterar Província"
+            >
+              <MapPin className="w-3 h-3 text-emerald-300 shrink-0" />
+              <span className="truncate max-w-[180px]">
+                {userLocation.isAllMozambique
+                  ? 'Moçambique (Todas as Províncias)'
+                  : `${userLocation.province || userLocation.name}`}
+              </span>
+            </button>
+
+            {onOpenNotifications && (
+              <button
+                onClick={onOpenNotifications}
+                className="relative px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/35 text-white text-[11px] font-bold transition-all active:scale-95 shadow-md cursor-pointer flex items-center gap-1"
+                title="Notificações & Interessados"
+                aria-label="Notificações"
+              >
+                <Bell className="w-3.5 h-3.5 text-amber-300" />
+                {unreadCount > 0 && (
+                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded-full text-[9px] font-black animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 5 MAIN COLOR-CODED BUTTONS - EXACTLY LIKE THE PRINT */}

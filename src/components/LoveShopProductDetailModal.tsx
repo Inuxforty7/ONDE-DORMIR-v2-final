@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { LoveShopProduct } from '../types';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface LoveShopProductDetailModalProps {
   product: LoveShopProduct | null;
@@ -172,6 +173,24 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              const allowed = contactUnlockService.triggerContactAttempt(
+                {
+                  id: product.storeId || product.id,
+                  name: `${product.name} (${product.storeName})`,
+                  photo: product.photo,
+                  whatsapp: product.whatsapp,
+                  phone: product.phone,
+                  module: 'loveshop',
+                  moduleLabel: 'Love Shop',
+                  unlockFee: 1000,
+                },
+                product.isContactUnlocked
+              );
+              if (!allowed) {
+                e.preventDefault();
+              }
+            }}
             className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
           >
             <MessageCircle className="w-5 h-5 fill-white shrink-0" />
@@ -180,6 +199,24 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
           <a
             href={`tel:${product.phone}`}
+            onClick={(e) => {
+              const allowed = contactUnlockService.triggerContactAttempt(
+                {
+                  id: product.storeId || product.id,
+                  name: `${product.name} (${product.storeName})`,
+                  photo: product.photo,
+                  whatsapp: product.whatsapp,
+                  phone: product.phone,
+                  module: 'loveshop',
+                  moduleLabel: 'Love Shop',
+                  unlockFee: 1000,
+                },
+                product.isContactUnlocked
+              );
+              if (!allowed) {
+                e.preventDefault();
+              }
+            }}
             className="w-12 h-12 rounded-2xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Ligar para a loja"
           >

@@ -32,6 +32,7 @@ import { getPlatformTenureText } from '../utils/tenure';
 import { AMENITIES_CATALOG, ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
 import { analyticsService } from '../services/analyticsService';
 import { propertyService } from '../services/propertyService';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface AccommodationDetailModalProps {
   accommodation: Accommodation | null;
@@ -485,7 +486,26 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => analyticsService.trackWhatsAppClick(accommodation.id, accommodation.location.province)}
+            onClick={(e) => {
+              const allowed = contactUnlockService.triggerContactAttempt(
+                {
+                  id: accommodation.id,
+                  name: accommodation.name,
+                  photo: accommodation.photos?.[0],
+                  phone: accommodation.phone,
+                  whatsapp: accommodation.whatsapp,
+                  module: 'accommodation',
+                  moduleLabel: 'Onde Dormir',
+                  unlockFee: 1000,
+                },
+                accommodation.isContactUnlocked
+              );
+              if (!allowed) {
+                e.preventDefault();
+                return;
+              }
+              analyticsService.trackWhatsAppClick(accommodation.id, accommodation.location.province);
+            }}
             className="flex-1 h-11 sm:h-12 px-3.5 sm:px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer touch-manipulation"
           >
             <MessageCircle className="w-4 sm:w-5 h-4 sm:h-5 fill-white shrink-0" />
@@ -494,7 +514,26 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 
           <a
             href={`tel:${accommodation.phone}`}
-            onClick={() => analyticsService.trackPhoneClick(accommodation.id, accommodation.location.province)}
+            onClick={(e) => {
+              const allowed = contactUnlockService.triggerContactAttempt(
+                {
+                  id: accommodation.id,
+                  name: accommodation.name,
+                  photo: accommodation.photos?.[0],
+                  phone: accommodation.phone,
+                  whatsapp: accommodation.whatsapp,
+                  module: 'accommodation',
+                  moduleLabel: 'Onde Dormir',
+                  unlockFee: 1000,
+                },
+                accommodation.isContactUnlocked
+              );
+              if (!allowed) {
+                e.preventDefault();
+                return;
+              }
+              analyticsService.trackPhoneClick(accommodation.id, accommodation.location.province);
+            }}
             className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl sm:rounded-2xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-colors cursor-pointer shrink-0 touch-manipulation"
             title="Ligar para a receção"
             aria-label="Ligar para a receção"

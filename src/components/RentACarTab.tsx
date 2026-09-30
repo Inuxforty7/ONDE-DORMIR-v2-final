@@ -38,6 +38,7 @@ import { OwnerFleetManagerModal } from './OwnerFleetManagerModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { getPlatformTenureText } from '../utils/tenure';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
+import { contactUnlockService } from '../services/contactUnlockService';
 
 interface RentACarTabProps {
   onBackToHome?: () => void;
@@ -354,6 +355,24 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
   const handleBookVehicle = (car: CarRental, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+
+    const allowed = contactUnlockService.triggerContactAttempt(
+      {
+        id: car.id,
+        name: car.model,
+        photo: car.photo,
+        phone: car.phone,
+        whatsapp: car.whatsapp,
+        module: 'car',
+        moduleLabel: 'Rent-a-Car',
+        unlockFee: 1000,
+      },
+      car.isContactUnlocked
+    );
+    if (!allowed) {
+      return;
+    }
+
     if (!verifiedDossier) {
       setPendingVehicleAction(car);
       setVerificationRole('client');
@@ -876,7 +895,25 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
               <div className="pt-2 flex gap-2">
                 <a
                   href={`tel:${selectedVehicle.phone}`}
-                  className="flex-1 h-11 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  onClick={(e) => {
+                    const allowed = contactUnlockService.triggerContactAttempt(
+                      {
+                        id: selectedVehicle.id,
+                        name: selectedVehicle.model,
+                        photo: selectedVehicle.photo,
+                        phone: selectedVehicle.phone,
+                        whatsapp: selectedVehicle.whatsapp,
+                        module: 'car',
+                        moduleLabel: 'Rent-a-Car',
+                        unlockFee: 1000,
+                      },
+                      selectedVehicle.isContactUnlocked
+                    );
+                    if (!allowed) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="flex-1 h-11 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   <span>Ligar Direto</span>
