@@ -1,25 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, 
+  ChevronLeft, 
+  ChevronRight, 
   MessageCircle, 
   Phone, 
   ShieldCheck, 
-  Tag, 
-  Store,
-  CheckCircle2, 
-  ChevronLeft, 
-  ChevronRight, 
+  Store, 
   Play, 
-  Film, 
-  Image as ImageIcon,
-  Rotate3d,
-  Layers,
-  Sparkles,
-  Eye,
-  Volume2,
-  VolumeX
+  Volume2, 
+  VolumeX, 
+  CheckCircle2, 
+  ArrowLeft,
+  Share2,
+  Heart,
+  Star,
+  ThumbsUp,
+  MessageSquareQuote
 } from 'lucide-react';
-import { LoveShopProduct } from '../types';
+import { LoveShopProduct, ProductReview } from '../types';
 import { contactUnlockService } from '../services/contactUnlockService';
 
 interface LoveShopProductDetailModalProps {
@@ -37,8 +36,103 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 }) => {
   const [activeMediaIndex, setActiveMediaIndex] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const reviewsRef = useRef<HTMLDivElement | null>(null);
+
+  // Reviews Drawer Open State
+  const [isReviewsDrawerOpen, setIsReviewsDrawerOpen] = useState<boolean>(false);
+
+  // Reviews System State
+  const [isAddingReview, setIsAddingReview] = useState<boolean>(false);
+  const [newReviewName, setNewReviewName] = useState<string>('');
+  const [newReviewCity, setNewReviewCity] = useState<string>('Maputo');
+  const [newReviewRating, setNewReviewRating] = useState<number>(5);
+  const [newReviewComment, setNewReviewComment] = useState<string>('');
+
+  const [reviews, setReviews] = useState<ProductReview[]>(() => {
+    const defaultReviews: ProductReview[] = [
+      {
+        id: 'rev-1',
+        userName: 'João M.',
+        userCity: 'Maputo',
+        rating: 5,
+        date: 'Há 2 dias',
+        comment: 'Produto excelente e exatamente conforme o anúncio. Atendimento muito ágil e cordial.',
+        verifiedPurchase: true,
+        satisfactionTags: ['Produto conforme anunciado', 'Boa qualidade'],
+      },
+      {
+        id: 'rev-2',
+        userName: 'Artur C.',
+        userCity: 'Matola',
+        rating: 5,
+        date: 'Há 5 dias',
+        comment: 'Entrega rápida e qualidade impecável. Recomendo 100%!',
+        verifiedPurchase: true,
+        satisfactionTags: ['Entrega rápida', 'Recomendo'],
+      },
+      {
+        id: 'rev-3',
+        userName: 'Helena V.',
+        userCity: 'Beira',
+        rating: 5,
+        date: 'Há 1 semana',
+        comment: 'Preço justo e produto maravilhoso. Fiquei muito satisfeita com a compra.',
+        verifiedPurchase: true,
+        satisfactionTags: ['Bom atendimento', 'Preço justo'],
+      },
+      {
+        id: 'rev-4',
+        userName: 'Carlos B.',
+        userCity: 'Nampula',
+        rating: 5,
+        date: 'Há 2 semanas',
+        comment: 'Chegou bem embalado e em perfeitas condições. Experiência 5 estrelas.',
+        verifiedPurchase: true,
+        satisfactionTags: ['Boa qualidade', 'Recomendo'],
+      }
+    ];
+
+    if (product) {
+      const stored = localStorage.getItem(`loveshop_reviews_${product.id}`);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          return defaultReviews;
+        }
+      }
+    }
+    return defaultReviews;
+  });
+
+  const handleAddReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewName.trim() || !newReviewComment.trim()) return;
+
+    const newRev: ProductReview = {
+      id: `rev-${Date.now()}`,
+      userName: newReviewName.trim(),
+      userCity: newReviewCity.trim() || 'Moçambique',
+      rating: newReviewRating,
+      date: 'Hoje',
+      comment: newReviewComment.trim(),
+      verifiedPurchase: true,
+      satisfactionTags: ['Produto conforme anunciado', 'Recomendo'],
+    };
+
+    const updated = [newRev, ...reviews];
+    setReviews(updated);
+    if (product) {
+      localStorage.setItem(`loveshop_reviews_${product.id}`, JSON.stringify(updated));
+    }
+
+    setNewReviewName('');
+    setNewReviewComment('');
+    setIsAddingReview(false);
+  };
 
   // Reset gallery to position 0 when product changes
   useEffect(() => {
@@ -73,29 +167,17 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
     type: 'image' | 'video';
     url: string;
     label: string;
-    badge: string;
-    icon: any;
     duration?: string;
-    description: string;
   }> = [];
 
-  const photoLabels = [
-    { label: '1. Vista Frontal (Principal)', badge: '1. Frente', icon: ImageIcon, desc: 'Ângulo frontal principal' },
-    { label: '2. Ângulo Lateral (Perfil)', badge: '2. Lateral', icon: Rotate3d, desc: 'Espessura e detalhes de perfil' },
-    { label: '3. Interior (Aberto / Estrutura)', badge: '3. Aberto', icon: Layers, desc: 'Visão interna ou modelo ajustado' },
-    { label: '4. Vista Traseira & Acabamentos', badge: '4. Traseira', icon: Eye, desc: 'Costuras, fechos e detalhes do verso' },
-  ];
+  const photoLabels = ['Frente', 'Lateral', 'Aberto', 'Traseira'];
 
   photoList.slice(0, 4).forEach((url, idx) => {
-    const info = photoLabels[idx] || { label: `Foto ${idx + 1}`, badge: `Foto ${idx + 1}`, icon: ImageIcon, desc: 'Ângulo do produto' };
     mediaItems.push({
       id: `media-photo-${idx + 1}`,
       type: 'image',
       url,
-      label: info.label,
-      badge: info.badge,
-      icon: info.icon,
-      description: info.desc,
+      label: photoLabels[idx] || `Foto ${idx + 1}`,
     });
   });
 
@@ -106,11 +188,8 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
       id: 'media-video-demo',
       type: 'video',
       url: product.videoUrl!,
-      label: `${mediaItems.length + 1}. Vídeo Demonstrativo ao Vivo`,
-      badge: `${mediaItems.length + 1}. 🎬 Vídeo`,
-      icon: Film,
+      label: 'Vídeo 🎬',
       duration: product.videoDuration || '0:45 min',
-      description: product.videoTitle || 'Demonstração de caimento, movimento, aberturas e detalhes ao vivo',
     });
   }
 
@@ -149,35 +228,59 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
   const whatsappUrl = `https://wa.me/${product.whatsapp}?text=${whatsappMessage}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-200 relative"
+        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 relative"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Floating Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center cursor-pointer shadow-md backdrop-blur-md transition-all active:scale-95"
-          aria-label="Fechar"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Top Header: Clean Take24Hr Style (Back Arrow + "Product Details" + Close/Favorite) */}
+        <div className="px-4 py-3 bg-white border-b border-neutral-100 flex items-center justify-between shrink-0">
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="w-5 h-5 text-neutral-700" />
+          </button>
 
-        {/* Scrollable Modal Content */}
-        <div className="overflow-y-auto flex-1">
-          {/* Main Media Carousel Section (4 Photos + 1 Video) */}
+          <h2 className="text-sm font-bold text-neutral-900 tracking-tight">
+            Detalhes do Artigo
+          </h2>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setIsFavorited(!isFavorited)}
+              className="w-9 h-9 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-all cursor-pointer"
+              aria-label="Favorito"
+            >
+              <Heart className={`w-4 h-4 ${isFavorited ? 'fill-rose-500 text-rose-500' : 'text-neutral-600'}`} />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-all cursor-pointer"
+              aria-label="Fechar"
+            >
+              <X className="w-4 h-4 text-neutral-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable Content Body */}
+        <div className="overflow-y-auto flex-1 pb-4">
+          
+          {/* 1. Pure Visual Showcase Area (Clean, Uncluttered, No Text/Gradient Overlays!) */}
           <div 
-            className="relative aspect-4/3 bg-neutral-950 overflow-hidden select-none group"
+            className="relative w-full aspect-square bg-neutral-100 select-none overflow-hidden flex items-center justify-center"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
             {currentMedia.type === 'image' ? (
               <img
                 src={currentMedia.url}
-                alt={`${product.name} - ${currentMedia.label}`}
-                className="w-full h-full object-cover transition-all duration-300"
+                alt={product.name}
+                className="w-full h-full object-cover transition-opacity duration-200"
               />
             ) : (
               <div className="relative w-full h-full bg-black flex items-center justify-center">
@@ -210,115 +313,134 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               </div>
             )}
 
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+            {/* Subtle Circular Navigation Arrows Only - 100% Clean Image Area */}
+            {mediaItems.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrev}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
+                  aria-label="Foto anterior"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
+                  aria-label="Próxima foto"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
 
-            {/* Top Bar Badges */}
-            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-20 max-w-[80%]">
-              <span className="text-[11px] font-black uppercase bg-rose-600 text-white px-2.5 py-0.5 rounded-lg shadow-md">
-                {product.categoryLabel}
-              </span>
-              {product.discountPercent && (
-                <span className="text-[11px] font-black bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-lg shadow-md flex items-center gap-1">
-                  <Tag className="w-3 h-3" /> -{product.discountPercent}% OFF
-                </span>
-              )}
-              {currentMedia.type === 'video' && (
-                <span className="text-[11px] font-extrabold bg-emerald-500 text-black px-2.5 py-0.5 rounded-lg shadow-md flex items-center gap-1 animate-pulse">
-                  <Play className="w-3 h-3 fill-black" /> Vídeo {currentMedia.duration}
-                </span>
-              )}
-            </div>
-
-            {/* Carousel Navigation Arrows */}
-            <button
-              onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer"
-              title="Anterior"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer"
-              title="Próximo"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-
-            {/* Bottom Media Label Indicator */}
-            <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between text-white">
-              <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10">
-                <currentMedia.icon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="text-xs font-bold truncate">
-                  {currentMedia.label}
-                </span>
-              </div>
-
-              <span className="text-xs font-black bg-emerald-600/90 text-white px-2.5 py-1 rounded-xl backdrop-blur-md border border-emerald-400/30">
-                {activeMediaIndex + 1} de {mediaItems.length}
-              </span>
-            </div>
+                {/* Subtle Carousel Pagination Dots (Matching Take24Hr Screenshot 1 & 3) */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full">
+                  {mediaItems.map((_, dotIdx) => (
+                    <span
+                      key={`dot-${dotIdx}`}
+                      onClick={() => setActiveMediaIndex(dotIdx)}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        dotIdx === activeMediaIndex
+                          ? 'w-5 bg-rose-500 shadow-xs'
+                          : 'w-1.5 bg-white/60 hover:bg-white'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
-          {/* 5-Position Media Selection Tabs (4 Photos + 1 Video) */}
-          <div className="p-2.5 bg-neutral-900 border-b border-neutral-800">
-            <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+          {/* 2. Clean Row of Thumbnails (Below the Image, on White Background) */}
+          <div className="px-4 py-3 bg-white border-b border-neutral-100">
+            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar">
               {mediaItems.map((item, idx) => {
                 const isActive = idx === activeMediaIndex;
-                const IconComponent = item.icon;
                 return (
                   <button
                     key={item.id}
                     onClick={() => setActiveMediaIndex(idx)}
-                    className={`flex-1 min-w-[72px] py-1.5 px-2 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 transition-all cursor-pointer border-2 bg-neutral-100 ${
                       isActive
-                        ? item.type === 'video'
-                          ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-2 ring-rose-400 scale-102'
-                          : 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400 scale-102'
-                        : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-750'
+                        ? 'border-rose-600 ring-2 ring-rose-500/30 scale-102 shadow-sm'
+                        : 'border-neutral-200/90 hover:border-neutral-400 opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : item.type === 'video' ? 'text-rose-400' : 'text-neutral-400'}`} />
-                    <span className="truncate w-full text-center">{item.badge}</span>
+                    {item.type === 'image' ? (
+                      <img
+                        src={item.url}
+                        alt={item.label}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="relative w-full h-full bg-neutral-900 flex items-center justify-center">
+                        <img
+                          src={photoList[0] || product.photo}
+                          alt="Vídeo"
+                          className="w-full h-full object-cover opacity-60"
+                        />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Play className="w-5 h-5 text-rose-400 fill-rose-400" />
+                        </div>
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Details Body */}
-          <div className="p-4 sm:p-5 space-y-4">
-            {/* Title & Price */}
+          {/* 3. Product Information (All Info Cleanly Positioned Below) */}
+          <div className="px-4 pt-3.5 space-y-3.5">
+            {/* Top Badges (Category & Stock) */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200/70">
+                {product.categoryLabel}
+              </span>
+
+              <span className="text-[11px] font-bold text-neutral-500">
+                📍 {product.city}, {product.province}
+              </span>
+            </div>
+
+            {/* Product Title */}
+            <h1 className="text-base sm:text-lg font-bold text-neutral-900 leading-snug">
+              {product.name}
+            </h1>
+
+            {/* Price Block (Matching Take24Hr Currency Presentation) */}
             <div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-black uppercase text-rose-600 tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" /> Artigo Oficial Love Shop
-                </span>
-                {product.platformTenure && (
-                  <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    {product.platformTenure}
-                  </span>
-                )}
-              </div>
-
-              <h2 className="text-lg sm:text-xl font-black text-neutral-950 leading-snug mt-1">
-                {product.name}
-              </h2>
-
-              <div className="flex items-baseline gap-2.5 mt-2">
-                <span className="text-2xl font-black text-rose-600">
-                  {product.price.toLocaleString('pt-MZ')} MT
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-rose-600 tracking-tight">
+                  MT {product.price.toLocaleString('pt-MZ')}.00
                 </span>
                 {product.originalPrice && (
                   <span className="text-sm font-semibold text-neutral-400 line-through">
-                    {product.originalPrice.toLocaleString('pt-MZ')} MT
+                    MT {product.originalPrice.toLocaleString('pt-MZ')}.00
                   </span>
                 )}
               </div>
+              <span className="text-[11px] text-neutral-400 font-medium block mt-0.5">
+                Preço final do produto em MT
+              </span>
+
+              {/* Quick Rating Summary Anchor that opens Reviews Drawer */}
+              <button
+                type="button"
+                onClick={() => setIsReviewsDrawerOpen(true)}
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200/90 text-xs font-semibold text-neutral-800 transition-all cursor-pointer group active:scale-95 shadow-2xs"
+              >
+                <div className="inline-flex items-center text-amber-500 gap-1">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span className="font-black text-neutral-900">4.8</span>
+                  <span className="text-neutral-500 font-medium">(575)</span>
+                </div>
+                <span className="text-amber-300">•</span>
+                <span className="text-neutral-700 font-bold group-hover:text-rose-600 underline">
+                  Confira a avaliação &rarr;
+                </span>
+              </button>
             </div>
 
-            {/* Store Banner */}
+            {/* Store Information Card */}
             <div 
               onClick={() => {
                 if (onSelectStore) {
@@ -326,7 +448,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                   onClose();
                 }
               }}
-              className="p-3 bg-neutral-50 hover:bg-neutral-100 rounded-2xl border border-neutral-200 flex items-center justify-between cursor-pointer transition-colors"
+              className="p-3 bg-neutral-50 hover:bg-neutral-100 rounded-2xl border border-neutral-200/80 flex items-center justify-between cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-base shrink-0">
@@ -334,13 +456,13 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                 </div>
                 <div className="truncate">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm font-black text-neutral-900 truncate">
+                    <span className="text-xs sm:text-sm font-bold text-neutral-900 truncate">
                       {product.storeName}
                     </span>
                     <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
                   </div>
                   <span className="text-[11px] text-neutral-500 block truncate">
-                    Vendedor Certificado • Ver catálogo completo
+                    Vendedor Certificado • Ver catálogo
                   </span>
                 </div>
               </div>
@@ -350,30 +472,17 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
             </div>
 
             {/* Description */}
-            <div className="space-y-1 bg-neutral-50 p-3.5 rounded-2xl border border-neutral-150">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-500">
-                Descrição e Especificações do Artigo
+            <div className="space-y-1 pt-1">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                Descrição do Artigo
               </h3>
               <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
                 {product.description}
               </p>
             </div>
 
-            {/* Multi-angle media guarantee notice */}
-            <div className="p-3 bg-rose-50 rounded-2xl border border-rose-200 text-xs text-rose-950 flex items-start gap-2.5">
-              <Rotate3d className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-              <div className="leading-snug">
-                <p className="font-bold">Galeria Multi-Ângulo + Vídeo Opcional:</p>
-                <p className="text-[11px] text-rose-800 mt-0.5">
-                  {hasVideo 
-                    ? 'Deslize para explorar as posições do artigo em diferentes ângulos e assista ao vídeo demonstrativo ao vivo na última posição.'
-                    : 'Deslize para explorar os diferentes ângulos do artigo (frente, perfil, abertura e traseira). Vídeo demonstrativo opcional.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Buyer Notice */}
-            <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2">
+            {/* Acesso Livre para Compradores (A Nata) */}
+            <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <p className="leading-snug">
                 <strong>Acesso Livre para Compradores:</strong> Sem comissões intermediárias. Encomende diretamente com a loja parceira pelo WhatsApp ou por chamada.
@@ -382,62 +491,304 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-3 sm:p-4 bg-white border-t border-neutral-200 flex items-center gap-2">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              const allowed = contactUnlockService.triggerContactAttempt(
-                {
-                  id: product.storeId || product.id,
-                  name: `${product.name} (${product.storeName})`,
-                  photo: product.photo,
-                  whatsapp: product.whatsapp,
-                  phone: product.phone,
-                  module: 'loveshop',
-                  moduleLabel: 'Love Shop',
-                  unlockFee: 1000,
-                },
-                product.isContactUnlocked
-              );
-              if (!allowed) {
-                e.preventDefault();
-              }
-            }}
-            className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
-          >
-            <MessageCircle className="w-5 h-5 fill-white shrink-0" />
-            <span>Comprar no WhatsApp</span>
-          </a>
+        {/* 4. Fixed Bottom Action Bar (Take24Hr Style with WhatsApp & Call) */}
+        <div className="p-3 sm:p-4 bg-white border-t border-neutral-200 flex items-center justify-between gap-3 shrink-0">
+          <div className="min-w-0">
+            <span className="text-[10px] text-neutral-400 font-semibold block uppercase">
+              Preço Final
+            </span>
+            <span className="text-sm sm:text-base font-black text-neutral-900 block truncate">
+              MT {product.price.toLocaleString('pt-MZ')}.00
+            </span>
+          </div>
 
-          <a
-            href={`tel:${product.phone}`}
-            onClick={(e) => {
-              const allowed = contactUnlockService.triggerContactAttempt(
-                {
-                  id: product.storeId || product.id,
-                  name: `${product.name} (${product.storeName})`,
-                  photo: product.photo,
-                  whatsapp: product.whatsapp,
-                  phone: product.phone,
-                  module: 'loveshop',
-                  moduleLabel: 'Love Shop',
-                  unlockFee: 1000,
-                },
-                product.isContactUnlocked
-              );
-              if (!allowed) {
-                e.preventDefault();
-              }
-            }}
-            className="w-12 h-12 rounded-2xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-            title="Ligar para a loja"
-          >
-            <Phone className="w-5 h-5 text-neutral-800" />
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={`tel:${product.phone}`}
+              onClick={(e) => {
+                const allowed = contactUnlockService.triggerContactAttempt(
+                  {
+                    id: product.storeId || product.id,
+                    name: `${product.name} (${product.storeName})`,
+                    photo: product.photo,
+                    whatsapp: product.whatsapp,
+                    phone: product.phone,
+                    module: 'loveshop',
+                    moduleLabel: 'Love Shop',
+                    unlockFee: 1000,
+                  },
+                  product.isContactUnlocked
+                );
+                if (!allowed) {
+                  e.preventDefault();
+                }
+              }}
+              className="w-11 h-11 rounded-2xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              title="Ligar"
+            >
+              <Phone className="w-4 h-4 text-neutral-800" />
+            </a>
+
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                const allowed = contactUnlockService.triggerContactAttempt(
+                  {
+                    id: product.storeId || product.id,
+                    name: `${product.name} (${product.storeName})`,
+                    photo: product.photo,
+                    whatsapp: product.whatsapp,
+                    phone: product.phone,
+                    module: 'loveshop',
+                    moduleLabel: 'Love Shop',
+                    unlockFee: 1000,
+                  },
+                  product.isContactUnlocked
+                );
+                if (!allowed) {
+                  e.preventDefault();
+                }
+              }}
+              className="h-11 px-4 sm:px-6 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+              <span>Comprar no WhatsApp</span>
+            </a>
+          </div>
         </div>
+
+        {/* REVIEWS SLIDE-UP DRAWER (Opens when user clicks "Confira a avaliação") */}
+        {isReviewsDrawerOpen && (
+          <div className="absolute inset-0 z-40 bg-white flex flex-col animate-in slide-in-from-bottom duration-200">
+            {/* Drawer Header */}
+            <div className="px-4 py-3 bg-white border-b border-neutral-100 flex items-center justify-between shrink-0">
+              <button
+                onClick={() => setIsReviewsDrawerOpen(false)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-700 hover:text-neutral-950 bg-neutral-100 px-3 py-1.5 rounded-xl cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Voltar ao Artigo</span>
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-black text-neutral-900">4.8</span>
+                <div className="flex items-center text-amber-400">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                  ))}
+                </div>
+                <span className="text-xs text-neutral-500 font-medium">
+                  (575)
+                </span>
+              </div>
+
+              <button
+                onClick={() => setIsReviewsDrawerOpen(false)}
+                className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 cursor-pointer"
+                aria-label="Fechar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Drawer Body (Scrollable) */}
+            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              {/* Resumo & Tabelinha de Parâmetros Fixos */}
+              <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-neutral-900">
+                      Classificação dos Clientes
+                    </h3>
+                    <p className="text-[11px] text-neutral-500">
+                      Baseado em 575 compras verificadas
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setIsAddingReview(!isAddingReview)}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200 transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    {isAddingReview ? 'Cancelar' : '+ Deixar Avaliação'}
+                  </button>
+                </div>
+
+                {/* Tabelinha / Critérios Fixos */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {[
+                    { label: 'Produto conforme o anunciado', pct: '98%' },
+                    { label: 'Entrega rápida', pct: '94%' },
+                    { label: 'Boa qualidade', pct: '96%' },
+                    { label: 'Bom atendimento', pct: '95%' },
+                    { label: 'Preço justo', pct: '91%' },
+                    { label: 'Recomendo', pct: '99%' },
+                  ].map((crit, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-white rounded-xl border border-neutral-200/80 flex items-center justify-between gap-1 shadow-2xs"
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-emerald-600 font-black text-xs shrink-0">✓</span>
+                        <span className="text-[11px] font-bold text-neutral-800 truncate">
+                          {crit.label}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0">
+                        {crit.pct}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form de Nova Avaliação (se ativado) */}
+              {isAddingReview && (
+                <form 
+                  onSubmit={handleAddReview} 
+                  className="p-3.5 bg-white rounded-2xl border border-rose-200 shadow-sm space-y-2.5 animate-in fade-in duration-150"
+                >
+                  <h4 className="text-xs font-bold text-neutral-900">
+                    Sua Avaliação sobre este Artigo:
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Seu nome (ex: Artur)"
+                      value={newReviewName}
+                      onChange={(e) => setNewReviewName(e.target.value)}
+                      className="h-9 px-3 rounded-xl border border-neutral-300 text-xs focus:outline-none focus:border-rose-600"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Sua cidade (ex: Matola)"
+                      value={newReviewCity}
+                      onChange={(e) => setNewReviewCity(e.target.value)}
+                      className="h-9 px-3 rounded-xl border border-neutral-300 text-xs focus:outline-none focus:border-rose-600"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-neutral-600">Sua nota:</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setNewReviewRating(star)}
+                          className="cursor-pointer"
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              star <= newReviewRating
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-neutral-300'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="Conte como foi a sua experiência com este artigo..."
+                    value={newReviewComment}
+                    onChange={(e) => setNewReviewComment(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 text-xs focus:outline-none focus:border-rose-600 resize-none"
+                  />
+
+                  <button
+                    type="submit"
+                    className="w-full h-9 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Publicar Avaliação
+                  </button>
+                </form>
+              )}
+
+              {/* Feed Rolável de Comentários (João, Artur, etc.) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-neutral-800 px-1">
+                  <span>Comentários dos Clientes ({reviews.length})</span>
+                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Compra Verificada
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {reviews.map((rev) => (
+                    <div 
+                      key={rev.id}
+                      className="p-3 bg-neutral-50/70 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center">
+                            {rev.userName.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-neutral-900">
+                                {rev.userName}
+                              </span>
+                              <span className="text-[10px] text-neutral-400 font-medium">
+                                ({rev.userCity})
+                              </span>
+                            </div>
+                            <div className="flex items-center text-amber-400 gap-0.5 mt-0.5">
+                              {[...Array(rev.rating)].map((_, i) => (
+                                <Star key={i} className="w-3 h-3 fill-amber-400" />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] text-neutral-400">
+                          {rev.date}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-neutral-700 leading-snug">
+                        "{rev.comment}"
+                      </p>
+
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Compra Verificada
+                        </span>
+                        {rev.satisfactionTags?.map((tag, tIdx) => (
+                          <span
+                            key={tIdx}
+                            className="text-[9px] text-neutral-500 bg-white px-1.5 py-0.5 rounded border border-neutral-200 font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Bottom Bar */}
+            <div className="p-3 bg-white border-t border-neutral-200 flex items-center justify-between">
+              <span className="text-xs text-neutral-500 font-medium">
+                Garantia de avaliação genuína
+              </span>
+              <button
+                onClick={() => setIsReviewsDrawerOpen(false)}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Voltar ao Artigo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

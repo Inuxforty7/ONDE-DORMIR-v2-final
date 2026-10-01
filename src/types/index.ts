@@ -142,6 +142,17 @@ export interface ProductMediaItem {
   thumbnail?: string;
 }
 
+export interface ProductReview {
+  id: string;
+  userName: string;
+  userCity: string;
+  rating: number;
+  date: string;
+  comment: string;
+  verifiedPurchase: boolean;
+  satisfactionTags?: string[];
+}
+
 export interface LoveShopProduct {
   id: string;
   storeId: string;

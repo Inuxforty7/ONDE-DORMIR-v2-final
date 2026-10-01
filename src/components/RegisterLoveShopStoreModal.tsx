@@ -415,6 +415,167 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
     );
   };
 
+  // Quick Simulation Test with 15 Fashion & Kaftan Items (sem escrever)
+  const handleQuickDemoSimulation = () => {
+    setStoreName('Boutique Afro Chic & Kaftans');
+    setSlogan('Vestidos Kaftan Tie-Dye exclusivos, moda africana e lenços finos.');
+    setOwnerName('Amina Muthemba');
+    setOwnerNuitOrBi('400888222');
+    setCity('Maputo');
+    setProvince('Maputo Cidade');
+    setAddress('Av. Julius Nyerere, Polana Cimento');
+    setPhone('+258841234567');
+    setWhatsapp('258841234567');
+    setDocNumber('110293847589B');
+    setBiFrontPhoto('https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80');
+    setBiBackPhoto('https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80');
+    setFacialSelfiePhoto('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+    setIsFacialVerified(true);
+    setTargetSlotCapacity(15);
+    
+    // Set 15 fashion tie-dye and kaftan products
+    setCatalogSlots([
+      {
+        id: 'slot-1',
+        name: 'Kaftan Elegance Tie-Dye Azul Royal e Dourado com Lenço',
+        price: 3500,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=800&q=80',
+        description: 'Vestido Kaftan boubou longo com padronagem tie-dye artesanal em azul royal e dourado com lenço.'
+      },
+      {
+        id: 'slot-2',
+        name: 'Kaftan Rainha Africana Tie-Dye Vermelho Rubí e Verde com Lenço',
+        price: 3500,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
+        description: 'Vestido tradicional Boubou com estampa tie-dye vibrante em vermelho escarlate e verde floresta.'
+      },
+      {
+        id: 'slot-3',
+        name: 'Vestido Boubou Seda Africana Estampado Exclusivo',
+        price: 4200,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+        description: 'Boubou solto de alta costura com estampagem exclusiva e toque sedoso.'
+      },
+      {
+        id: 'slot-4',
+        name: 'Kaftan Cerimónia Amarelo Ouro e Roxo Tie-Dye',
+        price: 3800,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+        description: 'Combinação contrastante de amarelo sol e roxo com técnica manual de tie-dye.'
+      },
+      {
+        id: 'slot-5',
+        name: 'Vestido Longo Moda Afro Verde Esmeralda e Dourado',
+        price: 3950,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80',
+        description: 'Vestido fluido verde esmeralda com bordados sutis na gola e mangas esvoaçantes.'
+      },
+      {
+        id: 'slot-6',
+        name: 'Túnica Longa Tradicional Algodão Premium Tie-Dye',
+        price: 2900,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80',
+        description: 'Túnica em algodão natural respirável com tingimento manual.'
+      },
+      {
+        id: 'slot-7',
+        name: 'Kaftan Noite de Gala Bordô com Lenço de Cetim',
+        price: 4500,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80',
+        description: 'Modelo nobre em tom bordô com detalhes brilhantes na gola e punhos.'
+      },
+      {
+        id: 'slot-8',
+        name: 'Vestido Kaftan Floral Tie-Dye Tons Terra e Laranja',
+        price: 3400,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=800&q=80',
+        description: 'Padrão floral estilizado em tons quentes africanos com cordão de ajuste.'
+      },
+      {
+        id: 'slot-9',
+        name: 'Boubou Majestoso Azul Marinho e Prata com Turbante',
+        price: 4100,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?auto=format&fit=crop&w=800&q=80',
+        description: 'Boubou tradicional em crepe encorpado azul petróleo com filamentos prateados.'
+      },
+      {
+        id: 'slot-10',
+        name: 'Conjunto Kaftan e Turbante Seda Africana Amarela',
+        price: 3750,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80',
+        description: 'Conjunto completo de 2 peças em seda com estampa tie-dye geométrica.'
+      },
+      {
+        id: 'slot-11',
+        name: 'Vestido Tradicional Moçambicano Seda Tie-Dye',
+        price: 3600,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80',
+        description: 'Fusão de influências locais com corte de boubou moderno.'
+      },
+      {
+        id: 'slot-12',
+        name: 'Kaftan Resort & Praia Tie-Dye Turquesa e Coral',
+        price: 2850,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
+        description: 'Modelo leve para dias quentes de praia e passeios em Maputo ou Bilene.'
+      },
+      {
+        id: 'slot-13',
+        name: 'Vestido Longo de Festa Tie-Dye Preto e Dourado',
+        price: 4800,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+        description: 'Elegância noturna com tingimento degradê preto carvão e faixas douradas.'
+      },
+      {
+        id: 'slot-14',
+        name: 'Kaftan Manga Morcego Seda Pura Estampa Geométrica',
+        price: 3900,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+        description: 'Corte fluido e amplo que valoriza todos os biotipos em seda pura.'
+      },
+      {
+        id: 'slot-15',
+        name: 'Kaftan Maxi Solto Rosa Choque e Roxo com Lenço Especial',
+        price: 3650,
+        category: 'presentes',
+        categoryLabel: 'Vestidos & Kaftans',
+        photoUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+        description: 'Cores radiantes e alegres para casamentos tradicionais e celebrações.'
+      }
+    ]);
+    
+    // Jump straight to catalog evaluation
+    setStep('catalog_slots');
+  };
+
   // Step transitions
   const handleProceedToIdentity = (e: React.FormEvent) => {
     e.preventDefault();
@@ -605,6 +766,28 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
             {/* STEP 1: General Store Details Form */}
             {step === 'form' && (
               <form onSubmit={handleProceedToIdentity} className="space-y-3.5" autoComplete="off">
+                {/* Botão de Simulação Rápida para Teste com 15 Artigos (Sem Escrever) */}
+                <div className="p-3.5 bg-gradient-to-r from-amber-50 via-rose-50 to-amber-50 rounded-2xl border-2 border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-2xl shrink-0 mt-0.5">⚡</span>
+                    <div>
+                      <h4 className="text-xs font-black text-neutral-900">
+                        Experiência de Teste Rápido (15 Artigos Prontos)
+                      </h4>
+                      <p className="text-[11px] text-neutral-600 leading-snug">
+                        Preenche automaticamente uma loja de moda e abre a montra com 15 vestidos e kaftans sem precisar escrever nada!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleQuickDemoSimulation}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-rose-600/20 cursor-pointer whitespace-nowrap self-stretch sm:self-auto text-center"
+                  >
+                    Abrir Loja de Teste &rarr;
+                  </button>
+                </div>
+
                 <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1">
                   <div className="font-bold flex items-center gap-1 text-amber-900">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />

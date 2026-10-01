@@ -275,47 +275,54 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3 items-stretch">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-3.5 items-stretch">
             {filteredProducts.map((prod) => (
               <div
                 key={prod.id}
                 onClick={() => setSelectedProduct(prod)}
-                className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation"
+                className="bg-white rounded-2xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md hover:border-rose-300 transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation relative"
               >
-                {/* Photo */}
-                <div className="relative aspect-square bg-neutral-900 overflow-hidden shrink-0">
+                {/* Product Image Container (100% Clean, No Text Overlays) */}
+                <div className="relative aspect-square bg-neutral-50 overflow-hidden shrink-0 border-b border-neutral-100 flex items-center justify-center">
                   <img
                     src={prod.photo}
                     alt={prod.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
-                  {prod.discountPercent && (
-                    <span className="absolute top-2 left-2 text-[10px] font-black bg-amber-400 text-zinc-950 px-1.5 py-0.5 rounded shadow-xs">
-                      -{prod.discountPercent}%
-                    </span>
-                  )}
                 </div>
 
-                {/* Info */}
-                <div className="p-2.5 space-y-1.5 flex-1 flex flex-col justify-between">
+                {/* Info Container */}
+                <div className="p-2.5 sm:p-3 space-y-2 flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-neutral-500">
-                      <Store className="w-2.5 h-2.5 text-rose-600 shrink-0" />
-                      <span className="truncate">{prod.storeName}</span>
-                    </div>
-
-                    <h3 className="font-bold text-xs text-neutral-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors mt-0.5">
+                    {/* Title (2 lines clamp) */}
+                    <h3 className="font-bold text-xs sm:text-sm text-neutral-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
                       {prod.name}
                     </h3>
+
+                    {/* Store & Location Sub-line */}
+                    <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-neutral-500 font-medium mt-1 truncate">
+                      <Store className="w-3 h-3 text-rose-600 shrink-0" />
+                      <span className="truncate">{prod.storeName}</span>
+                      <span className="text-neutral-300">•</span>
+                      <span className="shrink-0">{prod.city}</span>
+                    </div>
                   </div>
 
-                  {/* Price & Action - Fixed with mt-auto */}
-                  <div className="pt-1.5 mt-auto border-t border-neutral-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs sm:text-sm font-black text-rose-600 block">
+                  {/* Price Row & Action Button */}
+                  <div className="pt-2 mt-auto border-t border-neutral-100 flex items-center justify-between gap-1">
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-neutral-400 uppercase font-extrabold block -mb-0.5">
+                        MZN
+                      </span>
+                      <span className="text-xs sm:text-sm font-black text-rose-600 truncate block">
                         {prod.price.toLocaleString('pt-MZ')} MT
                       </span>
+                      {prod.originalPrice && (
+                        <span className="text-[10px] text-neutral-400 line-through block truncate">
+                          {prod.originalPrice.toLocaleString('pt-MZ')} MT
+                        </span>
+                      )}
                     </div>
 
                     <button
@@ -342,8 +349,8 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                         );
                         window.open(`https://wa.me/${prod.whatsapp}?text=${msg}`, '_blank');
                       }}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer touch-manipulation"
-                      title="Comprar no WhatsApp"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer touch-manipulation shrink-0"
+                      title="Encomendar no WhatsApp"
                     >
                       <MessageCircle className="w-3.5 h-3.5 fill-white" />
                     </button>
