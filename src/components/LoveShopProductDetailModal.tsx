@@ -43,6 +43,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
   // Reviews Drawer Open State
   const [isReviewsDrawerOpen, setIsReviewsDrawerOpen] = useState<boolean>(false);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState<boolean>(false);
 
   // Reviews System State
   const [isAddingReview, setIsAddingReview] = useState<boolean>(false);
@@ -471,22 +472,33 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               </span>
             </div>
 
-            {/* Description */}
-            <div className="space-y-1 pt-1">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                Descrição do Artigo
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
-                {product.description}
-              </p>
+            {/* Description Accordion (Minimalist, Click to Expand) */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setIsDescriptionOpen(!isDescriptionOpen)}
+                className="w-full p-3 bg-neutral-50 hover:bg-neutral-100 rounded-2xl border border-neutral-200/90 flex items-center justify-between transition-colors cursor-pointer"
+              >
+                <span className="text-xs font-bold text-neutral-800">
+                  Descrição do Artigo
+                </span>
+                <span className="text-xs font-semibold text-rose-600 flex items-center gap-1">
+                  <span>{isDescriptionOpen ? 'Recolher' : 'Ver detalhes'}</span>
+                  <span>{isDescriptionOpen ? '↑' : '↓'}</span>
+                </span>
+              </button>
+
+              {isDescriptionOpen && (
+                <div className="mt-2 p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 text-xs sm:text-sm text-neutral-700 leading-relaxed animate-in fade-in duration-150">
+                  {product.description}
+                </div>
+              )}
             </div>
 
-            {/* Acesso Livre para Compradores (A Nata) */}
-            <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <p className="leading-snug">
-                <strong>Acesso Livre para Compradores:</strong> Sem comissões intermediárias. Encomende diretamente com a loja parceira pelo WhatsApp ou por chamada.
-              </p>
+            {/* Subtle Trust Line (Minimalist, 1 line only) */}
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 px-1 pt-0.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Compra direta com a loja parceira • Sem comissões</span>
             </div>
           </div>
         </div>
