@@ -257,18 +257,20 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
           {/* Products from this Store */}
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-500">
-                Catálogo ({storeProducts.length})
-              </h3>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-500">
+                  Catálogo da Loja ({storeProducts.length})
+                </h3>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleOpenAddProduct}
-                  className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Adicionar Artigo</span>
+                  <span>+ Adicionar Artigo</span>
                 </button>
               </div>
             </div>

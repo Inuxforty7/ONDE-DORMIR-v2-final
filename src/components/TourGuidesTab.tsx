@@ -272,7 +272,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       <div className="p-2.5 sm:p-3 rounded-2xl bg-emerald-50 border border-emerald-200/90 flex items-center gap-2 text-xs text-emerald-950">
         <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
         <span className="leading-tight">
-          <strong>Proteção aos turistas:</strong> Guias validados com BI e reconhecimento facial para excursões seguras.
+          Guias locais credenciados e experientes para passeios seguros.
         </span>
       </div>
 

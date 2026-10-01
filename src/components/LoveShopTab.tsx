@@ -367,20 +367,20 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         )}
       </div>
 
-      {/* 5. Lojistas Registration Banner */}
-      <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm sm:text-base font-bold text-white">
+      {/* 5. Faixa do Comerciante */}
+      <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h3 className="text-sm sm:text-base font-black text-white">
             Venda na Love Shop
           </h3>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            Crie a sua loja e receba pedidos no WhatsApp.
+          <p className="text-xs text-neutral-300 leading-relaxed">
+            Publique o catálogo da sua loja e receba encomendas diretamente no seu WhatsApp.
           </p>
         </div>
 
         <button
           onClick={() => setIsRegisterStoreOpen(true)}
-          className="h-10 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer whitespace-nowrap"
+          className="h-10 px-5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           <span>Registar Loja</span>

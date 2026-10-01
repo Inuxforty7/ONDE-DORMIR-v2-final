@@ -646,7 +646,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                   Registar Nova Loja
                 </h2>
                 <p className="text-xs text-rose-700 font-semibold">
-                  Crie o catálogo da sua loja no Love Shop
+                  Crie a sua vitrine comercial • 1.000 MT / mês
                 </p>
               </div>
             </div>
@@ -1091,16 +1091,21 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                 {/* Catalog Status Bar */}
                 <div className="p-3.5 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-200 space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-bold text-sm text-neutral-900 flex items-center gap-2">
-                      <Store className="w-4 h-4 text-rose-600" />
-                      <span>Catálogo de Produtos</span>
-                    </h3>
+                    <div>
+                      <h3 className="font-black text-sm text-neutral-900 flex items-center gap-2">
+                        <Store className="w-4 h-4 text-rose-600" />
+                        <span>Catálogo da Loja</span>
+                      </h3>
+                      <p className="text-[11px] text-neutral-600 font-medium mt-0.5">
+                        Adicione os produtos que deseja exibir no catálogo.
+                      </p>
+                    </div>
 
                     <button
                       type="button"
                       onClick={handleAddIndividualSlot}
                       disabled={catalogSlots.length >= 25}
-                      className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Adicionar</span>
@@ -1109,15 +1114,11 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
 
                   <div className="pt-2 border-t border-rose-200/70 flex items-center justify-between text-xs font-semibold text-neutral-700">
                     <span>
-                      Produtos: <strong className="text-rose-600">{catalogSlots.length}</strong> de 25
+                      Total no catálogo: <strong className="text-rose-600 font-black">{catalogSlots.length}</strong> produtos
                     </span>
-                    {catalogSlots.length >= 25 ? (
+                    {catalogSlots.length >= 25 && (
                       <span className="text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md text-[11px] font-bold">
                         Limite de 25 atingido
-                      </span>
-                    ) : (
-                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
-                        {25 - catalogSlots.length} vagas livres
                       </span>
                     )}
                   </div>
@@ -1360,7 +1361,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                     onClick={handleProceedToSubscription}
                     className="h-11 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all cursor-pointer"
                   >
-                    <span>Avançar para Ativação ({catalogSlots.length} {catalogSlots.length === 1 ? 'Produto' : 'Produtos'})</span>
+                    <span>Avançar para Ativação ({catalogSlots.length} de 25 Produtos)</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

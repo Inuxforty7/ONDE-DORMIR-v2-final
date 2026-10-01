@@ -475,31 +475,13 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {verifiedDossier ? (
-              <span className="h-10 px-3 bg-emerald-950/80 border border-emerald-400 text-emerald-300 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Perfil Verificado ({verifiedDossier.fullName.split(' ')[0]})</span>
-              </span>
-            ) : (
-              <button
-                onClick={() => {
-                  setPendingAction(null);
-                  setIsVerificationOpen(true);
-                }}
-                className="flex-1 sm:flex-none h-10 px-3 bg-amber-400 hover:bg-amber-300 active:scale-95 text-zinc-950 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Validar Identidade (BI + Foto)</span>
-              </button>
-            )}
-
+          <div className="flex items-center gap-2">
             <button
               onClick={handleOpenRegister}
-              className="h-10 px-3.5 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              className="h-10 px-4 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Cadastrar</span>
+              <span>Criar Perfil</span>
             </button>
           </div>
         </div>
@@ -541,7 +523,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       <div className="p-2.5 sm:p-3 rounded-2xl bg-rose-50 border border-rose-200/90 flex items-center gap-2 text-xs text-rose-950">
         <ShieldCheck className="w-4 h-4 text-rose-700 shrink-0" />
         <span className="leading-tight">
-          <strong>Segurança mútua:</strong> Identidades validadas com BI e reconhecimento facial para proteção e confiança mútua.
+          Perfis autênticos e verificados para amizade e relacionamentos sérios.
         </span>
       </div>
 
@@ -557,7 +539,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-black text-sm text-white">
-                    ✨ Seu Perfil está Visível na Vitrine Pública!
+                    ✨ Perfil em Destaque na Vitrine
                   </span>
                   <span className="text-[10px] font-black bg-black/25 text-amber-200 px-2 py-0.5 rounded-full border border-amber-200/30">
                     {userVisibility.planName || 'Passe Ativo'}
@@ -565,7 +547,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 </div>
                 <p className="text-xs text-pink-100 mt-0.5 flex items-center gap-1.5 font-medium">
                   <Clock className="w-3.5 h-3.5 text-amber-200 shrink-0" />
-                  <span>{calculateRemainingTime(userVisibility.expiresAt)} restantes na vitrine</span>
+                  <span>{calculateRemainingTime(userVisibility.expiresAt)} restantes</span>
                 </p>
               </div>
             </div>
@@ -575,10 +557,10 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 type="button"
                 onClick={handleToggleAnonymous}
                 className="flex-1 sm:flex-none h-9 px-3 bg-black/30 hover:bg-black/40 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                title="Ficar temporariamente invisível na vitrine"
+                title="Pausar destaque"
               >
                 <EyeOff className="w-3.5 h-3.5" />
-                <span>Pausar e Ficar Anónimo</span>
+                <span>Pausar</span>
               </button>
               <button
                 type="button"
@@ -590,7 +572,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
           </div>
         ) : (
-          /* Estado 2: Modo Anónimo (100% Grátis) */
+          /* Estado 2: Modo Anónimo */
           <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white p-3.5 sm:p-4 border-neutral-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
@@ -598,15 +580,15 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-sm text-white">
-                    Você está no Modo Anónimo
+                  <span className="font-bold text-sm text-white">
+                    Modo Privado Ativo
                   </span>
-                  <span className="text-[10px] font-black bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
-                    100% Grátis
+                  <span className="text-[10px] font-semibold bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                    Grátis
                   </span>
                 </div>
-                <p className="text-xs text-neutral-300 mt-0.5 leading-snug">
-                  O seu perfil está <strong>invisível na vitrine pública</strong>. Pode navegar, ver todos os perfis e conversar no anonimato.
+                <p className="text-xs text-neutral-400 mt-0.5 leading-snug">
+                  Navegue e converse com total discrição e privacidade.
                 </p>
               </div>
             </div>
@@ -619,16 +601,16 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   className="h-9 px-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs rounded-xl border border-neutral-600 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Eye className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Reativar Vitrine</span>
+                  <span>Reativar</span>
                 </button>
               ) : null}
               <button
                 type="button"
                 onClick={() => setIsVisibilityModalOpen(true)}
-                className="flex-1 sm:flex-none h-10 px-4 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 sm:flex-none h-10 px-4 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Desbloquear Visibilidade (Aparecer na Vitrine)</span>
+                <span>Destacar Perfil</span>
               </button>
             </div>
           </div>

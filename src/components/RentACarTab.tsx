@@ -419,56 +419,13 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-            {verifiedDossier ? (
-              <span className="h-10 px-3 bg-emerald-950/80 border border-emerald-400 text-emerald-300 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Locatário Verificado ({verifiedDossier.fullName.split(' ')[0]})</span>
-              </span>
-            ) : (
-              <button
-                onClick={() => {
-                  setVerificationRole('client');
-                  setIsVerificationOpen(true);
-                }}
-                className="flex-1 sm:flex-none h-10 px-3 bg-amber-400 hover:bg-amber-300 active:scale-95 text-zinc-950 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Validar BI + Selfie</span>
-              </button>
-            )}
-
-            {/* Painel do Proprietário / Adicionar Viatura (+) */}
+          <div className="flex items-center gap-2">
             <button
               onClick={handleOpenOwnerFleet}
-              className="h-10 px-3.5 bg-neutral-950 hover:bg-neutral-900 border border-amber-400/40 text-amber-300 active:scale-95 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              className="h-10 px-4 bg-white text-orange-900 hover:bg-orange-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
             >
-              <Car className="w-3.5 h-3.5 text-orange-400" />
-              <span>Painel do Proprietário</span>
-              <span className="w-5 h-5 rounded-full bg-amber-400 text-black flex items-center justify-center text-xs font-black ml-0.5">
-                +
-              </span>
-            </button>
-
-            {/* Faturação Oficial / Bill */}
-            <button
-              onClick={() => {
-                setBillingInvoiceData({
-                  moduleType: 'rentacar',
-                  serviceTitle: 'Ativação & Aluguer de Viatura Rent-a-Car',
-                  clientName: verifiedDossier ? verifiedDossier.fullName : 'Locatário / Utilizador da Plataforma',
-                  clientNuitOrBi: verifiedDossier ? `BI: ${verifiedDossier.biNumber}` : 'Consumidor Final',
-                  clientPhone: verifiedDossier ? verifiedDossier.phone : '+258 84 000 0000',
-                  clientProvince: selectedProvince !== 'all' ? selectedProvince : 'Maputo Cidade',
-                  clientCity: selectedCity !== 'all' ? selectedCity : 'Maputo',
-                });
-                setIsBillingModalOpen(true);
-              }}
-              className="h-10 px-3 bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 active:scale-95 font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-              title="Consultar faturação e recibo fiscal"
-            >
-              <FileText className="w-3.5 h-3.5 text-neutral-600" />
-              <span>Faturação (Bill)</span>
+              <Plus className="w-3.5 h-3.5 text-orange-600" />
+              <span>Anunciar Viatura</span>
             </button>
           </div>
         </div>
@@ -478,7 +435,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
       <div className="p-2.5 sm:p-3 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-center gap-2 text-xs text-amber-950">
         <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0" />
         <span className="leading-tight">
-          <strong>Proteção contra roubos e burla:</strong> Locatários e proprietários validados com BI e reconhecimento facial.
+          Viaturas verificadas com proprietários credenciados em Moçambique.
         </span>
       </div>
 
