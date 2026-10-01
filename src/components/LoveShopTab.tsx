@@ -10,7 +10,9 @@ import {
   Gift,
   ArrowLeft,
   Home,
-  Play
+  Play,
+  ShoppingBag,
+  Star
 } from 'lucide-react';
 import { 
   LoveShopStore, 
@@ -28,7 +30,9 @@ import { RegisterLoveShopStoreModal } from './RegisterLoveShopStoreModal';
 import { LoveShopProductDetailModal } from './LoveShopProductDetailModal';
 import { LoveShopStoreModal } from './LoveShopStoreModal';
 import { LoveShopPromoCatMascot } from './LoveShopPromoCatMascot';
+import { LoveShopClientOrdersModal } from './LoveShopClientOrdersModal';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { loveShopOrderService } from '../services/loveShopOrderService';
 
 interface LoveShopTabProps {
   onBackToHome?: () => void;
@@ -82,6 +86,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
 
   // Modals
   const [isRegisterStoreOpen, setIsRegisterStoreOpen] = useState(false);
+  const [isClientOrdersOpen, setIsClientOrdersOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<LoveShopProduct | null>(null);
   const [selectedStore, setSelectedStore] = useState<LoveShopStore | null>(null);
   const [viewAllStores, setViewAllStores] = useState(false);
@@ -239,12 +244,22 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
             Artigos ({filteredProducts.length})
           </h2>
 
-          <button
-            onClick={() => setIsRegisterStoreOpen(true)}
-            className="text-xs font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
-          >
-            + Registar Loja
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsClientOrdersOpen(true)}
+              className="text-xs font-bold text-neutral-700 hover:text-rose-600 bg-neutral-100 hover:bg-rose-50 px-2.5 py-1 rounded-xl border border-neutral-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-rose-600" />
+              <span>Meus Pedidos</span>
+            </button>
+
+            <button
+              onClick={() => setIsRegisterStoreOpen(true)}
+              className="text-xs font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+            >
+              + Registar Loja
+            </button>
+          </div>
         </div>
 
         {filteredProducts.length === 0 ? (
@@ -376,6 +391,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              loveShopOrderService.createOrderOnContact(prod);
                               const allowed = contactUnlockService.triggerContactAttempt(
                                 {
                                   id: prod.storeId || prod.id,
@@ -520,6 +536,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              loveShopOrderService.createOrderOnContact(prod);
                               const allowed = contactUnlockService.triggerContactAttempt(
                                 {
                                   id: prod.storeId || prod.id,
@@ -602,6 +619,16 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         isOpen={!!selectedStore}
         onClose={() => setSelectedStore(null)}
         onSelectProduct={(prod) => setSelectedProduct(prod)}
+      />
+
+      {/* Client Orders & Reviews Modal */}
+      <LoveShopClientOrdersModal
+        isOpen={isClientOrdersOpen}
+        onClose={() => setIsClientOrdersOpen(false)}
+        onSelectProduct={(prodId) => {
+          const found = products.find((p) => p.id === prodId);
+          if (found) setSelectedProduct(found);
+        }}
       />
 
       {/* Floating Waving Cat Mascot in Corner for Promotions */}

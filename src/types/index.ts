@@ -142,6 +142,54 @@ export interface ProductMediaItem {
   thumbnail?: string;
 }
 
+export interface DetailedReviewRating {
+  productQuality: number; // 1 to 5 (Afeta Reputação do Produto)
+  deliverySpeed: number;  // 1 to 5 (Afeta Reputação da Loja)
+  customerService: number;// 1 to 5 (Afeta Reputação da Loja)
+  recommendation: number; // 1 to 5 (Afeta Reputação da Loja)
+  overallSatisfaction: number; // 1 to 5 (Afeta Reputação da Loja)
+}
+
+export interface LoveShopReview {
+  id: string;
+  orderId: string;
+  storeId: string;
+  productId: string;
+  productName?: string;
+  userName: string;
+  userCity: string;
+  date: string;
+  ratings: DetailedReviewRating;
+  storeRatingAverage: number; // (deliverySpeed + customerService + recommendation + overallSatisfaction) / 4
+  productQualityRating: number; // ratings.productQuality
+  comment?: string;
+  verifiedPurchase: boolean;
+  isReported?: boolean;
+  reportReason?: 'nao_foi_cliente' | 'linguagem_ofensiva' | 'avaliacao_fraudulenta';
+  reportDate?: string;
+  reportStatus?: 'em_analise' | 'resolvido';
+}
+
+export interface LoveShopOrder {
+  id: string; // ex: 'LS-20261001-0001'
+  storeId: string;
+  storeName: string;
+  productId: string;
+  productName: string;
+  productPrice: number;
+  productPhoto: string;
+  categoryLabel?: string;
+  createdAt: string; // ex: '01/10/2026'
+  timestamp: number;
+  clientName: string; // 'Visitante'
+  clientPhone?: string;
+  status: 'pendente' | 'concluido' | 'cancelado';
+  completedAt?: string;
+  cancelledAt?: string;
+  hasReviewed?: boolean;
+  reviewId?: string;
+}
+
 export interface ProductReview {
   id: string;
   userName: string;
@@ -151,6 +199,8 @@ export interface ProductReview {
   comment: string;
   verifiedPurchase: boolean;
   satisfactionTags?: string[];
+  detailedRatings?: DetailedReviewRating;
+  orderId?: string;
 }
 
 export interface LoveShopProduct {

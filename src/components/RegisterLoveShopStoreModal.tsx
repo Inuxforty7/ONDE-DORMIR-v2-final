@@ -636,38 +636,42 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-gradient-to-r from-rose-50 via-pink-50 to-rose-50 shrink-0">
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs">
                 <Store className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-black text-neutral-900 leading-tight">
+                <h2 className="text-sm sm:text-base font-bold text-neutral-900 leading-tight">
                   Registar Nova Loja
                 </h2>
-                <p className="text-xs text-rose-700 font-semibold">
-                  Crie a sua vitrine comercial • 1.000 MT / mês
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[11px] text-neutral-500 font-medium">Vitrine Comercial</span>
+                  <span className="text-neutral-300">•</span>
+                  <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-100">
+                    1.000 MT/mês
+                  </span>
+                </div>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-neutral-200 text-neutral-500 hover:text-neutral-800 transition-colors flex items-center justify-center cursor-pointer"
+              className="w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors flex items-center justify-center cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Stepper Navigation Indicator - Sleek, Responsive, Zero-Scrollbar */}
-          <div className="px-5 py-3 bg-neutral-50/90 border-b border-neutral-200/80 shrink-0 space-y-1.5">
+          {/* Stepper Navigation Indicator - Sleek & Mobile-First */}
+          <div className="px-4 sm:px-5 py-2.5 bg-neutral-50/80 border-b border-neutral-200/80 shrink-0 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-neutral-900">
+              <span className="font-bold text-neutral-800 text-[11.5px] sm:text-xs">
                 {step === 'form' && '1. Dados Comerciais da Loja'}
                 {step === 'identity_verification' && '2. Verificação de Identidade (BI + Selfie)'}
                 {step === 'catalog_slots' && '3. Catálogo de Artigos (1 a 25)'}
                 {step === 'subscription' && '4. Ativação & Mensalidade'}
               </span>
-              <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/70">
+              <span className="text-[10.5px] font-bold text-neutral-600 bg-white px-2 py-0.5 rounded-md border border-neutral-200 shadow-2xs">
                 {step === 'form' ? 'Passo 1/4' : step === 'identity_verification' ? 'Passo 2/4' : step === 'catalog_slots' ? 'Passo 3/4' : 'Passo 4/4'}
               </span>
             </div>
@@ -680,53 +684,23 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
             </div>
           </div>
 
-          {/* Modal Body */}
-          <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 pb-32 sm:pb-6">
+          {/* Modal Body - Tight, Organized & Zero Awkward Blank Space */}
+          <div className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 flex-1 pb-4 sm:pb-5">
             
             {/* STEP 1: General Store Details Form */}
             {step === 'form' && (
               <form onSubmit={handleProceedToIdentity} className="space-y-3.5" autoComplete="off">
 
-                {/* Nome da Loja */}
-                <div>
-                  <label className="text-xs font-bold text-neutral-800 block mb-1">
-                    Nome Comercial da Loja *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    placeholder="Ex: Amor & Mais, Joias do Coração, Boutique Elegance"
-                    value={storeName}
-                    onChange={(e) => setStoreName(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
-                  />
-                </div>
+                {/* Section 1: Informações Principais da Loja */}
+                <div className="bg-neutral-50/70 p-3 sm:p-4 rounded-2xl border border-neutral-200/80 space-y-3">
+                  <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                    Informações da Loja
+                  </div>
 
-                {/* Slogan */}
-                <div>
-                  <label className="text-xs font-bold text-neutral-800 block mb-1">
-                    Slogan ou Especialidade da Loja
-                  </label>
-                  <input
-                    type="text"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    placeholder="Ex: Alianças de noivado, perfumes, peluches e presentes inesquecíveis"
-                    value={slogan}
-                    onChange={(e) => setSlogan(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
-                  />
-                </div>
-
-                {/* Responsável & NUIT/BI */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Nome da Loja */}
                   <div>
                     <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      Proprietário / Gerente *
+                      Nome Comercial da Loja *
                     </label>
                     <input
                       type="text"
@@ -734,121 +708,176 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}
-                      placeholder="Nome completo do responsável"
-                      value={ownerName}
-                      onChange={(e) => setOwnerName(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
+                      placeholder="Ex: Boutique Afro Chic, Amor & Mais, Joias do Coração"
+                      value={storeName}
+                      onChange={(e) => setStoreName(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
                     />
                   </div>
+
+                  {/* Slogan */}
                   <div>
                     <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      NUIT da Loja ou Empresa
+                      Slogan ou Especialidade da Loja
                     </label>
                     <input
                       type="text"
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}
-                      inputMode="text"
-                      placeholder="Ex: 400123987"
-                      value={ownerNuitOrBi}
-                      onChange={(e) => setOwnerNuitOrBi(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
+                      placeholder="Ex: Vestidos Kaftan exclusivos, moda africana e lenços finos"
+                      value={slogan}
+                      onChange={(e) => setSlogan(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Localização */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Section 2: Responsável & Dados Fiscais */}
+                <div className="bg-neutral-50/70 p-3 sm:p-4 rounded-2xl border border-neutral-200/80 space-y-3">
+                  <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                    Responsável & Identificação Fiscal
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 block mb-1">
+                        Proprietário / Gerente *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        placeholder="Nome completo do responsável"
+                        value={ownerName}
+                        onChange={(e) => setOwnerName(e.target.value)}
+                        className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 block mb-1">
+                        NUIT da loja / empresa ou pessoal
+                      </label>
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        inputMode="numeric"
+                        placeholder="Ex: 400123987 ou 110293847"
+                        value={ownerNuitOrBi}
+                        onChange={(e) => setOwnerNuitOrBi(e.target.value.replace(/[^0-9]/g, '').slice(0, 9))}
+                        className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
+                      />
+                      <span className="text-[10.5px] text-neutral-500 mt-1 block">
+                        Vendedores individuais podem usar o seu NUIT pessoal.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Localização & Contactos Comerciais */}
+                <div className="bg-neutral-50/70 p-3 sm:p-4 rounded-2xl border border-neutral-200/80 space-y-3">
+                  <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                    Localização & Contactos
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 block mb-1">
+                        Província *
+                      </label>
+                      <select
+                        value={province}
+                        onChange={(e) => setProvince(e.target.value)}
+                        className="w-full h-11 px-3 bg-white rounded-xl border border-neutral-200/90 text-xs sm:text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all font-medium"
+                      >
+                        {MOZ_PROVINCES_LIST.filter((p) => p !== 'all').map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 block mb-1">
+                        Cidade *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        placeholder="Ex: Maputo, Matola, Beira..."
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Endereço */}
                   <div>
                     <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      Cidade *
+                      Bairro ou Endereço Físico
                     </label>
                     <input
                       type="text"
-                      required
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
+                      placeholder="Ex: Bairro Polana Cimento, Av. Julius Nyerere nº 120"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      Província *
-                    </label>
-                    <select
-                      value={province}
-                      onChange={(e) => setProvince(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none bg-white"
-                    >
-                      {MOZ_PROVINCES_LIST.filter((p) => p !== 'all').map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
+
+                  {/* Telefones */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 block mb-1">
+                        Telefone de Atendimento *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        autoComplete="off"
+                        inputMode="tel"
+                        placeholder="84 / 82 / 85..."
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-neutral-800 block mb-1">
+                        WhatsApp para Pedidos Directos *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        autoComplete="off"
+                        inputMode="tel"
+                        placeholder="84 / 85 / 86..."
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        className="w-full h-11 px-3.5 bg-white rounded-xl border border-neutral-200/90 text-sm focus:border-rose-600 focus:ring-1 focus:ring-rose-500 focus:outline-none transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Endereço */}
-                <div>
-                  <label className="text-xs font-bold text-neutral-800 block mb-1">
-                    Bairro ou Endereço Físico
-                  </label>
-                  <input
-                    type="text"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    placeholder="Ex: Bairro Polana Cimento, Av. Julius Nyerere nº 120"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
-                  />
+                <div className="pt-1">
+                  <button
+                    type="submit"
+                    className="w-full h-12 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer touch-manipulation"
+                  >
+                    <span>Avançar para Verificação de Identidade</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
-
-                {/* Telefones */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      Telefone de Atendimento *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      autoComplete="off"
-                      inputMode="tel"
-                      placeholder="84 / 82 / 85..."
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      WhatsApp para Pedidos Directos *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      autoComplete="off"
-                      inputMode="tel"
-                      placeholder="84 / 85 / 86..."
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-neutral-300 text-sm focus:border-rose-600 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full h-12 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-rose-600/25 cursor-pointer mt-2"
-                >
-                  <span>Avançar para Verificação de Identidade (BI & Selfie)</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </form>
             )}
 

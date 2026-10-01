@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { LoveShopProduct, ProductReview } from '../types';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { loveShopOrderService } from '../services/loveShopOrderService';
 
 interface LoveShopProductDetailModalProps {
   product: LoveShopProduct | null;
@@ -494,6 +495,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
             <a
               href={`tel:${product.phone}`}
               onClick={(e) => {
+                loveShopOrderService.createOrderOnContact(product);
                 const allowed = contactUnlockService.triggerContactAttempt(
                   {
                     id: product.storeId || product.id,
@@ -522,6 +524,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => {
+                loveShopOrderService.createOrderOnContact(product);
                 const allowed = contactUnlockService.triggerContactAttempt(
                   {
                     id: product.storeId || product.id,
