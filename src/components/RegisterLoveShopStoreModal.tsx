@@ -237,7 +237,8 @@ export interface CatalogPhotoSlot {
   price: number;
   category: LoveShopCategoryId;
   categoryLabel: string;
-  photoUrl: string;
+  photos: string[]; // 1 to 4 photo slides
+  videoUrl?: string; // Optional final video
   description: string;
 }
 
@@ -280,21 +281,26 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
   const [isCapturingSelfie, setIsCapturingSelfie] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
-  // 15 to 25 Image Slots Catalog State
-  const [catalogSlots, setCatalogSlots] = useState<CatalogPhotoSlot[]>(() => {
-    // Initial standard 15 slots populated with presets
-    return ROMANTIC_PRESET_TEMPLATES.slice(0, 15).map((preset, idx) => ({
-      id: `slot-${idx + 1}`,
-      name: preset.name,
-      price: preset.price,
-      category: preset.category,
-      categoryLabel: preset.categoryLabel,
-      photoUrl: preset.photo,
-      description: preset.description
-    }));
-  });
+  // 1 to 25 Products with 1-4 Slides + 1 Optional Video each
+  const [catalogSlots, setCatalogSlots] = useState<CatalogPhotoSlot[]>(() => [
+    {
+      id: 'slot-1',
+      name: 'Vestido Kaftan Tie-Dye com Lenço Elegance',
+      price: 3500,
+      category: 'presentes',
+      categoryLabel: 'Vestidos & Kaftans',
+      photos: [
+        'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg',
+        'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850245/WhatsApp_Image_2026-10-01_at_09.57.40_1_bicov1.jpg',
+        'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850246/WhatsApp_Image_2026-10-01_at_09.57.40_x2fg1n.jpg',
+        'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850245/WhatsApp_Image_2026-10-01_at_09.41.58_zkejsm.jpg',
+      ],
+      videoUrl: 'https://res.cloudinary.com/dwlfwnbt0/video/upload/v1790851926/Dynamic_slide_transition_for_images_20261001125112_qxvkw0.mp4',
+      description: 'Vestido longo tradicional Boubou Kaftan com tingimento artesanal Tie-Dye e lenço combinando.'
+    }
+  ]);
 
-  const [targetSlotCapacity, setTargetSlotCapacity] = useState<15 | 20 | 25>(15);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Subscription / Payment State
@@ -307,48 +313,29 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
 
   if (!isOpen) return null;
 
-  // Change preset batch (15, 20 or 25 slots)
-  const handleSetCapacity = (capacity: 15 | 20 | 25) => {
-    setTargetSlotCapacity(capacity);
-    const existingCount = catalogSlots.length;
-
-    if (capacity > existingCount) {
-      // Add more slots up to capacity from presets
-      const toAdd = ROMANTIC_PRESET_TEMPLATES.slice(existingCount, capacity).map((preset, idx) => ({
-        id: `slot-${existingCount + idx + 1}`,
-        name: preset.name,
-        price: preset.price,
-        category: preset.category,
-        categoryLabel: preset.categoryLabel,
-        photoUrl: preset.photo,
-        description: preset.description
-      }));
-      setCatalogSlots((prev) => [...prev, ...toAdd]);
-    } else if (capacity < existingCount) {
-      // Trim to selected capacity
-      setCatalogSlots((prev) => prev.slice(0, capacity));
-    }
-  };
-
-  // Add individual slot up to max 25
+  // Add individual product (up to 25 max for standard plan)
   const handleAddIndividualSlot = () => {
-    if (catalogSlots.length >= 25) return;
-    const nextIdx = catalogSlots.length;
-    const preset = ROMANTIC_PRESET_TEMPLATES[nextIdx % ROMANTIC_PRESET_TEMPLATES.length];
+    if (catalogSlots.length >= 25) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    const nextIdx = catalogSlots.length + 1;
     const newSlot: CatalogPhotoSlot = {
       id: `slot-${Date.now()}-${nextIdx}`,
-      name: preset.name,
-      price: preset.price,
-      category: preset.category,
-      categoryLabel: preset.categoryLabel,
-      photoUrl: preset.photo,
-      description: preset.description
+      name: '',
+      price: 1500,
+      category: 'presentes',
+      categoryLabel: 'Vestidos & Kaftans',
+      photos: [],
+      videoUrl: '',
+      description: ''
     };
     setCatalogSlots((prev) => [...prev, newSlot]);
   };
 
   // Remove individual slot (if > 1)
   const handleRemoveSlot = (id: string) => {
+    if (catalogSlots.length <= 1) return;
     setCatalogSlots((prev) => prev.filter((s) => s.id !== id));
   };
 
@@ -356,6 +343,32 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
   const handleUpdateSlot = (id: string, field: keyof CatalogPhotoSlot, val: any) => {
     setCatalogSlots((prev) =>
       prev.map((s) => (s.id === id ? { ...s, [field]: val } : s))
+    );
+  };
+
+  // Update photo for a specific slide index (0 to 3)
+  const handleUpdateProductSlidePhoto = (slotId: string, slideIndex: number, url: string) => {
+    setCatalogSlots((prev) =>
+      prev.map((slot) => {
+        if (slot.id !== slotId) return slot;
+        const currentPhotos = [...(slot.photos || [])];
+        if (url && url.trim().length > 0) {
+          currentPhotos[slideIndex] = url.trim();
+        } else {
+          currentPhotos.splice(slideIndex, 1);
+        }
+        return {
+          ...slot,
+          photos: currentPhotos.slice(0, 4)
+        };
+      })
+    );
+  };
+
+  // Update video for product
+  const handleUpdateProductVideo = (slotId: string, url: string) => {
+    setCatalogSlots((prev) =>
+      prev.map((s) => (s.id === slotId ? { ...s, videoUrl: url.trim() } : s))
     );
   };
 
@@ -378,7 +391,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
           if (updated[index]) {
             updated[index] = {
               ...updated[index],
-              photoUrl: base64Url,
+              photos: [base64Url],
               name: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || updated[index].name
             };
           } else if (updated.length < 25) {
@@ -388,7 +401,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
               price: preset.price,
               category: preset.category,
               categoryLabel: preset.categoryLabel,
-              photoUrl: base64Url,
+              photos: [base64Url],
               description: preset.description
             });
           }
@@ -401,7 +414,6 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
 
   // Fill all 25 with rich romantic stock catalog
   const handleFillAll25Presets = () => {
-    setTargetSlotCapacity(25);
     setCatalogSlots(
       ROMANTIC_PRESET_TEMPLATES.map((preset, idx) => ({
         id: `slot-${idx + 1}`,
@@ -409,15 +421,16 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
         price: preset.price,
         category: preset.category,
         categoryLabel: preset.categoryLabel,
-        photoUrl: preset.photo,
+        photos: [preset.photo],
+        videoUrl: idx === 0 ? 'https://res.cloudinary.com/dwlfwnbt0/video/upload/v1790851926/Dynamic_slide_transition_for_images_20261001125112_qxvkw0.mp4' : undefined,
         description: preset.description
       }))
     );
   };
 
-  // Quick Simulation Test with 15 Fashion & Kaftan Items (sem escrever)
+  // Quick Simulation Test with Fashion & Kaftan Items (sem escrever)
   const handleQuickDemoSimulation = () => {
-    setStoreName('Boutique Afro Chic & Kaftans');
+    setStoreName('Boutique Afro Chic');
     setSlogan('Vestidos Kaftan Tie-Dye exclusivos, moda africana e lenços finos.');
     setOwnerName('Amina Muthemba');
     setOwnerNuitOrBi('400888222');
@@ -431,144 +444,47 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
     setBiBackPhoto('https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80');
     setFacialSelfiePhoto('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
     setIsFacialVerified(true);
-    setTargetSlotCapacity(15);
     
-    // Set 15 fashion tie-dye and kaftan products
+    // Set first product with 4 slides + Cloudinary video
     setCatalogSlots([
       {
         id: 'slot-1',
-        name: 'Kaftan Elegance Tie-Dye Azul Royal e Dourado com Lenço',
+        name: 'Vestido Kaftan Tie-Dye com Lenço Elegance',
         price: 3500,
         category: 'presentes',
         categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=800&q=80',
-        description: 'Vestido Kaftan boubou longo com padronagem tie-dye artesanal em azul royal e dourado com lenço.'
+        photos: [
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg',
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850245/WhatsApp_Image_2026-10-01_at_09.57.40_1_bicov1.jpg',
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850246/WhatsApp_Image_2026-10-01_at_09.57.40_x2fg1n.jpg',
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850245/WhatsApp_Image_2026-10-01_at_09.41.58_zkejsm.jpg',
+        ],
+        videoUrl: 'https://res.cloudinary.com/dwlfwnbt0/video/upload/v1790851926/Dynamic_slide_transition_for_images_20261001125112_qxvkw0.mp4',
+        description: 'Vestido longo tradicional Boubou Kaftan com tingimento artesanal Tie-Dye e lenço combinando.'
       },
       {
         id: 'slot-2',
-        name: 'Kaftan Rainha Africana Tie-Dye Vermelho Rubí e Verde com Lenço',
-        price: 3500,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
-        description: 'Vestido tradicional Boubou com estampa tie-dye vibrante em vermelho escarlate e verde floresta.'
-      },
-      {
-        id: 'slot-3',
         name: 'Vestido Boubou Seda Africana Estampado Exclusivo',
         price: 4200,
         category: 'presentes',
         categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+        photos: [
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850245/WhatsApp_Image_2026-10-01_at_09.52.26_bw3rym.jpg',
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850244/WhatsApp_Image_2026-10-01_at_09.38.07_bxfl7o.jpg',
+        ],
         description: 'Boubou solto de alta costura com estampagem exclusiva e toque sedoso.'
       },
       {
-        id: 'slot-4',
+        id: 'slot-3',
         name: 'Kaftan Cerimónia Amarelo Ouro e Roxo Tie-Dye',
         price: 3800,
         category: 'presentes',
         categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+        photos: [
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850244/WhatsApp_Image_2026-10-01_at_09.37.13_afo8bi.jpg',
+          'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850244/WhatsApp_Image_2026-10-01_at_09.35.39_rvi27n.jpg',
+        ],
         description: 'Combinação contrastante de amarelo sol e roxo com técnica manual de tie-dye.'
-      },
-      {
-        id: 'slot-5',
-        name: 'Vestido Longo Moda Afro Verde Esmeralda e Dourado',
-        price: 3950,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80',
-        description: 'Vestido fluido verde esmeralda com bordados sutis na gola e mangas esvoaçantes.'
-      },
-      {
-        id: 'slot-6',
-        name: 'Túnica Longa Tradicional Algodão Premium Tie-Dye',
-        price: 2900,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80',
-        description: 'Túnica em algodão natural respirável com tingimento manual.'
-      },
-      {
-        id: 'slot-7',
-        name: 'Kaftan Noite de Gala Bordô com Lenço de Cetim',
-        price: 4500,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80',
-        description: 'Modelo nobre em tom bordô com detalhes brilhantes na gola e punhos.'
-      },
-      {
-        id: 'slot-8',
-        name: 'Vestido Kaftan Floral Tie-Dye Tons Terra e Laranja',
-        price: 3400,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=800&q=80',
-        description: 'Padrão floral estilizado em tons quentes africanos com cordão de ajuste.'
-      },
-      {
-        id: 'slot-9',
-        name: 'Boubou Majestoso Azul Marinho e Prata com Turbante',
-        price: 4100,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?auto=format&fit=crop&w=800&q=80',
-        description: 'Boubou tradicional em crepe encorpado azul petróleo com filamentos prateados.'
-      },
-      {
-        id: 'slot-10',
-        name: 'Conjunto Kaftan e Turbante Seda Africana Amarela',
-        price: 3750,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80',
-        description: 'Conjunto completo de 2 peças em seda com estampa tie-dye geométrica.'
-      },
-      {
-        id: 'slot-11',
-        name: 'Vestido Tradicional Moçambicano Seda Tie-Dye',
-        price: 3600,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80',
-        description: 'Fusão de influências locais com corte de boubou moderno.'
-      },
-      {
-        id: 'slot-12',
-        name: 'Kaftan Resort & Praia Tie-Dye Turquesa e Coral',
-        price: 2850,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80',
-        description: 'Modelo leve para dias quentes de praia e passeios em Maputo ou Bilene.'
-      },
-      {
-        id: 'slot-13',
-        name: 'Vestido Longo de Festa Tie-Dye Preto e Dourado',
-        price: 4800,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-        description: 'Elegância noturna com tingimento degradê preto carvão e faixas douradas.'
-      },
-      {
-        id: 'slot-14',
-        name: 'Kaftan Manga Morcego Seda Pura Estampa Geométrica',
-        price: 3900,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
-        description: 'Corte fluido e amplo que valoriza todos os biotipos em seda pura.'
-      },
-      {
-        id: 'slot-15',
-        name: 'Kaftan Maxi Solto Rosa Choque e Roxo com Lenço Especial',
-        price: 3650,
-        category: 'presentes',
-        categoryLabel: 'Vestidos & Kaftans',
-        photoUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
-        description: 'Cores radiantes e alegres para casamentos tradicionais e celebrações.'
       }
     ]);
     
@@ -614,8 +530,8 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       id: storeId,
       name: storeName,
       slogan: slogan || 'Presentes e artigos especiais selecionados com carinho.',
-      logo: '🎁',
-      coverImage: coverImage || catalogSlots[0]?.photoUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80',
+      logo: '👗',
+      coverImage: coverImage || catalogSlots[0]?.photos?.[0] || 'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg',
       verified: true,
       isIdentityVerified: true,
       verifiedDocType: docType,
@@ -639,32 +555,38 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       isSubscriptionActive: true,
       isContactUnlocked: true,
       registeredAt: new Date().toISOString().split('T')[0],
-      platformTenure: 'Iniciou hoje na plataforma',
+      platformTenure: 'Loja Nova Verificada',
     };
 
-    // Convert catalog slots into real LoveShopProduct entities (15 to 25 products!)
-    const createdProducts: LoveShopProduct[] = catalogSlots.map((slot, index) => ({
-      id: `prod-${storeId}-${index + 1}`,
-      storeId: storeId,
-      storeName: storeName,
-      storeVerified: true,
-      name: slot.name || `Artigo ${index + 1}`,
-      description: slot.description || `${slot.name} disponível na loja ${storeName} em ${city}.`,
-      category: slot.category || 'presentes',
-      categoryLabel: slot.categoryLabel || 'Presentes',
-      price: Number(slot.price) || 1200,
-      photo: slot.photoUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
-      photos: [slot.photoUrl],
-      inStock: true,
-      isFeatured: index < 4,
-      city,
-      province,
-      phone: cleanPhone,
-      whatsapp: cleanWhatsApp,
-      isContactUnlocked: true,
-      registeredAt: new Date().toISOString().split('T')[0],
-      platformTenure: 'Iniciou hoje na plataforma'
-    }));
+    // Convert catalog slots into real LoveShopProduct entities (1 to 25 products!)
+    const createdProducts: LoveShopProduct[] = catalogSlots.map((slot, index) => {
+      const activePhotos = (slot.photos || []).filter((p) => p && p.trim().length > 0);
+      const mainPhoto = activePhotos[0] || 'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg';
+      return {
+        id: `prod-${storeId}-${index + 1}`,
+        storeId,
+        storeName,
+        storeVerified: true,
+        name: slot.name || `Produto ${index + 1}`,
+        description: slot.description || `${slot.name} disponível na loja ${storeName} em ${city}.`,
+        category: slot.category || 'presentes',
+        categoryLabel: slot.categoryLabel || 'Vestidos & Presentes',
+        price: Number(slot.price) || 1500,
+        photo: mainPhoto,
+        photos: activePhotos.length > 0 ? activePhotos : [mainPhoto],
+        videoUrl: slot.videoUrl && slot.videoUrl.trim().length > 0 ? slot.videoUrl : undefined,
+        videoDuration: slot.videoUrl ? '0:35 min' : undefined,
+        inStock: true,
+        isFeatured: index === 0,
+        city,
+        province,
+        phone: cleanPhone,
+        whatsapp: cleanWhatsApp,
+        isContactUnlocked: true,
+        registeredAt: new Date().toISOString().split('T')[0],
+        platformTenure: 'Loja Verificada'
+      };
+    });
 
     // Generate Official Billing Invoice
     const invoiceNum = `INV-LS-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -674,8 +596,8 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
       status: 'PAID',
       moduleType: 'lodge',
-      serviceTitle: 'Ativação Love Shop • Catálogo 15-25 Fotos',
-      serviceDescription: `Subscrição Mensal Love Shop • Ativação Comercial (${storeName}) com ${createdProducts.length} Artigos Publicados`,
+      serviceTitle: 'Ativação Love Shop • Catálogo até 25 Produtos (4 Slides + 1 Vídeo cada)',
+      serviceDescription: `Subscrição Mensal Love Shop • Ativação Comercial (${storeName}) com ${createdProducts.length} Produtos Cadastrados`,
       clientName: `${storeName} (${ownerName})`,
       clientNuitOrBi: ownerNuitOrBi || '400987654',
       clientPhone: cleanPhone,
@@ -683,7 +605,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       clientCity: city,
       itemDetails: [
         {
-          description: `Subscrição Mensal Love Shop (${createdProducts.length} Espaços de Fotos Ativos)`,
+          description: `Subscrição Mensal Love Shop (${createdProducts.length} Produtos com 4 Slides + 1 Vídeo)`,
           quantity: 1,
           unitPriceMzn: 1000,
           totalMzn: 1000,
@@ -702,8 +624,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
     setStep('success');
   };
 
-  const filledCount = catalogSlots.filter((s) => s.photoUrl && s.photoUrl.trim().length > 0).length;
-  const isMinimumReached = catalogSlots.length >= 15;
+  const isMinimumReached = catalogSlots.length >= 1 && catalogSlots.length <= 25;
 
   return (
     <>
@@ -722,10 +643,10 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
               </div>
               <div>
                 <h2 className="text-base sm:text-lg font-black text-neutral-900 leading-tight">
-                  Registo & Catálogo Love Shop
+                  Registar Nova Loja
                 </h2>
                 <p className="text-xs text-rose-700 font-semibold">
-                  Mínimo 15 a 25 Espaços de Fotos • 1.000 MT / mês
+                  Crie o catálogo da sua loja no Love Shop
                 </p>
               </div>
             </div>
@@ -746,12 +667,12 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
             <span className="text-neutral-300">→</span>
             <div className={`flex items-center gap-1.5 shrink-0 ${step === 'identity_verification' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'identity_verification' ? 'bg-rose-600 text-white' : 'bg-neutral-200'}`}>2</span>
-              <span>BI & Selfie</span>
+              <span>Verificação</span>
             </div>
             <span className="text-neutral-300">→</span>
             <div className={`flex items-center gap-1.5 shrink-0 ${step === 'catalog_slots' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'catalog_slots' ? 'bg-rose-600 text-white' : 'bg-neutral-200'}`}>3</span>
-              <span>15-25 Fotos</span>
+              <span>Catálogo</span>
             </div>
             <span className="text-neutral-300">→</span>
             <div className={`flex items-center gap-1.5 shrink-0 ${step === 'subscription' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
@@ -766,37 +687,6 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
             {/* STEP 1: General Store Details Form */}
             {step === 'form' && (
               <form onSubmit={handleProceedToIdentity} className="space-y-3.5" autoComplete="off">
-                {/* Botão de Simulação Rápida para Teste com 15 Artigos (Sem Escrever) */}
-                <div className="p-3.5 bg-gradient-to-r from-amber-50 via-rose-50 to-amber-50 rounded-2xl border-2 border-amber-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-start gap-2.5">
-                    <span className="text-2xl shrink-0 mt-0.5">⚡</span>
-                    <div>
-                      <h4 className="text-xs font-black text-neutral-900">
-                        Experiência de Teste Rápido (15 Artigos Prontos)
-                      </h4>
-                      <p className="text-[11px] text-neutral-600 leading-snug">
-                        Preenche automaticamente uma loja de moda e abre a montra com 15 vestidos e kaftans sem precisar escrever nada!
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoSimulation}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-rose-600/20 cursor-pointer whitespace-nowrap self-stretch sm:self-auto text-center"
-                  >
-                    Abrir Loja de Teste &rarr;
-                  </button>
-                </div>
-
-                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-amber-900">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Registo Comercial & Capacidade Ampliada</span>
-                  </div>
-                  <p className="leading-relaxed">
-                    Como a sua loja investe a taxa mensal de <strong>1.000 MT</strong>, terá direito a carregar entre <strong>15 a 25 espaços de imagens e produtos</strong> para expor todos os seus artigos sem limitações.
-                  </p>
-                </div>
 
                 {/* Nome da Loja */}
                 <div>
@@ -1104,7 +994,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                 <div className="p-4 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-black text-rose-950">Validação Facial do Titular (Selfie Biométrica) *</h4>
+                      <h4 className="text-xs font-black text-rose-950">Validação Facial do Titular *</h4>
                       <p className="text-[11px] text-rose-800">Tire uma selfie nítida do seu rosto em local bem iluminado.</p>
                     </div>
                     {isFacialVerified && (
@@ -1170,9 +1060,6 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                           />
                         </label>
                       </div>
-                      <p className="text-[10px] text-neutral-500">
-                        A verificação biométrica é processada de forma segura para assegurar a autenticidade da loja.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -1191,187 +1078,269 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                     onClick={handleProceedToCatalog}
                     className="flex-1 h-12 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-rose-600/25 cursor-pointer"
                   >
-                    <span>Confirmar Identidade & Ir para o Catálogo (15-25 Fotos)</span>
+                    <span>Continuar para o Catálogo</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 2: 15 to 25 Image Slots Upload & Management */}
+            {/* STEP 3: 1 to 25 Products Catalog */}
             {step === 'catalog_slots' && (
               <div className="space-y-4">
-                {/* Capacity Selection Toolbar */}
-                <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-200 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h3 className="font-black text-sm sm:text-base text-neutral-900 flex items-center gap-2">
-                        <ImageIcon className="w-4 h-4 text-rose-600" />
-                        <span>Espaços de Imagem do Catálogo (Mín: 15 | Máx: 25)</span>
-                      </h3>
-                      <p className="text-xs text-neutral-600 mt-0.5">
-                        Defina a quantidade de artigos para expor na sua loja comercial.
-                      </p>
-                    </div>
+                {/* Catalog Status Bar */}
+                <div className="p-3.5 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-200 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-bold text-sm text-neutral-900 flex items-center gap-2">
+                      <Store className="w-4 h-4 text-rose-600" />
+                      <span>Catálogo de Produtos</span>
+                    </h3>
 
-                    {/* Fast Presets: 15, 20 or 25 slots */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[11px] font-bold text-neutral-500 mr-1">Espaços:</span>
-                      {([15, 20, 25] as const).map((cap) => (
-                        <button
-                          key={cap}
-                          type="button"
-                          onClick={() => handleSetCapacity(cap)}
-                          className={`h-8 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            catalogSlots.length === cap
-                              ? 'bg-rose-600 text-white shadow-xs'
-                              : 'bg-white text-neutral-700 border border-neutral-200 hover:bg-rose-100/50'
-                          }`}
-                        >
-                          {cap} Fotos
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddIndividualSlot}
+                      disabled={catalogSlots.length >= 25}
+                      className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar</span>
+                    </button>
                   </div>
 
-                  {/* Progress & Status Bar */}
-                  <div className="pt-2 border-t border-rose-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-neutral-800">
-                        Total de Espaços Ativos: <strong className="text-rose-600">{catalogSlots.length}</strong> / 25
+                  <div className="pt-2 border-t border-rose-200/70 flex items-center justify-between text-xs font-semibold text-neutral-700">
+                    <span>
+                      Produtos: <strong className="text-rose-600">{catalogSlots.length}</strong> de 25
+                    </span>
+                    {catalogSlots.length >= 25 ? (
+                      <span className="text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                        Limite de 25 atingido
                       </span>
-                      {isMinimumReached ? (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[11px] flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Mínimo cumprido (≥15)
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[11px] flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                          Faltam {15 - catalogSlots.length} para o mínimo de 15
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Action Buttons: Batch Upload or Template Preset */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleMultiFileUpload}
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-8 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                        title="Carregar fotos do telemóvel"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Carregar Fotos</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleFillAll25Presets}
-                        className="h-8 px-3 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                        title="Preencher todos os 25 espaços com catálogo romântico"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-                        <span>Preencher 25 Fotos</span>
-                      </button>
-                    </div>
+                    ) : (
+                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
+                        {25 - catalogSlots.length} vagas livres
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Slots Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
-                  {catalogSlots.map((slot, index) => (
+                {/* Products List (1 to 25 items) */}
+                <div className="space-y-4 max-h-[52vh] overflow-y-auto pr-1">
+                  {catalogSlots.map((slot, pIdx) => (
                     <div
                       key={slot.id}
-                      className="p-3 bg-white rounded-2xl border border-neutral-200 shadow-2xs space-y-2 flex flex-col justify-between"
+                      className="p-4 bg-white rounded-2xl border border-neutral-200/90 shadow-2xs space-y-3"
                     >
-                      {/* Top slot header */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
-                          Espaço #{index + 1} de {catalogSlots.length}
-                        </span>
-                        {catalogSlots.length > 15 && (
+                      {/* Product Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-200/60">
+                            Produto #{pIdx + 1}
+                          </span>
+                          <span className="text-xs text-neutral-400 font-medium">
+                            {slot.photos?.length || 0}/4 fotos • {slot.videoUrl ? '1 vídeo' : 'sem vídeo'}
+                          </span>
+                        </div>
+
+                        {catalogSlots.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveSlot(slot.id)}
-                            className="text-neutral-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
-                            title="Remover este espaço"
+                            className="text-neutral-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
+                            title="Remover este produto"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
 
-                      {/* Photo Thumbnail & URL / Input */}
-                      <div className="flex items-center gap-2.5">
-                        <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
-                          {slot.photoUrl ? (
-                            <img
-                              src={slot.photoUrl}
-                              alt={slot.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400">
-                              <ImageIcon className="w-5 h-5" />
-                              <span className="text-[9px] font-bold">Sem foto</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0 space-y-1">
+                      {/* Product Info Row */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div className="sm:col-span-2">
+                          <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">
+                            Nome do Artigo / Vestido *
+                          </label>
                           <input
                             type="text"
-                            placeholder="Nome do Artigo / Presente"
+                            placeholder="Ex: Vestido Kaftan Tie-Dye com Lenço"
                             value={slot.name}
                             onChange={(e) => handleUpdateSlot(slot.id, 'name', e.target.value)}
-                            className="w-full h-8 px-2.5 rounded-lg border border-neutral-300 text-xs font-bold focus:border-rose-600 focus:outline-none"
+                            className="w-full h-9 px-3 rounded-xl border border-neutral-300 text-xs font-bold focus:border-rose-600 focus:outline-none"
                           />
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="number"
-                              placeholder="Preço MT"
-                              value={slot.price || ''}
-                              onChange={(e) => handleUpdateSlot(slot.id, 'price', e.target.value)}
-                              className="w-24 h-7 px-2 rounded-lg border border-neutral-300 text-xs font-bold text-rose-600 focus:border-rose-600 focus:outline-none"
-                            />
-                            <span className="text-[11px] font-bold text-neutral-500">MT</span>
-                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-neutral-700 block mb-0.5">
+                            Preço (MT) *
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="Ex: 3500"
+                            value={slot.price || ''}
+                            onChange={(e) => handleUpdateSlot(slot.id, 'price', e.target.value)}
+                            className="w-full h-9 px-3 rounded-xl border border-neutral-300 text-xs font-bold text-rose-600 focus:border-rose-600 focus:outline-none"
+                          />
                         </div>
                       </div>
 
-                      {/* Photo Link Input */}
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Link da imagem (ou use o botão 'Carregar Fotos')"
-                          value={slot.photoUrl}
-                          onChange={(e) => handleUpdateSlot(slot.id, 'photoUrl', e.target.value)}
-                          className="w-full h-7 px-2 rounded-lg border border-neutral-200 text-[11px] text-neutral-600 focus:border-rose-600 focus:outline-none truncate"
-                        />
+                      {/* Photos Row */}
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[11px] font-bold text-neutral-800 block">
+                          Fotos do Artigo (1 a 4)
+                        </label>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[0, 1, 2, 3].map((slideIdx) => {
+                            const slidePhoto = slot.photos?.[slideIdx];
+                            return (
+                              <div
+                                key={slideIdx}
+                                className="p-2 bg-neutral-50 rounded-xl border border-neutral-200/90 flex flex-col items-center justify-between text-center relative group min-h-[110px]"
+                              >
+                                <span className="text-[9px] font-bold uppercase text-neutral-500 mb-1">
+                                  Slide {slideIdx + 1} {slideIdx === 0 && '• Capa'}
+                                </span>
+
+                                {slidePhoto ? (
+                                  <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-neutral-200">
+                                    <img
+                                      src={slidePhoto}
+                                      alt={`Slide ${slideIdx + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateProductSlidePhoto(slot.id, slideIdx, '')}
+                                      className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
+                                      title="Remover esta foto"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <label className="cursor-pointer flex flex-col items-center justify-center p-2 w-full flex-1 border border-dashed border-neutral-300 rounded-lg hover:bg-rose-50/50 transition-colors">
+                                    <Upload className="w-4 h-4 text-neutral-400 mb-0.5" />
+                                    <span className="text-[10px] font-semibold text-neutral-600">
+                                      + Slide {slideIdx + 1}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const reader = new FileReader();
+                                          reader.onload = (ev) => {
+                                            handleUpdateProductSlidePhoto(slot.id, slideIdx, ev.target?.result as string);
+                                          };
+                                          reader.readAsDataURL(file);
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                )}
+
+                                <input
+                                  type="text"
+                                  placeholder="Ou link URL"
+                                  value={slidePhoto || ''}
+                                  onChange={(e) => handleUpdateProductSlidePhoto(slot.id, slideIdx, e.target.value)}
+                                  className="w-full h-6 px-1.5 mt-1.5 text-[9px] border border-neutral-200 rounded text-neutral-600 focus:outline-none truncate"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Optional Video */}
+                      <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 space-y-2">
+                        <label className="text-[11px] font-bold text-neutral-800 flex items-center gap-1.5">
+                          <span>🎬</span>
+                          <span>Vídeo (opcional)</span>
+                        </label>
+
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <div className="flex-1 w-full flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              placeholder="Link do vídeo MP4"
+                              value={slot.videoUrl || ''}
+                              onChange={(e) => handleUpdateProductVideo(slot.id, e.target.value)}
+                              className="flex-1 h-9 px-3 rounded-xl border border-neutral-300 text-xs text-neutral-700 focus:border-rose-600 focus:outline-none"
+                            />
+                            {slot.videoUrl && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateProductVideo(slot.id, '')}
+                                className="px-2.5 h-9 rounded-xl bg-neutral-200 hover:bg-red-100 text-neutral-600 hover:text-red-600 text-xs font-bold transition-colors cursor-pointer"
+                                title="Remover vídeo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          <label className="w-full sm:w-auto h-9 px-3.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors">
+                            <Upload className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Carregar Vídeo</span>
+                            <input
+                              type="file"
+                              accept="video/mp4,video/webm,video/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => {
+                                    handleUpdateProductVideo(slot.id, ev.target?.result as string);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        {slot.videoUrl && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                            <span>Vídeo anexado com sucesso</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
 
-                  {/* Add Individual Slot Button if < 25 */}
-                  {catalogSlots.length < 25 && (
+                  {/* Add Product Button or Upgrade notice */}
+                  {catalogSlots.length < 25 ? (
                     <button
                       type="button"
                       onClick={handleAddIndividualSlot}
-                      className="p-4 rounded-2xl border-2 border-dashed border-rose-300 hover:border-rose-500 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all cursor-pointer min-h-[140px]"
+                      className="w-full p-3.5 rounded-2xl border-2 border-dashed border-rose-300 hover:border-rose-500 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <Plus className="w-6 h-6 text-rose-600" />
-                      <span>Adicionar Espaço #{catalogSlots.length + 1} (até 25)</span>
+                      <Plus className="w-4 h-4 text-rose-600" />
+                      <span>+ Adicionar Produto</span>
                     </button>
+                  ) : (
+                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <div>
+                        <h4 className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                          <span>👑</span>
+                          <span>Limite de 25 Produtos Atingido no Plano Base</span>
+                        </h4>
+                        <p className="text-[11px] text-amber-900 mt-0.5">
+                          Para cadastrar mais de 25 produtos, fale com a nossa equipa comercial para um plano corporativo.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shadow-xs"
+                      >
+                        Upgrade Comercial &rarr;
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -1383,7 +1352,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                     className="h-11 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>Voltar aos Dados</span>
+                    <span>Voltar</span>
                   </button>
 
                   <button
@@ -1391,7 +1360,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
                     onClick={handleProceedToSubscription}
                     className="h-11 px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-rose-600/20 transition-all cursor-pointer"
                   >
-                    <span>Avançar para Ativação ({catalogSlots.length} Artigos Prontos)</span>
+                    <span>Avançar para Ativação ({catalogSlots.length} {catalogSlots.length === 1 ? 'Produto' : 'Produtos'})</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -1559,6 +1528,46 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
           onClose={() => setIsInvoiceOpen(false)}
           invoiceData={generatedInvoice}
         />
+      )}
+
+      {/* 25-Product Standard Limit Upgrade / Upsell Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-neutral-200 space-y-4 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-2xl font-black shadow-inner">
+              👑
+            </div>
+            
+            <div className="text-center space-y-1.5">
+              <h3 className="text-base font-black text-neutral-900">
+                Limite de 25 Produtos Atingido
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                O seu pacote standard (1.000 MT/mês) permite até <strong>25 produtos diferentes</strong> com 4 slides e 1 vídeo cada. Para cadastrar 26 ou mais produtos, entre em contacto com a nossa equipa comercial para ativar um plano corporativo personalizado.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <a
+                href="https://wa.me/258841234560?text=Ol%C3%A1!%20Tenho%20uma%20loja%20no%20Love%20Shop%20e%20pretendo%20fazer%20upgrade%20para%20mais%20de%2025%20produtos."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/25"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Negociar Plano no WhatsApp</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="w-full h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-2xl font-bold text-xs transition-colors cursor-pointer"
+              >
+                Manter 25 Produtos
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

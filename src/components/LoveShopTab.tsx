@@ -9,7 +9,8 @@ import {
   Clock,
   Gift,
   ArrowLeft,
-  Home
+  Home,
+  Play
 } from 'lucide-react';
 import { 
   LoveShopStore, 
@@ -234,20 +235,15 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
       {/* 4. Product Showcase Catalog Grid */}
       <div className="space-y-3 pt-3">
         <div className="flex items-center justify-between px-1">
-          <div>
-            <h2 className="text-base font-black text-neutral-900">
-              Artigos da Categoria ({filteredProducts.length})
-            </h2>
-            <p className="text-[11px] text-neutral-500">
-              Acesso livre para compradores • Contacto direto com a loja
-            </p>
-          </div>
+          <h2 className="text-base font-black text-neutral-900">
+            Artigos ({filteredProducts.length})
+          </h2>
 
           <button
             onClick={() => setIsRegisterStoreOpen(true)}
-            className="text-xs font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+            className="text-xs font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
           >
-            + Registar Minha Loja
+            + Registar Loja
           </button>
         </div>
 
@@ -275,25 +271,44 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                 onClick={() => setSelectedProduct(prod)}
                 className="bg-white rounded-2xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md hover:border-rose-300 transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation relative"
               >
-                {/* Product Image Container (100% Clean, No Text Overlays) */}
-                <div className="relative aspect-square bg-neutral-50 overflow-hidden shrink-0 border-b border-neutral-100 flex items-center justify-center">
-                  <img
-                    src={prod.photo}
-                    alt={prod.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+                {/* Product Image/Video Container (Vertical 3:4 Proportion - Edge-to-Edge 720p) */}
+                <div className="relative aspect-[3/4] bg-neutral-900 overflow-hidden shrink-0 border-b border-neutral-100 flex items-center justify-center">
+                  {prod.videoUrl && prod.id === 'prod-kaftan-1' ? (
+                    <video
+                      src={prod.videoUrl}
+                      poster={prod.photo}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <img
+                      src={prod.photo}
+                      alt={prod.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  )}
+
+                  {/* Minimal subtle video indicator */}
+                  {prod.videoUrl && (
+                    <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/65 backdrop-blur-xs text-white flex items-center justify-center shadow-md">
+                      <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Info Container */}
-                <div className="p-2.5 sm:p-3 space-y-2 flex-1 flex flex-col justify-between">
+                <div className="p-2.5 sm:p-3 space-y-1.5 flex-1 flex flex-col justify-between">
                   <div>
-                    {/* Title (2 lines clamp) */}
+                    {/* Title */}
                     <h3 className="font-bold text-xs sm:text-sm text-neutral-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
                       {prod.name}
                     </h3>
 
-                    {/* Store & Location Sub-line */}
+                    {/* Store & Location */}
                     <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-neutral-500 font-medium mt-1 truncate">
                       <Store className="w-3 h-3 text-rose-600 shrink-0" />
                       <span className="truncate">{prod.storeName}</span>
@@ -305,9 +320,6 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                   {/* Price Row & Action Button */}
                   <div className="pt-2 mt-auto border-t border-neutral-100 flex items-center justify-between gap-1">
                     <div className="min-w-0">
-                      <span className="text-[10px] text-neutral-400 uppercase font-extrabold block -mb-0.5">
-                        MZN
-                      </span>
                       <span className="text-xs sm:text-sm font-black text-rose-600 truncate block">
                         {prod.price.toLocaleString('pt-MZ')} MT
                       </span>
@@ -355,27 +367,23 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         )}
       </div>
 
-      {/* 5. Vendedores & Lojistas Registration Banner */}
-      <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* 5. Lojistas Registration Banner */}
+      <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-1.5 text-rose-400 text-[10px] font-bold uppercase tracking-wider">
-            <Store className="w-3.5 h-3.5" />
-            <span>Área do Comerciante Love Shop • Mínimo 15 a 25 Fotos</span>
-          </div>
-          <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
-            Tem uma loja de presentes, joias ou perfumes?
+          <h3 className="text-sm sm:text-base font-bold text-white">
+            Venda na Love Shop
           </h3>
-          <p className="text-[11px] text-neutral-300 mt-0.5">
-            Taxa única de <strong>1.000 MT/mês</strong> com capacidade garantida de <strong>15 até 25 fotos/artigos</strong> no seu catálogo e fatura fiscal oficial.
+          <p className="text-xs text-neutral-400 mt-0.5">
+            Crie a sua loja e receba pedidos no WhatsApp.
           </p>
         </div>
 
         <button
           onClick={() => setIsRegisterStoreOpen(true)}
-          className="h-10 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+          className="h-10 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
-          <span>Registar Loja (15-25 Fotos)</span>
+          <span>Registar Loja</span>
         </button>
       </div>
 

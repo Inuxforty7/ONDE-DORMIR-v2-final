@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   Store, 
@@ -10,9 +10,15 @@ import {
   CheckCircle2, 
   ShoppingBag,
   Clock,
-  Sparkles
+  Sparkles,
+  Plus,
+  Trash2,
+  Upload,
+  AlertCircle,
+  Play
 } from 'lucide-react';
 import { LoveShopStore, LoveShopProduct } from '../types';
+import { DEFAULT_AFRO_CHIC_CATALOG } from '../data/loveShopData';
 
 interface LoveShopStoreModalProps {
   store: LoveShopStore | null;
@@ -29,9 +35,20 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
   onClose,
   onSelectProduct,
 }) => {
-  if (!isOpen || !store) return null;
+  // Modal states for adding products and upsell upgrade
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const storeProducts = React.useMemo(() => {
+  // New product form state (1 to 4 photo slides + 1 optional video)
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdPrice, setNewProdPrice] = useState<number | ''>(3500);
+  const [newProdCategory, setNewProdCategory] = useState<'presentes' | 'noivado' | 'casamento'>('presentes');
+  const [newProdPhotos, setNewProdPhotos] = useState<string[]>([]);
+  const [newProdVideoUrl, setNewProdVideoUrl] = useState('');
+  const [newProdDescription, setNewProdDescription] = useState('');
+
+  // Store custom products in state initialized from localStorage
+  const [customCatalog, setCustomCatalog] = useState<LoveShopProduct[]>(() => {
     if (!store) return [];
     const saved = localStorage.getItem(`onde_dormir_store_catalog_${store.id}`);
     if (saved) {
@@ -44,11 +61,117 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
         // fallback
       }
     }
+    if (store.id === 'store-7') {
+      return DEFAULT_AFRO_CHIC_CATALOG;
+    }
     return products.filter((p) => p.storeId === store.id);
+  });
+
+  // Re-sync when store changes
+  React.useEffect(() => {
+    if (!store) return;
+    const saved = localStorage.getItem(`onde_dormir_store_catalog_${store.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCustomCatalog(parsed);
+          return;
+        }
+      } catch (e) {
+        // fallback
+      }
+    }
+    if (store.id === 'store-7') {
+      setCustomCatalog(DEFAULT_AFRO_CHIC_CATALOG);
+      return;
+    }
+    setCustomCatalog(products.filter((p) => p.storeId === store.id));
   }, [store?.id, products]);
 
+  if (!isOpen || !store) return null;
+
+  const storeProducts = customCatalog;
+
+  // Handle Photo Slide Change (Index 0 to 3)
+  const handleUpdateSlidePhoto = (index: number, url: string) => {
+    setNewProdPhotos((prev) => {
+      const next = [...prev];
+      if (url && url.trim().length > 0) {
+        next[index] = url.trim();
+      } else {
+        next.splice(index, 1);
+      }
+      return next.slice(0, 4);
+    });
+  };
+
+  // Handle Add Product Click
+  const handleOpenAddProduct = () => {
+    if (storeProducts.length >= 25) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setNewProdName('');
+    setNewProdPrice(3500);
+    setNewProdPhotos([]);
+    setNewProdVideoUrl('');
+    setNewProdDescription('');
+    setIsAddProductOpen(true);
+  };
+
+  // Save new product
+  const handleSaveProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProdName.trim() || !newProdPrice) return;
+    if (storeProducts.length >= 25) {
+      setIsAddProductOpen(false);
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    const validPhotos = newProdPhotos.filter((p) => p && p.trim().length > 0);
+    const mainPhoto = validPhotos[0] || 'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg';
+
+    const newProd: LoveShopProduct = {
+      id: `prod-${store.id}-${Date.now()}`,
+      storeId: store.id,
+      storeName: store.name,
+      storeVerified: store.verified,
+      name: newProdName.trim(),
+      description: newProdDescription.trim() || `${newProdName.trim()} disponível na loja ${store.name}.`,
+      category: newProdCategory,
+      categoryLabel: newProdCategory === 'presentes' ? 'Vestidos & Presentes' : 'Moda & Acessórios',
+      price: Number(newProdPrice),
+      photo: mainPhoto,
+      photos: validPhotos.length > 0 ? validPhotos : [mainPhoto],
+      videoUrl: newProdVideoUrl.trim() || undefined,
+      videoDuration: newProdVideoUrl.trim() ? '0:35 min' : undefined,
+      inStock: true,
+      city: store.city,
+      province: store.province,
+      phone: store.phone,
+      whatsapp: store.whatsapp,
+      registeredAt: new Date().toISOString().split('T')[0],
+      platformTenure: 'Novo Artigo'
+    };
+
+    const updated = [...storeProducts, newProd];
+    setCustomCatalog(updated);
+    localStorage.setItem(`onde_dormir_store_catalog_${store.id}`, JSON.stringify(updated));
+    setIsAddProductOpen(false);
+  };
+
+  // Remove product from store
+  const handleRemoveProduct = (productId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = storeProducts.filter((p) => p.id !== productId);
+    setCustomCatalog(updated);
+    localStorage.setItem(`onde_dormir_store_catalog_${store.id}`, JSON.stringify(updated));
+  };
+
   const whatsappMessage = encodeURIComponent(
-    `Olá ${store.name}! Encontrei a vossa loja no módulo Love Shop do Onde Dormir Moçambique e gostaria de conhecer o vosso catálogo de presentes.`
+    `Olá ${store.name}! Encontrei a vossa loja no módulo Love Shop do Onde Dormir Moçambique e gostaria de encomendar.`
   );
   const whatsappUrl = `https://wa.me/${store.whatsapp}?text=${whatsappMessage}`;
 
@@ -124,56 +247,100 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
               )}
             </div>
 
-            {/* Anti-Fraud Verified Shield Banner */}
-            <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-[11px] font-bold">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Loja Oficial Verificada Anti-Fraude • BI & Biometria do Titular Validados</span>
-              </div>
-              <span className="text-[10px] font-black text-emerald-700 bg-emerald-200/60 px-2 py-0.5 rounded-md">
-                100% Autêntica
-              </span>
+            {/* Verified Banner */}
+            <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 flex items-center gap-2 text-xs font-bold">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Loja Oficial Verificada</span>
             </div>
           </div>
 
           {/* Products from this Store */}
           <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h3 className="text-xs font-black uppercase tracking-wider text-neutral-500">
-                Catálogo da Loja ({storeProducts.length} artigos)
+                Catálogo ({storeProducts.length})
               </h3>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Compre Direto com a Loja
-              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenAddProduct}
+                  className="h-8 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Adicionar Artigo</span>
+                </button>
+              </div>
             </div>
+
+            {storeProducts.length >= 25 && (
+              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-300 flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-amber-950 font-bold">
+                  <span>👑</span>
+                  <span>Limite de 25 artigos atingido.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-black cursor-pointer shadow-2xs"
+                >
+                  Upgrade &rarr;
+                </button>
+              </div>
+            )}
 
             {storeProducts.length === 0 ? (
               <div className="p-8 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-neutral-500 text-xs">
-                Esta loja ainda não adicionou artigos ao catálogo online. Entre em contacto pelo WhatsApp abaixo!
+                Nenhum artigo adicionado ainda.
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                {storeProducts.map((prod) => (
+                {storeProducts.map((prod, idx) => (
                   <div
                     key={prod.id}
                     onClick={() => {
                       onSelectProduct(prod);
                       onClose();
                     }}
-                    className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+                    className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group relative"
                   >
-                    <div className="relative aspect-square bg-neutral-900 overflow-hidden">
-                      <img
-                        src={prod.photo}
-                        alt={prod.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {prod.discountPercent && (
-                        <span className="absolute top-2 left-2 text-[10px] font-black bg-amber-400 text-zinc-950 px-1.5 py-0.5 rounded shadow-xs">
-                          -{prod.discountPercent}%
-                        </span>
+                    <div className="relative aspect-[3/4] bg-neutral-900 overflow-hidden">
+                      {prod.videoUrl && prod.id === 'prod-kaftan-1' ? (
+                        <video
+                          src={prod.videoUrl}
+                          poster={prod.photo}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <img
+                          src={prod.photo}
+                          alt={prod.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
                       )}
+                      
+                      {/* Video indicator if product has video */}
+                      {prod.videoUrl && (
+                        <div className="absolute bottom-2 left-2 w-5 h-5 rounded-full bg-black/65 backdrop-blur-xs text-white flex items-center justify-center shadow-md">
+                          <Play className="w-2.5 h-2.5 fill-white text-white ml-0.5" />
+                        </div>
+                      )}
+
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveProduct(prod.id, e)}
+                        className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer"
+                        title="Remover artigo"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
+
                     <div className="p-2.5 space-y-1">
                       <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-rose-600 transition-colors">
                         {prod.name}
@@ -210,6 +377,225 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
           </a>
         </div>
       </div>
+
+      {/* Add Product Modal (1 to 4 Slides + 1 Optional Video) */}
+      {isAddProductOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-5 shadow-2xl border border-neutral-200 space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+              <h3 className="text-sm font-black text-neutral-900">
+                + Novo Artigo ({storeProducts.length + 1}/25)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddProductOpen(false)}
+                className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProduct} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                    Nome do Artigo *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Vestido Kaftan Tie-Dye com Lenço"
+                    value={newProdName}
+                    onChange={(e) => setNewProdName(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-xs font-bold focus:border-rose-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                    Preço (MT) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="3500"
+                    value={newProdPrice}
+                    onChange={(e) => setNewProdPrice(e.target.value ? Number(e.target.value) : '')}
+                    className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-xs font-bold text-rose-600 focus:border-rose-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* 4 Photo Slides (Flexible 1 to 4) */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-neutral-800 block">
+                  Fotografias (até 4 slides)
+                </label>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[0, 1, 2, 3].map((sIdx) => {
+                    const photo = newProdPhotos[sIdx];
+                    return (
+                      <div
+                        key={sIdx}
+                        className="p-2 bg-neutral-50 rounded-xl border border-neutral-200 flex flex-col items-center justify-between min-h-[110px]"
+                      >
+                        <span className="text-[9px] font-bold uppercase text-neutral-500 mb-1">
+                          Slide {sIdx + 1} {sIdx === 0 && '• Capa'}
+                        </span>
+
+                        {photo ? (
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-neutral-200">
+                            <img src={photo} alt={`Slide ${sIdx + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSlidePhoto(sIdx, '')}
+                              className="absolute top-1 right-1 p-1 bg-black/70 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center p-2 w-full flex-1 border border-dashed border-neutral-300 rounded-lg hover:bg-rose-50/50 transition-colors">
+                            <Upload className="w-4 h-4 text-neutral-400 mb-0.5" />
+                            <span className="text-[10px] font-semibold text-neutral-600">+ Slide {sIdx + 1}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) {
+                                  const r = new FileReader();
+                                  r.onload = (ev) => handleUpdateSlidePhoto(sIdx, ev.target?.result as string);
+                                  r.readAsDataURL(f);
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+
+                        <input
+                          type="text"
+                          placeholder="Ou link URL"
+                          value={photo || ''}
+                          onChange={(e) => handleUpdateSlidePhoto(sIdx, e.target.value)}
+                          className="w-full h-6 px-1.5 mt-1.5 text-[9px] border border-neutral-200 rounded text-neutral-600 focus:outline-none truncate"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Optional Video Slide */}
+              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 space-y-2">
+                <label className="text-[11px] font-bold text-neutral-800 flex items-center gap-1.5">
+                  <span>🎬</span>
+                  <span>Vídeo demonstrativo (opcional)</span>
+                </label>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <div className="flex-1 w-full flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Link do vídeo MP4"
+                      value={newProdVideoUrl}
+                      onChange={(e) => setNewProdVideoUrl(e.target.value)}
+                      className="flex-1 h-9 px-3 rounded-xl border border-neutral-300 text-xs focus:border-rose-600 focus:outline-none"
+                    />
+                    {newProdVideoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setNewProdVideoUrl('')}
+                        className="px-2.5 h-9 rounded-xl bg-neutral-200 hover:bg-red-100 text-neutral-600 hover:text-red-600 text-xs font-bold"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="w-full sm:w-auto h-9 px-3.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+                    <Upload className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Carregar Vídeo</span>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setNewProdVideoUrl(ev.target?.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddProductOpen(false)}
+                  className="h-10 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/25 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Guardar Artigo</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 25 Products Standard Limit Upsell Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-neutral-200 space-y-4 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-2xl font-black shadow-inner">
+              👑
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="text-base font-black text-neutral-900">
+                Limite de 25 Produtos
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                A sua loja atingiu a capacidade máxima standard. Fale connosco no WhatsApp para expandir a quota de produtos da sua loja.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <a
+                href="https://wa.me/258841234560?text=Ol%C3%A1!%20Tenho%20uma%20loja%20no%20Love%20Shop%20e%20pretendo%20fazer%20upgrade%20para%20mais%20de%2025%20produtos."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/25"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Contactar Suporte no WhatsApp</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="w-full h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-2xl font-bold text-xs transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -142,29 +142,12 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
   if (!isOpen || !product) return null;
 
-  // Build dynamic media items (Photos + Optional Demonstrative Video at the end)
+  // Build dynamic media items (Video as FIRST item if present, followed by photo slides)
   const photoList: string[] = [];
   if (product.photos && product.photos.length > 0) {
-    photoList.push(...product.photos);
-  } else {
-    const frontPhoto = product.photoAngles?.front || product.photo;
-    if (frontPhoto) photoList.push(frontPhoto);
-
-    const sidePhoto = product.photoAngles?.side;
-    if (sidePhoto) photoList.push(sidePhoto);
-
-    const openPhoto = product.photoAngles?.open;
-    if (openPhoto) photoList.push(openPhoto);
-
-    const backPhoto = product.photoAngles?.back;
-    if (backPhoto) photoList.push(backPhoto);
-  }
-
-  // Fallback to ensure at least default photo angles if only 1 photo was provided
-  if (photoList.length === 1) {
-    photoList.push('https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1000&q=80');
-    photoList.push('https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=1000&q=80');
-    photoList.push('https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?auto=format&fit=crop&w=1000&q=80');
+    photoList.push(...product.photos.slice(0, 4));
+  } else if (product.photo) {
+    photoList.push(product.photo);
   }
 
   const mediaItems: Array<{
@@ -175,16 +158,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
     duration?: string;
   }> = [];
 
-  photoList.forEach((url, idx) => {
-    mediaItems.push({
-      id: `media-photo-${idx + 1}`,
-      type: 'image',
-      url,
-      label: `Foto ${idx + 1}`,
-    });
-  });
-
-  // Optional Demonstrative Video (only included if provided by vendor)
+  // 1. Vídeo como primeiro artigo/apresentação deste card
   const hasVideo = Boolean(product.videoUrl && product.videoUrl.trim().length > 0);
   if (hasVideo) {
     mediaItems.push({
@@ -192,9 +166,19 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
       type: 'video',
       url: product.videoUrl!,
       label: 'Vídeo 🎬',
-      duration: product.videoDuration || '0:45 min',
+      duration: product.videoDuration || '0:35 min',
     });
   }
+
+  // 2. Seguido pelas fotografias do artigo (até 4 slides)
+  photoList.forEach((url, idx) => {
+    mediaItems.push({
+      id: `media-photo-${idx + 1}`,
+      type: 'image',
+      url,
+      label: `Slide ${idx + 1}`,
+    });
+  });
 
   const currentMedia = mediaItems[activeMediaIndex] || mediaItems[0];
 
@@ -273,9 +257,9 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
         {/* Scrollable Content Body */}
         <div className="overflow-y-auto flex-1 pb-4">
           
-          {/* 1. Pure Visual Showcase Area (Clean, Uncluttered, No Text/Gradient Overlays!) */}
+          {/* 1. Pure Visual Showcase Area (Vertical 3:4 Proportions - 100% Edge-to-Edge, Preenche o Card Sem Bordas Vazias) */}
           <div 
-            className="relative w-full aspect-square bg-neutral-100 select-none overflow-hidden flex items-center justify-center"
+            className="relative w-full aspect-[3/4] max-h-[460px] bg-neutral-950 select-none overflow-hidden flex items-center justify-center"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -286,7 +270,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                 className="w-full h-full object-cover transition-opacity duration-200"
               />
             ) : (
-              <div className="relative w-full h-full bg-black flex items-center justify-center">
+              <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
                 <video
                   ref={videoRef}
                   src={currentMedia.url}
@@ -299,18 +283,13 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                 />
                 <button
                   onClick={() => setIsMuted(!isMuted)}
-                  className="absolute bottom-12 right-3 z-20 px-3 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-black transition-all"
+                  className="absolute bottom-3 right-3 z-20 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center cursor-pointer hover:bg-black/80 transition-all shadow-md"
+                  aria-label={isMuted ? 'Ativar som' : 'Silenciar'}
                 >
                   {isMuted ? (
-                    <>
-                      <VolumeX className="w-4 h-4 text-amber-400" />
-                      <span>Com Som</span>
-                    </>
+                    <VolumeX className="w-4 h-4 text-white" />
                   ) : (
-                    <>
-                      <Volume2 className="w-4 h-4 text-emerald-400" />
-                      <span>Sem Som</span>
-                    </>
+                    <Volume2 className="w-4 h-4 text-white" />
                   )}
                 </button>
               </div>
@@ -321,20 +300,20 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               <>
                 <button
                   onClick={handlePrev}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
                   aria-label="Foto anterior"
                 >
-                  <ChevronLeft className="w-6 h-6" />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
                   aria-label="Próxima foto"
                 >
-                  <ChevronRight className="w-6 h-6" />
+                  <ChevronRight className="w-5 h-5" />
                 </button>
 
-                {/* Subtle Carousel Pagination Dots (Matching Take24Hr Screenshot 1 & 3) */}
+                {/* Subtle Carousel Pagination Dots */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full">
                   {mediaItems.map((_, dotIdx) => (
                     <span
@@ -421,11 +400,8 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-neutral-400 font-medium block mt-0.5">
-                Preço final do produto em MT
-              </span>
 
-              {/* Quick Rating Summary Anchor that opens Reviews Drawer */}
+              {/* Quick Rating Summary */}
               <button
                 type="button"
                 onClick={() => setIsReviewsDrawerOpen(true)}
@@ -438,7 +414,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                 </div>
                 <span className="text-amber-300">•</span>
                 <span className="text-neutral-700 font-bold group-hover:text-rose-600 underline">
-                  Confira a avaliação &rarr;
+                  Avaliações &rarr;
                 </span>
               </button>
             </div>
@@ -465,7 +441,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                     <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
                   </div>
                   <span className="text-[11px] text-neutral-500 block truncate">
-                    Vendedor Certificado • Ver catálogo
+                    Loja Oficial Verificada
                   </span>
                 </div>
               </div>
@@ -497,19 +473,19 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               )}
             </div>
 
-            {/* Subtle Trust Line (Minimalist, 1 line only) */}
+            {/* Subtle Trust Line */}
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 px-1 pt-0.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Compra direta com a loja parceira • Sem comissões</span>
+              <span>Compra direta com a loja parceira</span>
             </div>
           </div>
         </div>
 
-        {/* 4. Fixed Bottom Action Bar (Take24Hr Style with WhatsApp & Call) */}
+        {/* 4. Fixed Bottom Action Bar */}
         <div className="p-3 sm:p-4 bg-white border-t border-neutral-200 flex items-center justify-between gap-3 shrink-0">
           <div className="min-w-0">
             <span className="text-[10px] text-neutral-400 font-semibold block uppercase">
-              Preço Final
+              Preço
             </span>
             <span className="text-sm sm:text-base font-black text-neutral-900 block truncate">
               MT {product.price.toLocaleString('pt-MZ')}.00
