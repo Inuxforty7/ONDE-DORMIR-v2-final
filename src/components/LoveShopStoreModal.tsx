@@ -33,6 +33,7 @@ interface LoveShopStoreModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectProduct: (product: LoveShopProduct) => void;
+  initialTab?: 'catalogo' | 'pedidos' | 'reputacao';
 }
 
 export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
@@ -41,9 +42,16 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
   isOpen,
   onClose,
   onSelectProduct,
+  initialTab = 'catalogo',
 }) => {
   // Active Tab: 'catalogo' | 'pedidos' | 'reputacao'
-  const [activeStoreTab, setActiveStoreTab] = useState<'catalogo' | 'pedidos' | 'reputacao'>('catalogo');
+  const [activeStoreTab, setActiveStoreTab] = useState<'catalogo' | 'pedidos' | 'reputacao'>(initialTab);
+
+  React.useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveStoreTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   // Modal states for adding products and upsell upgrade
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);

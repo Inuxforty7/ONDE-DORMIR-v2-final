@@ -12,7 +12,8 @@ import {
   Home,
   Play,
   ShoppingBag,
-  Star
+  Star,
+  PackageCheck
 } from 'lucide-react';
 import { 
   LoveShopStore, 
@@ -84,12 +85,18 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<LoveShopCategoryId>('presentes');
   const [isMoreCategoriesOpen, setIsMoreCategoriesOpen] = useState(false);
 
-  // Modals
+  // Modals & Role Mode
+  const [userRoleMode, setUserRoleMode] = useState<'visitante' | 'comerciante'>('visitante');
+  const [storeModalInitialTab, setStoreModalInitialTab] = useState<'catalogo' | 'pedidos' | 'reputacao'>('catalogo');
   const [isRegisterStoreOpen, setIsRegisterStoreOpen] = useState(false);
   const [isClientOrdersOpen, setIsClientOrdersOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<LoveShopProduct | null>(null);
   const [selectedStore, setSelectedStore] = useState<LoveShopStore | null>(null);
   const [viewAllStores, setViewAllStores] = useState(false);
+
+  // Client Orders pending reviews count for real-time badge
+  const clientOrders = useMemo(() => loveShopOrderService.getOrders(), [isClientOrdersOpen, selectedProduct, isRegisterStoreOpen]);
+  const pendingReviewsCount = clientOrders.filter((o) => o.status === 'concluido' && !o.hasReviewed).length;
 
   // Handle Add Store with its 15 to 25 catalog products (Saved strictly inside store details, NOT on the main screen)
   const handleAddStore = (newStore: LoveShopStore, newProducts?: LoveShopProduct[]) => {
@@ -139,6 +146,158 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
 
   return (
     <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-3 sm:px-4 pt-2 pb-16 sm:pb-20 space-y-3.5 animate-in fade-in duration-200">
+      
+      {/* 0. Top Access Bar: Entrar como Visitante vs. Entrar como Comerciante (Strictly 100% Width - Zero Overflow Leaks) */}
+      <div className="w-full bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 border border-neutral-200/90 shadow-2xs space-y-2.5 overflow-hidden">
+        {/* Full-width 2-column Segmented Control (Prevents side leaks on mobile) */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-neutral-100/90 rounded-xl sm:rounded-2xl border border-neutral-200/60 w-full">
+          <button
+            type="button"
+            onClick={() => setUserRoleMode('visitante')}
+            className={`py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
+              userRoleMode === 'visitante'
+                ? 'bg-white text-rose-700 shadow-xs font-black'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+            <span className="truncate">Entrar como Visitante</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setUserRoleMode('comerciante')}
+            className={`py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 ${
+              userRoleMode === 'comerciante'
+                ? 'bg-neutral-900 text-white shadow-xs font-black'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <Store className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <span className="truncate">Entrar como Comerciante</span>
+          </button>
+        </div>
+
+        {/* Visitante Quick Actions Bar */}
+        {userRoleMode === 'visitante' && (
+          <div className="flex items-center justify-between gap-2 pt-0.5 animate-in fade-in duration-150">
+            <button
+              type="button"
+              onClick={() => setIsClientOrdersOpen(true)}
+              className="relative h-9 px-3.5 bg-neutral-100 hover:bg-rose-50 text-neutral-800 hover:text-rose-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200/80 min-w-0"
+              title="Ver meus pedidos"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <span className="truncate">Meus Pedidos</span>
+              {pendingReviewsCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 animate-pulse">
+                  {pendingReviewsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsRegisterStoreOpen(true)}
+              className="h-9 px-3.5 sm:px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0 ml-auto"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Registar Loja</span>
+            </button>
+          </div>
+        )}
+
+        {/* Dedicated Black Merchant Card at Top ("Venda na Love Shop") - Faithful to Image 2 */}
+        {userRoleMode === 'comerciante' && (
+          <div className="animate-in fade-in duration-200 space-y-2.5">
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 text-white rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-md space-y-3">
+              <div className="space-y-1">
+                <h3 className="text-sm sm:text-base font-black text-white tracking-tight">
+                  Venda na Love Shop
+                </h3>
+                <p className="text-xs text-neutral-300 leading-relaxed max-w-md">
+                  Publique o catálogo da sua loja e receba encomendas diretamente no seu WhatsApp.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsRegisterStoreOpen(true)}
+                  className="h-10 px-5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Registar Loja</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (stores.length > 0) {
+                      setStoreModalInitialTab('pedidos');
+                      setSelectedStore(stores[0]);
+                    }
+                  }}
+                  className="h-10 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <PackageCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Pedidos Recebidos</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Access to Registered Stores */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[11px] font-bold text-neutral-600 block px-1">
+                Suas Lojas Cadastradas & Gestão de Vendas:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {stores.slice(0, 4).map((s) => {
+                  const sOrders = loveShopOrderService.getOrdersByStoreId(s.id);
+                  const pendingOrders = sOrders.filter((o) => o.status === 'pendente').length;
+
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => {
+                        setStoreModalInitialTab('pedidos');
+                        setSelectedStore(s);
+                      }}
+                      className="p-2.5 bg-neutral-50 hover:bg-rose-50/50 rounded-xl border border-neutral-200/90 hover:border-rose-300 transition-all flex items-center justify-between cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0">
+                          {s.name.charAt(0)}
+                        </div>
+                        <div className="truncate">
+                          <div className="text-xs font-bold text-neutral-900 group-hover:text-rose-700 truncate">
+                            {s.name}
+                          </div>
+                          <div className="text-[10px] text-neutral-500">
+                            {s.city} • {sOrders.length} pedido{sOrders.length !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {pendingOrders > 0 ? (
+                          <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md border border-amber-200">
+                            {pendingOrders} pendente{pendingOrders > 1 ? 's' : ''}
+                          </span>
+                        ) : (
+                          <span className="text-[10.5px] font-bold text-rose-600 group-hover:translate-x-0.5 transition-transform">
+                            Gerir &rarr;
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       
       {/* 1. Crimson Hero Banner with Search Bar (Exact match to Image 3) */}
       <LoveShopHeaderBanner
@@ -617,7 +776,11 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         store={selectedStore}
         products={products}
         isOpen={!!selectedStore}
-        onClose={() => setSelectedStore(null)}
+        initialTab={storeModalInitialTab}
+        onClose={() => {
+          setSelectedStore(null);
+          setStoreModalInitialTab('catalogo');
+        }}
         onSelectProduct={(prod) => setSelectedProduct(prod)}
       />
 
