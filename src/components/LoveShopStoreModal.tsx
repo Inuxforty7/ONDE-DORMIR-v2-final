@@ -31,7 +31,21 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
 }) => {
   if (!isOpen || !store) return null;
 
-  const storeProducts = products.filter((p) => p.storeId === store.id);
+  const storeProducts = React.useMemo(() => {
+    if (!store) return [];
+    const saved = localStorage.getItem(`onde_dormir_store_catalog_${store.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        // fallback
+      }
+    }
+    return products.filter((p) => p.storeId === store.id);
+  }, [store?.id, products]);
 
   const whatsappMessage = encodeURIComponent(
     `Olá ${store.name}! Encontrei a vossa loja no módulo Love Shop do Onde Dormir Moçambique e gostaria de conhecer o vosso catálogo de presentes.`

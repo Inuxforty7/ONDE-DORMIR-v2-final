@@ -64,16 +64,12 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
     return INITIAL_LOVE_SHOP_STORES;
   });
 
-  // Products state (includes initial items + custom store catalog products)
+  // Products state (Keeps the main screen clean, balanced and never flooded with 15 cards)
   const [products, setProducts] = useState<LoveShopProduct[]>(() => {
-    const saved = localStorage.getItem('onde_dormir_loveshop_custom_products');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return [...parsed, ...INITIAL_LOVE_SHOP_PRODUCTS];
-      } catch (e) {
-        // fallback
-      }
+    try {
+      localStorage.removeItem('onde_dormir_loveshop_custom_products');
+    } catch (e) {
+      // ignore
     }
     return INITIAL_LOVE_SHOP_PRODUCTS;
   });
@@ -89,7 +85,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   const [selectedStore, setSelectedStore] = useState<LoveShopStore | null>(null);
   const [viewAllStores, setViewAllStores] = useState(false);
 
-  // Handle Add Store with its 15 to 25 catalog products
+  // Handle Add Store with its 15 to 25 catalog products (Saved strictly inside store details, NOT on the main screen)
   const handleAddStore = (newStore: LoveShopStore, newProducts?: LoveShopProduct[]) => {
     setStores((prev) => {
       const updated = [newStore, ...prev];
@@ -98,14 +94,11 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
     });
 
     if (newProducts && newProducts.length > 0) {
-      setProducts((prev) => {
-        const updated = [...newProducts, ...prev];
-        localStorage.setItem(
-          'onde_dormir_loveshop_custom_products',
-          JSON.stringify(updated.filter((p) => p.storeId.startsWith('store-')))
-        );
-        return updated;
-      });
+      // Save specifically for this store's catalog details
+      localStorage.setItem(
+        `onde_dormir_store_catalog_${newStore.id}`,
+        JSON.stringify(newProducts)
+      );
     }
   };
 
