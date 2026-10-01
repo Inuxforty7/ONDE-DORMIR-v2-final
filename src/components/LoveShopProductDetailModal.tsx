@@ -144,17 +144,21 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
   // Build dynamic media items (Photos + Optional Demonstrative Video at the end)
   const photoList: string[] = [];
-  const frontPhoto = product.photoAngles?.front || product.photos?.[0] || product.photo;
-  if (frontPhoto) photoList.push(frontPhoto);
+  if (product.photos && product.photos.length > 0) {
+    photoList.push(...product.photos);
+  } else {
+    const frontPhoto = product.photoAngles?.front || product.photo;
+    if (frontPhoto) photoList.push(frontPhoto);
 
-  const sidePhoto = product.photoAngles?.side || product.photos?.[1];
-  if (sidePhoto) photoList.push(sidePhoto);
+    const sidePhoto = product.photoAngles?.side;
+    if (sidePhoto) photoList.push(sidePhoto);
 
-  const openPhoto = product.photoAngles?.open || product.photos?.[2];
-  if (openPhoto) photoList.push(openPhoto);
+    const openPhoto = product.photoAngles?.open;
+    if (openPhoto) photoList.push(openPhoto);
 
-  const backPhoto = product.photoAngles?.back || product.photos?.[3];
-  if (backPhoto) photoList.push(backPhoto);
+    const backPhoto = product.photoAngles?.back;
+    if (backPhoto) photoList.push(backPhoto);
+  }
 
   // Fallback to ensure at least default photo angles if only 1 photo was provided
   if (photoList.length === 1) {
@@ -171,14 +175,12 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
     duration?: string;
   }> = [];
 
-  const photoLabels = ['Frente', 'Lateral', 'Aberto', 'Traseira'];
-
-  photoList.slice(0, 4).forEach((url, idx) => {
+  photoList.forEach((url, idx) => {
     mediaItems.push({
       id: `media-photo-${idx + 1}`,
       type: 'image',
       url,
-      label: photoLabels[idx] || `Foto ${idx + 1}`,
+      label: `Foto ${idx + 1}`,
     });
   });
 
