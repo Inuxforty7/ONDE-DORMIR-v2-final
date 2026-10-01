@@ -15,6 +15,7 @@ import {
   Plus, 
   Share2, 
   ChevronDown, 
+  ChevronUp,
   ArrowLeft, 
   ShieldCheck, 
   Camera, 
@@ -88,6 +89,20 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
   });
+
+  const [expandedSections, setExpandedSections] = useState<{
+    about: boolean;
+    specialties: boolean;
+    verification: boolean;
+  }>({
+    about: false,
+    specialties: false,
+    verification: false,
+  });
+
+  const toggleSection = (key: 'about' | 'specialties' | 'verification') => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleStartGuideRegistration = () => {
     setIsVerificationOpen(true);
@@ -316,77 +331,37 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           </div>
         </div>
 
-        {/* Quick Horizontal Province Chips */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => handleProvinceClick('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedProvince === 'all'
-                ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todas as Províncias
-          </button>
-          {MOZ_PROVINCES_LIST.map((p) => {
-            const isSelected = selectedProvince.toLowerCase() === p.toLowerCase();
-            return (
-              <button
-                key={p}
-                onClick={() => handleProvinceClick(isSelected ? 'all' : p)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Active Province Scope Indicator */}
-        {selectedProvince !== 'all' && (
-          <div className="flex items-center justify-between bg-emerald-50 text-emerald-950 px-3 py-1.5 rounded-xl border border-emerald-200 text-xs font-semibold">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="truncate">Apenas guias em: <strong>{selectedProvince}</strong> ({filteredGuides.length})</span>
-            </div>
-            <button 
-              onClick={() => handleProvinceClick('all')}
-              className="text-[11px] text-emerald-800 font-bold underline hover:text-emerald-950 shrink-0 ml-2 cursor-pointer"
+        {/* Clean Responsive 2-Selector Row (Zero-Cutoff & Direct) */}
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
+          {/* Quick Province Dropdown Selector */}
+          <div className="relative">
+            <select
+              value={selectedProvince}
+              onChange={(e) => handleProvinceClick(e.target.value)}
+              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
             >
-              Ver Todas as Províncias
-            </button>
+              <option value="all">📍 Moçambique (Todas)</option>
+              {MOZ_PROVINCES_LIST.map((p) => (
+                <option key={p} value={p}>📍 {p}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-        )}
 
-        {/* Specialty Filter Pills */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => setSelectedSpecialty('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedSpecialty === 'all'
-                ? 'bg-emerald-700 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todas
-          </button>
-          {specialtiesList.map((spec) => (
-            <button
-              key={spec}
-              onClick={() => setSelectedSpecialty(selectedSpecialty === spec ? 'all' : spec)}
-              className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                selectedSpecialty === spec
-                  ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
-                  : 'bg-white text-neutral-700 border-neutral-200 hover:bg-emerald-50'
-              }`}
+          {/* Quick Specialty Selector */}
+          <div className="relative">
+            <select
+              value={selectedSpecialty}
+              onChange={(e) => setSelectedSpecialty(e.target.value)}
+              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
             >
-              {spec}
-            </button>
-          ))}
+              <option value="all">🧭 Todas as Especialidades</option>
+              {specialtiesList.map((spec) => (
+                <option key={spec} value={spec}>{spec}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
       </div>
 
@@ -405,63 +380,42 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           >
             <div className="space-y-2.5">
               <div className="flex items-start gap-3">
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-900 shadow-2xs">
+                <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-100 shadow-2xs">
                   <img
                     src={guide.photo}
                     alt={guide.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                  {guide.age && (
-                    <span className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-white text-[11px] font-black px-1.5 py-0.5 rounded-md leading-none shadow-sm border border-white/20">
-                      {guide.age}
-                    </span>
-                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <h3 className="font-extrabold text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors">
+                    <h3 className="font-bold text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors">
                       {guide.name}{guide.age ? `, ${guide.age}` : ''}
                     </h3>
-                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verificado
+                    <span className="text-[10.5px] font-bold text-emerald-700 flex items-center gap-1 shrink-0">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verificado
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 text-xs text-neutral-600 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>{guide.city}, {guide.province}</span>
-                  </div>
-
-                  {/* 🕒 Antiguidade do Guia na Plataforma */}
-                  <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-neutral-100/90 border border-neutral-200/80 px-2 py-0.5 rounded-md w-fit mt-1">
-                    <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span>{getPlatformTenureText(guide.registeredAt, guide.platformTenure, guide.id)}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-1.5 text-xs">
-                    <div className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-600 mt-0.5 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{guide.city}, {guide.province}</span>
+                    </span>
+                    <span aria-hidden="true" className="text-neutral-300">·</span>
+                    <span>{guide.experienceYears} anos exp.</span>
+                    <span aria-hidden="true" className="text-neutral-300">·</span>
+                    <span className="flex items-center gap-0.5 font-semibold text-neutral-800">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                       <span>{guide.rating.toFixed(1)}</span>
-                    </div>
-                    <span className="text-neutral-400">•</span>
-                    <span className="text-neutral-600 font-medium">
-                      {guide.experienceYears} anos exp.
                     </span>
+                  </div>
+
+                  <div className="text-[11.5px] text-neutral-500 mt-1 truncate">
+                    <span className="text-neutral-400 font-medium">Especialista em:</span> {guide.specialties.slice(0, 2).join(' · ')}
                   </div>
                 </div>
-              </div>
-
-              <div className="flex flex-wrap gap-1">
-                {guide.specialties.slice(0, 2).map((spec, i) => (
-                  <span
-                    key={i}
-                    className="text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-md"
-                  >
-                    {spec}
-                  </span>
-                ))}
               </div>
 
               <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
@@ -503,7 +457,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   }}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation cursor-pointer"
+                  className="h-10 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation cursor-pointer"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span>WhatsApp</span>
@@ -529,7 +483,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                       e.preventDefault();
                     }
                   }}
-                  className="h-9 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors touch-manipulation cursor-pointer"
+                  className="h-10 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors touch-manipulation cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   <span>Ligar</span>
@@ -544,7 +498,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       {selectedGuide && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in fade-in zoom-in-95 duration-150 my-auto">
-            <div className="relative aspect-4/3 w-full bg-neutral-900">
+            <div className="relative aspect-4/3 w-full bg-neutral-100">
               <img
                 src={selectedGuide.photo}
                 alt={selectedGuide.name}
@@ -594,36 +548,81 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </div>
               </div>
 
-              <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>
-                  <strong>Identidade Confirmada:</strong> Guia verificado com BI e reconhecimento facial.
-                </span>
+              {/* 1. Identidade & Verificação (Accordion) */}
+              <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-emerald-50/50">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('verification')}
+                  className="w-full p-2.5 flex items-center justify-between text-left hover:bg-emerald-100/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>Identidade Confirmada (BI + Facial)</span>
+                  </div>
+                  {expandedSections.verification ? (
+                    <ChevronUp className="w-4 h-4 text-emerald-700 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-emerald-700 shrink-0" />
+                  )}
+                </button>
+                {expandedSections.verification && (
+                  <div className="px-2.5 pb-2.5 pt-0 text-[11px] text-emerald-900 leading-relaxed border-t border-emerald-100">
+                    Guia credenciado com verificação biométrica facial e Bilhete de Identidade ativo verificado pelos moderadores.
+                  </div>
+                )}
               </div>
 
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">
-                  Sobre o Guia
-                </h4>
-                <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
-                  {selectedGuide.bio}
-                </p>
+              {/* 2. Sobre o Guia (Accordion) */}
+              <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('about')}
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                    Sobre o Guia
+                  </span>
+                  {expandedSections.about ? (
+                    <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                  )}
+                </button>
+                {expandedSections.about && (
+                  <div className="px-3 pb-3 pt-0 text-xs sm:text-sm text-neutral-700 leading-relaxed border-t border-neutral-100 pt-2">
+                    {selectedGuide.bio}
+                  </div>
+                )}
               </div>
 
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">
-                  Especialidades
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {selectedGuide.specialties.map((spec, i) => (
-                    <span
-                      key={i}
-                      className="text-xs font-bold bg-emerald-100/70 text-emerald-900 px-2.5 py-0.5 rounded-lg"
-                    >
-                      {spec}
-                    </span>
-                  ))}
-                </div>
+              {/* 3. Especialidades (Accordion) */}
+              <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('specialties')}
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                    Especialidades & Roteiros
+                  </span>
+                  {expandedSections.specialties ? (
+                    <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                  )}
+                </button>
+                {expandedSections.specialties && (
+                  <div className="px-3 pb-3 pt-2 border-t border-neutral-100 flex flex-wrap gap-1.5">
+                    {selectedGuide.specialties.map((spec, i) => (
+                      <span
+                        key={i}
+                        className="text-xs font-bold bg-emerald-100/70 text-emerald-900 px-2.5 py-1 rounded-lg"
+                      >
+                        {spec}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

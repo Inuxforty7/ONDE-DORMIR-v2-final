@@ -24,7 +24,11 @@ import {
   Waves,
   Wine,
   Flame,
-  Flag
+  Flag,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Sparkles
 } from 'lucide-react';
 import { Accommodation, AmenityId } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
@@ -69,6 +73,21 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [reportState, setReportState] = useState<'idle' | 'reporting' | 'sent'>('idle');
   const [showAllSeals, setShowAllSeals] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<{
+    about: boolean;
+    amenities: boolean;
+    location: boolean;
+    verification: boolean;
+  }>({
+    about: false,
+    amenities: false,
+    location: false,
+    verification: false,
+  });
+
+  const toggleSection = (section: 'about' | 'amenities' | 'location' | 'verification') => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   if (!isOpen || !accommodation) return null;
 
@@ -108,19 +127,19 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
       >
         {/* Floating Top Control Bar */}
         <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
-          <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border shadow-md backdrop-blur-md bg-white/95 pointer-events-auto ${typeMeta.badgeColor}`}>
+          <span className="text-xs font-semibold px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white pointer-events-auto">
             {typeMeta.label}
           </span>
 
           <div className="flex items-center gap-2 pointer-events-auto">
             <button
               onClick={() => onToggleSave(accommodation.id)}
-              className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-md backdrop-blur-md transition-all active:scale-95 flex items-center justify-center cursor-pointer touch-manipulation"
+              className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-md backdrop-blur-md transition-all active:scale-95 flex items-center justify-center cursor-pointer touch-manipulation"
               title={isSaved ? 'Remover dos guardados' : 'Guardar hospedagem'}
               aria-label={isSaved ? 'Remover dos guardados' : 'Guardar hospedagem'}
             >
               <Heart
-                className={`w-4 sm:w-5 h-4 sm:h-5 transition-colors ${
+                className={`w-5 h-5 transition-colors ${
                   isSaved ? 'fill-rose-500 text-rose-500' : 'text-white'
                 }`}
               />
@@ -128,11 +147,11 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 
             <button
               onClick={onClose}
-              className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-md backdrop-blur-md transition-all active:scale-95 flex items-center justify-center cursor-pointer touch-manipulation"
+              className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white shadow-md backdrop-blur-md transition-all active:scale-95 flex items-center justify-center cursor-pointer touch-manipulation"
               title="Fechar"
               aria-label="Fechar"
             >
-              <X className="w-4 sm:w-5 h-4 sm:h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -148,30 +167,25 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
-            {/* Badges and Price on Photo */}
-            <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between text-white pointer-events-none">
-              <div className="flex flex-wrap gap-2 items-center">
-                {accommodation.isPremium && (
-                  <span className="flex items-center gap-1 text-xs font-black uppercase tracking-wider bg-amber-500 text-zinc-950 px-2.5 py-1 rounded-lg shadow-sm">
-                    <Crown className="w-3.5 h-3.5 fill-zinc-950" /> PREMIUM
-                  </span>
-                )}
-                {accommodation.featured && (
-                  <span className="flex items-center gap-1 text-xs font-black uppercase tracking-wider bg-amber-400 text-zinc-950 px-2.5 py-1 rounded-lg shadow-sm">
-                    <Star className="w-3.5 h-3.5 fill-zinc-950" /> DESTAQUE
-                  </span>
-                )}
+            {/* Clean bottom overlay on Photo */}
+            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white pointer-events-none">
+              <div className="flex items-center gap-2">
                 {accommodation.isOpen24h && (
-                  <span className="flex items-center gap-1 text-xs font-bold bg-neutral-900/80 backdrop-blur-md text-neutral-200 px-2.5 py-1 rounded-lg border border-white/20">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" /> 24 Horas
+                  <span className="text-xs font-semibold bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg">
+                    Recepção 24h
+                  </span>
+                )}
+                {accommodation.isPremium && (
+                  <span className="text-xs font-bold bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-lg">
+                    Premium
                   </span>
                 )}
               </div>
 
               {accommodation.distanceKm !== undefined && (
-                <span className="bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 text-xs font-black px-3 py-1 rounded-xl shadow-sm backdrop-blur-md flex items-center gap-1.5">
-                  <Navigation2 className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>{formatDistance(accommodation.distanceKm)}</span>
+                <span className="bg-black/60 text-white text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1.5">
+                  <Navigation2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>a {formatDistance(accommodation.distanceKm)}</span>
                 </span>
               )}
             </div>
@@ -196,284 +210,247 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 
           {/* Details Content */}
           <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6">
-            {/* Title, Location & Pricing Overview */}
-            <div className="space-y-2">
-              <h1 className="text-lg sm:text-2xl font-black text-neutral-950 leading-snug">
-                {accommodation.name}
-              </h1>
+            {/* Title, Location & Pricing Overview (Side-by-Side Compact Layout) */}
+            <div className="space-y-2.5">
+              {/* Top Row: Name & Location (Left) + Price (Right) */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <h1 className="text-lg sm:text-2xl font-black text-neutral-950 leading-snug">
+                    {accommodation.name}
+                  </h1>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-600">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">
+                      {accommodation.location.neighborhood}, {accommodation.location.city}
+                    </span>
+                  </div>
+                </div>
 
-              {/* 📍 Bairro Central, Cidade */}
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-700">
-                <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>
-                  {accommodation.location.neighborhood}, {accommodation.location.city}
-                </span>
+                {minPrice && (
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] text-neutral-400 font-medium block uppercase tracking-wider">A partir de</span>
+                    <strong className="text-emerald-700 font-black text-lg sm:text-2xl block tracking-tight">
+                      {minPrice.toLocaleString('pt-MZ')} MT
+                    </strong>
+                    <span className="text-[10px] text-neutral-400 font-medium block">/ noite</span>
+                  </div>
+                )}
               </div>
 
-              {/* 💰 A partir de 1.400 MT/noite */}
-              {minPrice && (
-                <div className="flex items-center gap-2 text-xs sm:text-base font-extrabold text-neutral-900 bg-amber-50 border border-amber-200 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl w-fit">
-                  <span>💰</span>
-                  <span>A partir de <strong className="text-emerald-700 font-black text-sm sm:text-lg">{minPrice.toLocaleString('pt-MZ')} MT</strong> / noite</span>
-                </div>
-              )}
-
-              {/* ⭐⭐⭐⭐ 4.5 Rating & Tenure */}
-              <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm font-bold text-neutral-800 pt-0.5">
+              {/* Rating & Antiguidade (Clean single line) */}
+              <div className="flex items-center gap-2 flex-wrap text-xs font-semibold text-neutral-700 pt-1.5 border-t border-neutral-100">
                 <div className="flex items-center text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-3.5 sm:w-4 h-3.5 sm:h-4 ${
-                        i < Math.floor(rating)
-                          ? 'fill-amber-400 text-amber-400'
-                          : i < rating
-                          ? 'fill-amber-200 text-amber-400'
-                          : 'text-neutral-300'
-                      }`}
-                    />
-                  ))}
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                  <span className="font-bold text-neutral-900 ml-1">{rating.toFixed(1)}</span>
+                  <span className="text-neutral-400 font-normal ml-0.5">({reviewsCount} avaliações)</span>
                 </div>
-                <span className="font-black text-neutral-950">{rating.toFixed(1)}</span>
-                <span className="text-neutral-500 font-medium">({reviewsCount} avaliações)</span>
 
-                <span className="text-neutral-300">•</span>
+                <span aria-hidden="true" className="text-neutral-300">·</span>
 
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-                  <Clock className="w-3 h-3 text-emerald-600" />
+                <span className="inline-flex items-center gap-1 text-xs text-neutral-600">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>{getPlatformTenureText(accommodation.registeredAt, accommodation.platformTenure, accommodation.id)}</span>
                 </span>
               </div>
             </div>
 
-            {/* NÍVEL DE CONFIANÇA */}
-            <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-50 border border-neutral-200 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-600">
-                  Nível de Confiança
-                </h3>
-                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">Auditoria ONDE DORMIR</span>
-              </div>
-
-              <div className="space-y-2">
-                {/* Active Seal Card */}
-                {accommodation.verificationStatus === 'verified_in_person' && (
-                  <div className="p-3 rounded-xl sm:rounded-2xl border bg-amber-500/10 border-amber-400 text-neutral-900 ring-1 ring-amber-400/30 flex items-start gap-2.5">
-                    <div className="text-lg sm:text-xl shrink-0">🥇</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs sm:text-sm font-black text-neutral-900">
-                          Verificado Presencialmente
-                        </span>
-                        <span className="text-[9px] font-black uppercase bg-amber-500 text-zinc-950 px-2 py-0.5 rounded-md shrink-0">
-                          Selo Ativo
-                        </span>
-                      </div>
-                      <p className="text-[11px] sm:text-xs text-neutral-600 mt-0.5 leading-snug">
-                        A nossa equipa visitou o local, testou climatização, banho, higiene e segurança.
-                      </p>
-                    </div>
+            {/* 1. Sobre o Alojamento (Card Interativo com Toque Intuitivo) */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => toggleSection('about')}
+                className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-neutral-100/80 active:scale-[0.99] transition-all group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shrink-0 shadow-2xs group-hover:border-emerald-500 transition-colors">
+                    <FileText className="w-4 h-4 text-emerald-600" />
                   </div>
-                )}
-
-                {accommodation.verificationStatus === 'verified' && (
-                  <div className="p-3 rounded-xl sm:rounded-2xl border bg-emerald-500/10 border-emerald-400 text-neutral-900 ring-1 ring-emerald-400/30 flex items-start gap-2.5">
-                    <div className="text-lg sm:text-xl shrink-0">🟢</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs sm:text-sm font-black text-neutral-900">
-                          Verificado
-                        </span>
-                        <span className="text-[9px] font-black uppercase bg-emerald-600 text-white px-2 py-0.5 rounded-md shrink-0">
-                          Selo Ativo
-                        </span>
-                      </div>
-                      <p className="text-[11px] sm:text-xs text-neutral-600 mt-0.5 leading-snug">
-                        Documentação comercial, alvará e número telefónico validados pela plataforma.
-                      </p>
-                    </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight group-hover:text-emerald-700 transition-colors">
+                      Sobre o Alojamento
+                    </h3>
+                    <p className="text-[11px] text-neutral-500 truncate mt-0.5">
+                      {expandedSections.about ? 'Toque para recolher' : 'História, ambiente e detalhes do espaço'}
+                    </p>
                   </div>
-                )}
+                </div>
+                <div className="w-7 h-7 rounded-full bg-white border border-neutral-200 shadow-2xs flex items-center justify-center text-neutral-600 group-hover:text-emerald-700 group-hover:border-emerald-300 transition-all shrink-0 ml-2">
+                  {expandedSections.about ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+              {expandedSections.about && (
+                <div className="px-4 pb-4 pt-1 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150">
+                  <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed pt-2">
+                    {accommodation.description}
+                  </p>
+                </div>
+              )}
+            </div>
 
-                {(accommodation.verificationStatus === 'pending' || accommodation.isPendingVerification) && (
-                  <div className="p-3 rounded-xl sm:rounded-2xl border bg-amber-500/10 border-amber-400 text-neutral-900 ring-1 ring-amber-400/30 flex items-start gap-2.5">
-                    <div className="text-lg sm:text-xl shrink-0">⏳</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs sm:text-sm font-black text-neutral-900">
-                          Verificação Pendente (BI & Selfie em Análise)
-                        </span>
-                        <span className="text-[9px] font-black uppercase bg-amber-500 text-zinc-950 px-2 py-0.5 rounded-md shrink-0">
-                          Em Análise
-                        </span>
-                      </div>
-                      <p className="text-[11px] sm:text-xs text-neutral-600 mt-0.5 leading-snug">
-                        O proprietário submeteu o documento de identificação (BI/Passaporte) e a validação facial. A equipa de auditoria está a analisar os dados antes da emissão do selo definitivo.
-                      </p>
-                    </div>
+            {/* 2. Comodidades e Serviços (Card Interativo com Toque Intuitivo) */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => toggleSection('amenities')}
+                className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-neutral-100/80 active:scale-[0.99] transition-all group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shrink-0 shadow-2xs group-hover:border-emerald-500 transition-colors">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
                   </div>
-                )}
-
-                {accommodation.verificationStatus === 'unverified' && !accommodation.isPendingVerification && (
-                  <div className="p-3 rounded-xl sm:rounded-2xl border bg-neutral-100 border-neutral-300 text-neutral-900 flex items-start gap-2.5">
-                    <div className="text-lg sm:text-xl shrink-0">⚪</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs sm:text-sm font-bold text-neutral-800">
-                          Não Verificado
-                        </span>
-                        <span className="text-[9px] font-bold uppercase bg-neutral-200 text-neutral-700 px-2 py-0.5 rounded-md shrink-0">
-                          Pendente
-                        </span>
-                      </div>
-                      <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5 leading-snug">
-                        Submetido pela comunidade de viajantes. Em fase de recolha de referências.
-                      </p>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight group-hover:text-emerald-700 transition-colors">
+                        Comodidades e Serviços
+                      </h3>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-md">
+                        {accommodation.amenities.length}
+                      </span>
                     </div>
+                    <p className="text-[11px] text-neutral-500 truncate mt-0.5">
+                      {expandedSections.amenities ? 'Toque para recolher' : 'Wi-Fi, AC, Piscina, Estacionamento...'}
+                    </p>
                   </div>
-                )}
-
-                {/* Collapsible details for other seals */}
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowAllSeals(!showAllSeals)}
-                    className="text-[11px] font-bold text-neutral-500 hover:text-neutral-800 underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>{showAllSeals ? 'Ocultar definições de selos' : 'Entender os outros selos de auditoria'}</span>
-                  </button>
-
-                  {showAllSeals && (
-                    <div className="mt-2 space-y-2 pt-2 border-t border-neutral-200/80 animate-in fade-in duration-150">
-                      {accommodation.verificationStatus !== 'verified_in_person' && (
-                        <div className="p-2.5 rounded-xl border bg-white/70 border-neutral-200 flex items-start gap-2 text-neutral-600">
-                          <span className="text-sm">🥇</span>
-                          <div>
-                            <span className="text-xs font-bold text-neutral-800 block">Verificado Presencialmente</span>
-                            <span className="text-[11px] leading-tight block text-neutral-500">Visita no local com teste de instalações e higiene.</span>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-white border border-neutral-200 shadow-2xs flex items-center justify-center text-neutral-600 group-hover:text-emerald-700 group-hover:border-emerald-300 transition-all shrink-0 ml-2">
+                  {expandedSections.amenities ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+              {expandedSections.amenities && (
+                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                    {accommodation.amenities.map((amenityId) => {
+                      const item = AMENITIES_CATALOG[amenityId];
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={amenityId}
+                          className="flex items-center gap-2 p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80"
+                        >
+                          <div className="shrink-0">{AMENITY_ICONS[amenityId]}</div>
+                          <div className="truncate">
+                            <span className="text-xs font-bold text-neutral-800 block truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-[10px] text-neutral-500 truncate block">
+                              {item.shortDesc}
+                            </span>
                           </div>
                         </div>
-                      )}
-                      {accommodation.verificationStatus !== 'verified' && (
-                        <div className="p-2.5 rounded-xl border bg-white/70 border-neutral-200 flex items-start gap-2 text-neutral-600">
-                          <span className="text-sm">🟢</span>
-                          <div>
-                            <span className="text-xs font-bold text-neutral-800 block">Verificado</span>
-                            <span className="text-[11px] leading-tight block text-neutral-500">Validação documental e contacto telefónico.</span>
-                          </div>
-                        </div>
-                      )}
-                      {accommodation.verificationStatus !== 'unverified' && (
-                        <div className="p-2.5 rounded-xl border bg-white/70 border-neutral-200 flex items-start gap-2 text-neutral-600">
-                          <span className="text-sm">⚪</span>
-                          <div>
-                            <span className="text-xs font-bold text-neutral-800 block">Não Verificado</span>
-                            <span className="text-[11px] leading-tight block text-neutral-500">Submetido por utilizadores, em auditoria.</span>
-                          </div>
-                        </div>
-                      )}
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Localização & Ponto de Referência (Card Interativo com Toque Intuitivo) */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => toggleSection('location')}
+                className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-neutral-100/80 active:scale-[0.99] transition-all group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shrink-0 shadow-2xs group-hover:border-emerald-500 transition-colors">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight group-hover:text-emerald-700 transition-colors">
+                      Localização & Ponto de Referência
+                    </h3>
+                    <p className="text-[11px] text-neutral-500 truncate mt-0.5">
+                      {accommodation.location.neighborhood}, {accommodation.location.city}
+                    </p>
+                  </div>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-white border border-neutral-200 shadow-2xs flex items-center justify-center text-neutral-600 group-hover:text-emerald-700 group-hover:border-emerald-300 transition-all shrink-0 ml-2">
+                  {expandedSections.location ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+              
+              {expandedSections.location && (
+                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-2">
+                  <div className="flex items-start gap-2 pt-2">
+                    <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="leading-snug">
+                      <span className="font-bold text-neutral-900 block text-xs sm:text-sm">
+                        {accommodation.location.neighborhood}, {accommodation.location.city}
+                      </span>
+                      <span className="text-neutral-500 block text-[11px] mt-0.5">
+                        {accommodation.location.address} · {accommodation.location.province}
+                      </span>
+                    </div>
+                  </div>
+
+                  {accommodation.location.landmark && (
+                    <div className="pl-6 text-xs text-neutral-600 bg-neutral-50 p-2.5 rounded-xl border border-neutral-200/70">
+                      <strong className="text-neutral-900 font-semibold">Ponto de referência:</strong> {accommodation.location.landmark}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Localização e Rota */}
-            <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-50 border border-neutral-200 space-y-2.5 sm:space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block">
-                Endereço & Ponto de Referência
-              </span>
-
-              <div className="flex items-start gap-2.5 sm:gap-3">
-                <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5 min-w-0 flex-1">
-                  <div className="text-xs sm:text-base font-bold text-neutral-900 truncate">
-                    {accommodation.location.neighborhood}, {accommodation.location.city}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs text-neutral-600 leading-snug">
-                      {accommodation.location.address} • {accommodation.location.province}
-                    </span>
-                    {accommodation.distanceKm !== undefined && (
-                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shrink-0">
-                        <Navigation2 className="w-3 h-3 text-emerald-600" />
-                        <span>{formatDistance(accommodation.distanceKm)}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {accommodation.location.landmark && (
-                <div className="text-xs text-neutral-800 bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-neutral-200 flex items-start gap-2 sm:gap-2.5">
-                  <span className="font-bold text-emerald-700 shrink-0">Referência:</span>
-                  <span className="font-medium text-neutral-700 leading-snug">{accommodation.location.landmark}</span>
-                </div>
               )}
+            </div>
 
-              <a
-                href={directionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-10 sm:h-11 px-3.5 rounded-xl bg-white hover:bg-neutral-100 active:scale-98 text-neutral-800 border border-neutral-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer touch-manipulation shadow-2xs"
+            {/* 4. Verificação & Segurança (Card Interativo com Toque Intuitivo) */}
+            <div className="rounded-2xl border border-emerald-200/90 bg-emerald-50/40 overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => toggleSection('verification')}
+                className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-emerald-50/80 active:scale-[0.99] transition-all group"
               >
-                <Navigation2 className="w-4 h-4 text-emerald-600" />
-                <span>Traçar Rota no Mapa do Telemóvel</span>
-              </a>
-            </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0 shadow-2xs">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight group-hover:text-emerald-800 transition-colors">
+                      Verificação & Segurança
+                    </h3>
+                    <p className="text-[11px] text-emerald-700/90 truncate mt-0.5">
+                      Dossiê de Auditoria Oficial Onde Dormir
+                    </p>
+                  </div>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-white border border-emerald-200 shadow-2xs flex items-center justify-center text-emerald-700 transition-all shrink-0 ml-2">
+                  {expandedSections.verification ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
 
-            {/* Como é o espaço */}
-            <div className="space-y-1.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                Descrição do Espaço
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
-                {accommodation.description}
-              </p>
-            </div>
-
-            {/* O que oferece */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                Comodidades e Serviços
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
-                {accommodation.amenities.map((amenityId) => {
-                  const item = AMENITIES_CATALOG[amenityId];
-                  if (!item) return null;
-                  return (
-                    <div
-                      key={amenityId}
-                      className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200"
-                    >
-                      <div className="shrink-0">{AMENITY_ICONS[amenityId]}</div>
-                      <div className="truncate">
-                        <span className="text-xs sm:text-sm font-bold text-neutral-800 block truncate">
-                          {item.name}
-                        </span>
-                        <span className="text-[10px] sm:text-xs text-neutral-500 truncate block mt-0.5">
-                          {item.shortDesc}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Contacto direto */}
-            <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-emerald-50/70 border border-emerald-200 space-y-1.5">
-              <div className="flex items-start gap-2 sm:gap-2.5">
-                <Info className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-700 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <h4 className="text-xs sm:text-sm font-bold text-emerald-950">
-                    Contacto Direto com a Recepção
-                  </h4>
-                  <p className="text-xs text-emerald-900/90 leading-relaxed">
-                    Não cobramos comissões nem taxas de reserva. Fale diretamente com o alojamento para confirmar disponibilidade em tempo real.
+              {expandedSections.verification && (
+                <div className="px-4 pb-4 pt-2 border-t border-emerald-100 bg-white animate-in fade-in duration-150 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap pt-2">
+                    <span className="text-xs font-bold text-neutral-900">
+                      {accommodation.verificationStatus === 'verified_in_person'
+                        ? 'Verificado Presencialmente com BI'
+                        : accommodation.verificationStatus === 'verified'
+                        ? 'Alojamento Verificado'
+                        : 'Verificação em Análise'}
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      Auditoria Concluída
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-600 leading-relaxed">
+                    {accommodation.verificationStatus === 'verified_in_person'
+                      ? 'A nossa equipa visitou o local e validou as condições de conforto, higiene e segurança.'
+                      : accommodation.verificationStatus === 'verified'
+                      ? 'Documentação comercial, alvará e contacto de atendimento validados pela plataforma.'
+                      : 'Documentação do proprietário em fase de análise pela equipa de auditoria.'}
                   </p>
                 </div>
+              )}
+            </div>
+
+            {/* Informação de Apoio */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 space-y-1">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-950">
+                <Info className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>Reserva Direta e Sem Comissões</span>
               </div>
+              <p className="text-xs text-emerald-900/90 leading-relaxed pl-6">
+                Fale diretamente com a recepção no WhatsApp para confirmar quartos disponíveis e efetuar o check-in.
+              </p>
             </div>
 
             {/* Reportar Irregularidade (Auditoria & Segurança) */}

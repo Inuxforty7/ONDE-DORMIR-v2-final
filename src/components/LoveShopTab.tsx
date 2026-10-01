@@ -264,105 +264,295 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-3.5 items-stretch">
-            {filteredProducts.map((prod) => (
-              <div
-                key={prod.id}
-                onClick={() => setSelectedProduct(prod)}
-                className="bg-white rounded-2xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md hover:border-rose-300 transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation relative"
-              >
-                {/* Product Image/Video Container (Vertical 3:4 Proportion - Edge-to-Edge 720p) */}
-                <div className="relative aspect-[3/4] bg-neutral-900 overflow-hidden shrink-0 border-b border-neutral-100 flex items-center justify-center">
-                  {prod.videoUrl && prod.id === 'prod-kaftan-1' ? (
-                    <video
-                      src={prod.videoUrl}
-                      poster={prod.photo}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <img
-                      src={prod.photo}
-                      alt={prod.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  )}
+          /* Balanced 2-Column Dynamic Waterfall - Zero Gaps or Empty Holes */
+          <div className="grid grid-cols-2 gap-3 sm:gap-3.5 items-start">
+            {/* Left Column (Items 0, 2, 4...) */}
+            <div className="flex flex-col gap-3 sm:gap-3.5">
+              {filteredProducts.filter((_, i) => i % 2 === 0).map((prod) => {
+                const hasVideo = Boolean(prod.videoUrl);
+                const isFashionModel = Boolean(
+                  prod.id.startsWith('prod-kaftan') ||
+                  prod.storeId === 'store-7' ||
+                  prod.name.toLowerCase().includes('vestido') ||
+                  prod.name.toLowerCase().includes('kaftan') ||
+                  prod.name.toLowerCase().includes('boubou')
+                );
+                const mediaAspectClass = (hasVideo || isFashionModel)
+                  ? 'aspect-[9/14]' 
+                  : prod.category === 'casamento' || prod.category === 'noivado'
+                    ? 'aspect-[4/5]' 
+                    : 'aspect-square';
+                const photoCount = prod.photos?.length || 1;
 
-                  {/* Minimal subtle video indicator */}
-                  {prod.videoUrl && (
-                    <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/65 backdrop-blur-xs text-white flex items-center justify-center shadow-md">
-                      <Play className="w-3 h-3 fill-white text-white ml-0.5" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Info Container */}
-                <div className="p-2.5 sm:p-3 space-y-1.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Title */}
-                    <h3 className="font-bold text-xs sm:text-sm text-neutral-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
-                      {prod.name}
-                    </h3>
-
-                    {/* Store & Location */}
-                    <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-neutral-500 font-medium mt-1 truncate">
-                      <Store className="w-3 h-3 text-rose-600 shrink-0" />
-                      <span className="truncate">{prod.storeName}</span>
-                      <span className="text-neutral-300">•</span>
-                      <span className="shrink-0">{prod.city}</span>
-                    </div>
-                  </div>
-
-                  {/* Price Row & Action Button */}
-                  <div className="pt-2 mt-auto border-t border-neutral-100 flex items-center justify-between gap-1">
-                    <div className="min-w-0">
-                      <span className="text-xs sm:text-sm font-black text-rose-600 truncate block">
-                        {prod.price.toLocaleString('pt-MZ')} MT
-                      </span>
-                      {prod.originalPrice && (
-                        <span className="text-[10px] text-neutral-400 line-through block truncate">
-                          {prod.originalPrice.toLocaleString('pt-MZ')} MT
-                        </span>
+                return (
+                  <div
+                    key={prod.id}
+                    onClick={() => setSelectedProduct(prod)}
+                    className="bg-white rounded-2xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md hover:border-neutral-300 transition-all cursor-pointer flex flex-col group active:scale-[0.98] touch-manipulation relative"
+                  >
+                    {/* Product Image/Video Container (Dynamic Vertical Framing) */}
+                    <div className={`relative ${mediaAspectClass} bg-neutral-100 overflow-hidden shrink-0 border-b border-neutral-100 flex items-center justify-center`}>
+                      {hasVideo ? (
+                        <video
+                          src={prod.videoUrl}
+                          poster={prod.photo}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <img
+                          src={prod.photo}
+                          alt={prod.name}
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
                       )}
+
+                      {/* Top Left: Media Count / Video Indicator (Intuitive Affordance) */}
+                      <div className="absolute top-2 left-2 flex items-center gap-1 z-10 pointer-events-none">
+                        {hasVideo ? (
+                          <div className="w-6 h-6 rounded-full bg-black/60 backdrop-blur-xs text-white flex items-center justify-center shadow-xs">
+                            <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                          </div>
+                        ) : photoCount > 1 ? (
+                          <span className="text-[10px] font-bold bg-black/60 backdrop-blur-xs text-white px-2 py-0.5 rounded-md shadow-xs">
+                            {photoCount} fotos
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Discount Badge */}
+                      {prod.discountPercent && (
+                        <div className="absolute top-2 right-2 bg-rose-600 text-white text-[9.5px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                          -{prod.discountPercent}%
+                        </div>
+                      )}
+
+                      {/* Bottom Image Subtle Tap Cue */}
+                      <div className="absolute bottom-2 inset-x-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                        <span className="text-[10px] font-bold text-white bg-black/65 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                          Ver detalhes
+                        </span>
+                      </div>
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const allowed = contactUnlockService.triggerContactAttempt(
-                          {
-                            id: prod.storeId || prod.id,
-                            name: `${prod.name} (${prod.storeName})`,
-                            photo: prod.photo,
-                            whatsapp: prod.whatsapp,
-                            phone: prod.phone,
-                            module: 'loveshop',
-                            moduleLabel: 'Love Shop',
-                            unlockFee: 1000,
-                          },
-                          prod.isContactUnlocked
-                        );
-                        if (!allowed) {
-                          return;
-                        }
-                        const msg = encodeURIComponent(
-                          `Olá! Vi o produto "${prod.name}" (${prod.price.toLocaleString('pt-MZ')} MT) na Love Shop do Onde Dormir Moçambique e gostaria de encomendar.`
-                        );
-                        window.open(`https://wa.me/${prod.whatsapp}?text=${msg}`, '_blank');
-                      }}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer touch-manipulation shrink-0"
-                      title="Encomendar no WhatsApp"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 fill-white" />
-                    </button>
+                    {/* Info Container */}
+                    <div className="p-2.5 sm:p-3 space-y-1.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* Title */}
+                        <h3 className="font-bold text-xs sm:text-sm text-neutral-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
+                          {prod.name}
+                        </h3>
+
+                        {/* Store & Location */}
+                        <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-neutral-500 font-medium mt-1 truncate">
+                          <Store className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span className="truncate">{prod.storeName}</span>
+                          <span className="text-neutral-300">•</span>
+                          <span className="shrink-0">{prod.city}</span>
+                        </div>
+                      </div>
+
+                      {/* Price Row & Action Button */}
+                      <div className="pt-2 mt-2 border-t border-neutral-100 flex items-center justify-between gap-1">
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm font-black text-rose-600 truncate block">
+                            {prod.price.toLocaleString('pt-MZ')} MT
+                          </span>
+                          {prod.originalPrice && (
+                            <span className="text-[10px] text-neutral-400 line-through block truncate">
+                              {prod.originalPrice.toLocaleString('pt-MZ')} MT
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="hidden sm:inline-block text-[10.5px] font-bold text-neutral-400 group-hover:text-rose-600 transition-colors pr-0.5">
+                            Ver &rarr;
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const allowed = contactUnlockService.triggerContactAttempt(
+                                {
+                                  id: prod.storeId || prod.id,
+                                  name: `${prod.name} (${prod.storeName})`,
+                                  photo: prod.photo,
+                                  whatsapp: prod.whatsapp,
+                                  phone: prod.phone,
+                                  module: 'loveshop',
+                                  moduleLabel: 'Love Shop',
+                                  unlockFee: 1000,
+                                },
+                                prod.isContactUnlocked
+                              );
+                              if (!allowed) {
+                                return;
+                              }
+                              const msg = encodeURIComponent(
+                                `Olá! Vi o produto "${prod.name}" (${prod.price.toLocaleString('pt-MZ')} MT) na Love Shop do Onde Dormir Moçambique e gostaria de encomendar.`
+                              );
+                              window.open(`https://wa.me/${prod.whatsapp}?text=${msg}`, '_blank');
+                            }}
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer touch-manipulation shrink-0"
+                            title="Encomendar no WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
+
+            {/* Right Column (Items 1, 3, 5...) */}
+            <div className="flex flex-col gap-3 sm:gap-3.5">
+              {filteredProducts.filter((_, i) => i % 2 !== 0).map((prod) => {
+                const hasVideo = Boolean(prod.videoUrl);
+                const isFashionModel = Boolean(
+                  prod.id.startsWith('prod-kaftan') ||
+                  prod.storeId === 'store-7' ||
+                  prod.name.toLowerCase().includes('vestido') ||
+                  prod.name.toLowerCase().includes('kaftan') ||
+                  prod.name.toLowerCase().includes('boubou')
+                );
+                const mediaAspectClass = (hasVideo || isFashionModel)
+                  ? 'aspect-[9/14]' 
+                  : prod.category === 'casamento' || prod.category === 'noivado'
+                    ? 'aspect-[4/5]' 
+                    : 'aspect-square';
+                const photoCount = prod.photos?.length || 1;
+
+                return (
+                  <div
+                    key={prod.id}
+                    onClick={() => setSelectedProduct(prod)}
+                    className="bg-white rounded-2xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md hover:border-neutral-300 transition-all cursor-pointer flex flex-col group active:scale-[0.98] touch-manipulation relative"
+                  >
+                    {/* Product Image/Video Container (Dynamic Vertical Framing) */}
+                    <div className={`relative ${mediaAspectClass} bg-neutral-100 overflow-hidden shrink-0 border-b border-neutral-100 flex items-center justify-center`}>
+                      {hasVideo ? (
+                        <video
+                          src={prod.videoUrl}
+                          poster={prod.photo}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <img
+                          src={prod.photo}
+                          alt={prod.name}
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      )}
+
+                      {/* Top Left: Media Count / Video Indicator (Intuitive Affordance) */}
+                      <div className="absolute top-2 left-2 flex items-center gap-1 z-10 pointer-events-none">
+                        {hasVideo ? (
+                          <div className="w-6 h-6 rounded-full bg-black/60 backdrop-blur-xs text-white flex items-center justify-center shadow-xs">
+                            <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                          </div>
+                        ) : photoCount > 1 ? (
+                          <span className="text-[10px] font-bold bg-black/60 backdrop-blur-xs text-white px-2 py-0.5 rounded-md shadow-xs">
+                            {photoCount} fotos
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Discount Badge */}
+                      {prod.discountPercent && (
+                        <div className="absolute top-2 right-2 bg-rose-600 text-white text-[9.5px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                          -{prod.discountPercent}%
+                        </div>
+                      )}
+
+                      {/* Bottom Image Subtle Tap Cue */}
+                      <div className="absolute bottom-2 inset-x-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                        <span className="text-[10px] font-bold text-white bg-black/65 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                          Ver detalhes
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Info Container */}
+                    <div className="p-2.5 sm:p-3 space-y-1.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* Title */}
+                        <h3 className="font-bold text-xs sm:text-sm text-neutral-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors">
+                          {prod.name}
+                        </h3>
+
+                        {/* Store & Location */}
+                        <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-neutral-500 font-medium mt-1 truncate">
+                          <Store className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span className="truncate">{prod.storeName}</span>
+                          <span className="text-neutral-300">•</span>
+                          <span className="shrink-0">{prod.city}</span>
+                        </div>
+                      </div>
+
+                      {/* Price Row & Action Button */}
+                      <div className="pt-2 mt-2 border-t border-neutral-100 flex items-center justify-between gap-1">
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm font-black text-rose-600 truncate block">
+                            {prod.price.toLocaleString('pt-MZ')} MT
+                          </span>
+                          {prod.originalPrice && (
+                            <span className="text-[10px] text-neutral-400 line-through block truncate">
+                              {prod.originalPrice.toLocaleString('pt-MZ')} MT
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="hidden sm:inline-block text-[10.5px] font-bold text-neutral-400 group-hover:text-rose-600 transition-colors pr-0.5">
+                            Ver &rarr;
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const allowed = contactUnlockService.triggerContactAttempt(
+                                {
+                                  id: prod.storeId || prod.id,
+                                  name: `${prod.name} (${prod.storeName})`,
+                                  photo: prod.photo,
+                                  whatsapp: prod.whatsapp,
+                                  phone: prod.phone,
+                                  module: 'loveshop',
+                                  moduleLabel: 'Love Shop',
+                                  unlockFee: 1000,
+                                },
+                                prod.isContactUnlocked
+                              );
+                              if (!allowed) {
+                                return;
+                              }
+                              const msg = encodeURIComponent(
+                                `Olá! Vi o produto "${prod.name}" (${prod.price.toLocaleString('pt-MZ')} MT) na Love Shop do Onde Dormir Moçambique e gostaria de encomendar.`
+                              );
+                              window.open(`https://wa.me/${prod.whatsapp}?text=${msg}`, '_blank');
+                            }}
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer touch-manipulation shrink-0"
+                            title="Encomendar no WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

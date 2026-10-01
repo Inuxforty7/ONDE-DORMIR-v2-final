@@ -493,26 +493,25 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
           </button>
         </div>
 
-        {/* Multi-step progress bar */}
-        <div className="px-5 py-2.5 bg-neutral-100 border-b border-neutral-200 flex items-center justify-between text-xs font-bold text-neutral-600">
-          <div className={`flex items-center gap-1.5 ${currentStep === 'docs_upload' ? 'text-neutral-950 font-black' : ''}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${currentStep === 'docs_upload' ? 'bg-neutral-900 text-white' : 'bg-neutral-300 text-neutral-700'}`}>1</span>
-            <span>Fotos do BI</span>
+        {/* Stepper Navigation Indicator - Sleek, Responsive, Zero-Scrollbar */}
+        <div className="px-5 py-3 bg-neutral-50/90 border-b border-neutral-200/80 shrink-0 space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-neutral-900">
+              {currentStep === 'docs_upload' && '1. Documento Oficial (BI ou Passaporte)'}
+              {currentStep === 'camera_liveness' && '2. Reconhecimento Facial & Prova de Vida'}
+              {currentStep === 'info_form' && '3. Confirmação por SMS & Contacto'}
+              {currentStep === 'review' && '4. Emissão do Dossiê de Segurança'}
+            </span>
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70">
+              {currentStep === 'docs_upload' ? 'Passo 1/4' : currentStep === 'camera_liveness' ? 'Passo 2/4' : currentStep === 'info_form' ? 'Passo 3/4' : 'Passo 4/4'}
+            </span>
           </div>
-          <div className="w-6 h-0.5 bg-neutral-300" />
-          <div className={`flex items-center gap-1.5 ${currentStep === 'camera_liveness' ? 'text-neutral-950 font-black' : ''}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${currentStep === 'camera_liveness' ? 'bg-neutral-900 text-white' : 'bg-neutral-300 text-neutral-700'}`}>2</span>
-            <span>Desafios Aleatórios</span>
-          </div>
-          <div className="w-6 h-0.5 bg-neutral-300" />
-          <div className={`flex items-center gap-1.5 ${currentStep === 'info_form' ? 'text-neutral-950 font-black' : ''}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${currentStep === 'info_form' ? 'bg-neutral-900 text-white' : 'bg-neutral-300 text-neutral-700'}`}>3</span>
-            <span>SMS & Contacto</span>
-          </div>
-          <div className="w-6 h-0.5 bg-neutral-300" />
-          <div className={`flex items-center gap-1.5 ${currentStep === 'review' ? 'text-neutral-950 font-black' : ''}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${currentStep === 'review' ? 'bg-emerald-600 text-white' : 'bg-neutral-300 text-neutral-700'}`}>4</span>
-            <span>4 Pilares</span>
+          {/* Segmented Progress Track */}
+          <div className="grid grid-cols-4 gap-1.5 h-1.5 w-full">
+            <div className={`rounded-full transition-all duration-300 ${currentStep === 'docs_upload' || currentStep === 'camera_liveness' || currentStep === 'info_form' || currentStep === 'review' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+            <div className={`rounded-full transition-all duration-300 ${currentStep === 'camera_liveness' || currentStep === 'info_form' || currentStep === 'review' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+            <div className={`rounded-full transition-all duration-300 ${currentStep === 'info_form' || currentStep === 'review' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+            <div className={`rounded-full transition-all duration-300 ${currentStep === 'review' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
           </div>
         </div>
 

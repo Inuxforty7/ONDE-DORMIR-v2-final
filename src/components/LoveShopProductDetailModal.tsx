@@ -16,7 +16,8 @@ import {
   Heart,
   Star,
   ThumbsUp,
-  MessageSquareQuote
+  MessageSquareQuote,
+  MapPin
 } from 'lucide-react';
 import { LoveShopProduct, ProductReview } from '../types';
 import { contactUnlockService } from '../services/contactUnlockService';
@@ -257,9 +258,9 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
         {/* Scrollable Content Body */}
         <div className="overflow-y-auto flex-1 pb-4">
           
-          {/* 1. Pure Visual Showcase Area (Vertical 3:4 Proportions - 100% Edge-to-Edge, Preenche o Card Sem Bordas Vazias) */}
+          {/* 1. Pure Visual Showcase Area (Vertical Framing - Clean Backdrop, Zero Bottom Cropping, Shows Full Body & Feet) */}
           <div 
-            className="relative w-full aspect-[3/4] max-h-[460px] bg-neutral-950 select-none overflow-hidden flex items-center justify-center"
+            className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-h-[380px] sm:max-h-[420px] bg-gradient-to-b from-neutral-100 to-neutral-200/70 select-none overflow-hidden flex items-center justify-center p-2"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -267,10 +268,10 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               <img
                 src={currentMedia.url}
                 alt={product.name}
-                className="w-full h-full object-cover transition-opacity duration-200"
+                className="w-full h-full object-contain rounded-xl transition-opacity duration-200"
               />
             ) : (
-              <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
+              <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl">
                 <video
                   ref={videoRef}
                   src={currentMedia.url}
@@ -279,11 +280,11 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                   loop
                   playsInline
                   muted={isMuted}
-                  className="w-full h-full object-cover"
+                  className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-xs"
                 />
                 <button
                   onClick={() => setIsMuted(!isMuted)}
-                  className="absolute bottom-3 right-3 z-20 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center cursor-pointer hover:bg-black/80 transition-all shadow-md"
+                  className="absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full bg-neutral-900/75 backdrop-blur-md text-white flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition-all shadow-md active:scale-90"
                   aria-label={isMuted ? 'Ativar som' : 'Silenciar'}
                 >
                   {isMuted ? (
@@ -295,26 +296,26 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
               </div>
             )}
 
-            {/* Subtle Circular Navigation Arrows Only - 100% Clean Image Area */}
+            {/* Subtle Circular Navigation Arrows Only - Clean & High Contrast */}
             {mediaItems.length > 1 && (
               <>
                 <button
                   onClick={handlePrev}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
                   aria-label="Foto anterior"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-4.5 h-4.5" />
                 </button>
                 <button
                   onClick={handleNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-xs transition-all active:scale-90 cursor-pointer shadow-md"
                   aria-label="Próxima foto"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4.5 h-4.5" />
                 </button>
 
                 {/* Subtle Carousel Pagination Dots */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full">
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-neutral-900/60 backdrop-blur-xs px-2.5 py-1 rounded-full">
                   {mediaItems.map((_, dotIdx) => (
                     <span
                       key={`dot-${dotIdx}`}
@@ -322,7 +323,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
                         dotIdx === activeMediaIndex
                           ? 'w-5 bg-rose-500 shadow-xs'
-                          : 'w-1.5 bg-white/60 hover:bg-white'
+                          : 'w-1.5 bg-white/70 hover:bg-white'
                       }`}
                     />
                   ))}
@@ -370,56 +371,53 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
             </div>
           </div>
 
-          {/* 3. Product Information (All Info Cleanly Positioned Below) */}
-          <div className="px-4 pt-3.5 space-y-3.5">
-            {/* Top Badges (Category & Stock) */}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200/70">
-                {product.categoryLabel}
-              </span>
-
-              <span className="text-[11px] font-bold text-neutral-500">
-                📍 {product.city}, {product.province}
-              </span>
-            </div>
-
-            {/* Product Title */}
-            <h1 className="text-base sm:text-lg font-bold text-neutral-900 leading-snug">
-              {product.name}
-            </h1>
-
-            {/* Price Block (Matching Take24Hr Currency Presentation) */}
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-rose-600 tracking-tight">
-                  MT {product.price.toLocaleString('pt-MZ')}.00
+          {/* 3. Product Information (Compact, Side-by-Side Layout to Minimize Vertical Scroll) */}
+          <div className="px-4 pt-3 space-y-3">
+            {/* Top Row: Category/Location (Left) + Reviews/Rating (Right) Side-by-Side */}
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 min-w-0 truncate text-neutral-500">
+                <span className="font-bold text-rose-700 uppercase tracking-wide shrink-0">
+                  {product.categoryLabel}
                 </span>
-                {product.originalPrice && (
-                  <span className="text-sm font-semibold text-neutral-400 line-through">
-                    MT {product.originalPrice.toLocaleString('pt-MZ')}.00
-                  </span>
-                )}
+                <span aria-hidden="true" className="text-neutral-300">·</span>
+                <span className="flex items-center gap-1 text-neutral-600 font-medium truncate">
+                  <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                  <span className="truncate">{product.city}</span>
+                </span>
               </div>
 
               {/* Quick Rating Summary */}
               <button
                 type="button"
                 onClick={() => setIsReviewsDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200/90 text-xs font-semibold text-neutral-800 transition-all cursor-pointer group active:scale-95 shadow-2xs"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-700 hover:text-rose-600 transition-colors cursor-pointer shrink-0 active:scale-95"
               >
-                <div className="inline-flex items-center text-amber-500 gap-1">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span className="font-black text-neutral-900">4.8</span>
-                  <span className="text-neutral-500 font-medium">(575)</span>
-                </div>
-                <span className="text-amber-300">•</span>
-                <span className="text-neutral-700 font-bold group-hover:text-rose-600 underline">
-                  Avaliações &rarr;
-                </span>
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                <span className="font-black text-neutral-900">4.8</span>
+                <span className="text-neutral-400 font-normal">(575)</span>
+                <span className="text-rose-600 font-bold ml-0.5">&rarr;</span>
               </button>
             </div>
 
-            {/* Store Information Card */}
+            {/* Main Row: Product Title (Left) + Price Block (Right) Side-by-Side */}
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-base sm:text-lg font-bold text-neutral-900 leading-snug flex-1">
+                {product.name}
+              </h1>
+
+              <div className="text-right shrink-0">
+                <span className="text-xl sm:text-2xl font-black text-rose-600 tracking-tight block">
+                  MT {product.price.toLocaleString('pt-MZ')}.00
+                </span>
+                {product.originalPrice && (
+                  <span className="text-xs font-semibold text-neutral-400 line-through block">
+                    MT {product.originalPrice.toLocaleString('pt-MZ')}.00
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Store Information Card (Compact & Clean) */}
             <div 
               onClick={() => {
                 if (onSelectStore) {
@@ -427,25 +425,25 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                   onClose();
                 }
               }}
-              className="p-3 bg-neutral-50 hover:bg-neutral-100 rounded-2xl border border-neutral-200/80 flex items-center justify-between cursor-pointer transition-colors"
+              className="p-2.5 bg-neutral-50 hover:bg-neutral-100 rounded-2xl border border-neutral-200/80 flex items-center justify-between cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-base shrink-0">
-                  <Store className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm shrink-0">
+                  <Store className="w-4 h-4" />
                 </div>
                 <div className="truncate">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs sm:text-sm font-bold text-neutral-900 truncate">
                       {product.storeName}
                     </span>
-                    <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   </div>
                   <span className="text-[11px] text-neutral-500 block truncate">
                     Loja Oficial Verificada
                   </span>
                 </div>
               </div>
-              <span className="text-xs font-bold text-rose-600 shrink-0">
+              <span className="text-xs font-bold text-rose-600 shrink-0 ml-2">
                 Ver Loja &rarr;
               </span>
             </div>

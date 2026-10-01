@@ -249,8 +249,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         </div>
       </div>
 
-      {/* Compact Search and Province Filter Bar */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">
+      {/* Compact Modern Search and Quick Filter Bar (Zero-Clutter) */}
+      <div className="bg-white p-3 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-2.5">
+        {/* Search Bar + Filter Modal Trigger */}
         <div className="flex items-center gap-2">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -274,209 +275,250 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
           {/* Filter button trigger */}
           <button
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`h-10 sm:h-11 px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
-              activeFiltersCount > 0 || showAdvancedFilters
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
-                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            onClick={() => setShowAdvancedFilters(true)}
+            className={`h-10 sm:h-11 px-3.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95 ${
+              activeFiltersCount > 0
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-800 hover:bg-neutral-100'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Filtros</span>
+            <span>Filtros</span>
             {activeFiltersCount > 0 && (
-              <span className="w-4.5 h-4.5 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">
+              <span className="w-4.5 h-4.5 rounded-full bg-white text-emerald-800 text-[10px] font-black flex items-center justify-center">
                 {activeFiltersCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Quick Horizontal Province Chips */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => handleProvinceClick('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedProvince === 'all'
-                ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todas as Províncias
-          </button>
-          {MOZ_PROVINCES_LIST.map((p) => {
-            const isSelected = selectedProvince.toLowerCase() === p.toLowerCase();
-            return (
-              <button
-                key={p}
-                onClick={() => handleProvinceClick(isSelected ? 'all' : p)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
+        {/* Clean Responsive 2-Selector Row (Zero-Cutoff & Direct) */}
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
+          {/* Quick Province Dropdown Selector */}
+          <div className="relative">
+            <select
+              value={selectedProvince}
+              onChange={(e) => handleProvinceClick(e.target.value)}
+              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
+            >
+              <option value="all">📍 Moçambique (Todas)</option>
+              {MOZ_PROVINCES_LIST.map((p) => (
+                <option key={p} value={p}>📍 {p}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Quick Type Selector */}
+          <div className="relative">
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value as AccommodationType | 'all')}
+              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
+            >
+              <option value="all">🏨 Todos os Tipos</option>
+              <option value="pensao">🏠 Pensões & Quartos</option>
+              <option value="hotel">🏨 Hotéis & Pousadas</option>
+              <option value="resort">🌴 Resorts & Lodges</option>
+              <option value="apart_hotel">🏢 Apartamentos</option>
+              <option value="complexo_turistico">🛖 Complexos Turísticos</option>
+              <option value="acampamento">⛺ Acampamentos</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
 
-        {/* Active Province Scope Indicator */}
-        {selectedProvince !== 'all' && (
+        {/* Active Scope Tag (Only when filtered by specific province/neighborhood) */}
+        {(selectedProvince !== 'all' || selectedNeighborhood !== 'all' || verifiedOnly || only24h) && (
           <div className="flex items-center justify-between bg-emerald-50 text-emerald-950 px-3 py-1.5 rounded-xl border border-emerald-200 text-xs font-semibold">
             <div className="flex items-center gap-1.5 min-w-0">
               <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="truncate">A filtrar apenas: <strong>{selectedProvince}</strong> ({filteredList.length})</span>
+              <span className="truncate">
+                {selectedProvince !== 'all' ? selectedProvince : 'Moçambique'}
+                {selectedNeighborhood !== 'all' ? ` · ${selectedNeighborhood}` : ''}
+                {verifiedOnly ? ' · Verificados' : ''} ({filteredList.length})
+              </span>
             </div>
             <button 
-              onClick={() => handleProvinceClick('all')}
+              onClick={resetFilters}
               className="text-[11px] text-emerald-800 font-bold underline hover:text-emerald-950 shrink-0 ml-2 cursor-pointer"
             >
-              Ver Todas as Províncias
+              Limpar Filtros
             </button>
           </div>
         )}
+      </div>
 
-        {/* Dynamic Bairros & Zonas Chips */}
-        {neighborhoodsList.length > 0 && (
-          <div className="pt-2 border-t border-neutral-100">
-            <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>📍 Bairros & Zonas ({selectedProvince !== 'all' ? selectedProvince : 'Geral'}):</span>
-              {selectedNeighborhood !== 'all' && (
-                <button
-                  onClick={() => setSelectedNeighborhood('all')}
-                  className="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer"
-                >
-                  Limpar Bairro
-                </button>
-              )}
-            </div>
-            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+      {/* Advanced Filters Modal / Sheet (Progressive Disclosure) */}
+      {showAdvancedFilters && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="bg-emerald-700 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-5 h-5" />
+                <h3 className="font-extrabold text-base">Filtros de Hospedagem</h3>
+              </div>
               <button
-                onClick={() => setSelectedNeighborhood('all')}
-                className={`h-7 px-2.5 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-                  selectedNeighborhood === 'all'
-                    ? 'bg-emerald-800 text-white shadow-xs'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                }`}
+                onClick={() => setShowAdvancedFilters(false)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer transition-colors"
               >
-                Todos os Bairros ({neighborhoodsList.length})
+                <X className="w-4 h-4" />
               </button>
-              {neighborhoodsList.map((b) => {
-                const isSel = selectedNeighborhood.toLowerCase() === b.toLowerCase();
-                return (
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
+              {/* 1. Província */}
+              <div>
+                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block mb-1">
+                  Província
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedProvince}
+                    onChange={(e) => handleProvinceClick(e.target.value)}
+                    className="w-full h-11 px-3 pr-8 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm font-semibold text-neutral-800 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="all">📍 Todas as Províncias (Moçambique)</option>
+                    {MOZ_PROVINCES_LIST.map((p) => (
+                      <option key={p} value={p}>📍 {p}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* 2. Bairros & Zonas */}
+              {neighborhoodsList.length > 0 && (
+                <div>
+                  <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block mb-1">
+                    Bairro ou Zona
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedNeighborhood}
+                      onChange={(e) => setSelectedNeighborhood(e.target.value)}
+                      className="w-full h-11 px-3 pr-8 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm font-semibold text-neutral-800 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="all">🏙️ Todos os Bairros & Zonas</option>
+                      {neighborhoodsList.map((b) => (
+                        <option key={b} value={b}>🏙️ {b}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Tipo de Alojamento */}
+              <div>
+                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block mb-1">
+                  Tipo de Alojamento
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value as AccommodationType | 'all')}
+                    className="w-full h-11 px-3 pr-8 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm font-semibold text-neutral-800 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="all">🏨 Todos os Tipos</option>
+                    <option value="pensao">🏠 Pensões & Quartos</option>
+                    <option value="hotel">🏨 Hotéis & Pousadas</option>
+                    <option value="resort">🌴 Resorts & Lodges</option>
+                    <option value="apart_hotel">🏢 Apartamentos</option>
+                    <option value="complexo_turistico">🛖 Complexos Turísticos</option>
+                    <option value="acampamento">⛺ Acampamentos</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* 4. Destaques & Verificação */}
+              <div>
+                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block mb-1.5">
+                  Destaques & Verificação
+                </label>
+                <div className="grid grid-cols-2 gap-2">
                   <button
-                    key={b}
-                    onClick={() => setSelectedNeighborhood(isSel ? 'all' : b)}
-                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                      isSel
+                    type="button"
+                    onClick={() => setVerifiedOnly(!verifiedOnly)}
+                    className={`h-11 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                      verifiedOnly
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                        : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                        : 'bg-neutral-50 border-neutral-200 text-neutral-800 hover:bg-neutral-100'
                     }`}
                   >
-                    {b}
+                    <div className="flex items-center gap-1.5 truncate">
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
+                      <span className="truncate">Verificado com BI</span>
+                    </div>
+                    {verifiedOnly && <Check className="w-3.5 h-3.5 shrink-0" />}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        {/* Type Filter Chips */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5 border-t border-neutral-100 pt-2">
-          {[
-            { id: 'all', label: 'Todos os Tipos' },
-            { id: 'pensao', label: 'Pensões & Guest Houses' },
-            { id: 'hotel', label: 'Hotéis' },
-            { id: 'resort', label: 'Resorts & Lodges' },
-            { id: 'apart_hotel', label: 'Apartamentos' },
-          ].map((type) => {
-            const isSelected = selectedType === type.id;
-            return (
-              <button
-                key={type.id}
-                onClick={() => setSelectedType(type.id as any)}
-                className={`h-7 px-2.5 rounded-md text-xs font-medium shrink-0 transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                }`}
-              >
-                {type.label}
-              </button>
-            );
-          })}
+                  <button
+                    type="button"
+                    onClick={() => setOnly24h(!only24h)}
+                    className={`h-11 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                      only24h
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                        : 'bg-neutral-50 border-neutral-200 text-neutral-800 hover:bg-neutral-100'
+                    }`}
+                  >
+                    <span className="truncate">Recepção 24 Horas</span>
+                    {only24h && <Check className="w-3.5 h-3.5 shrink-0" />}
+                  </button>
+                </div>
+              </div>
 
-          <button
-            onClick={() => setVerifiedOnly(!verifiedOnly)}
-            className={`h-7 px-2.5 rounded-md text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1 border ${
-              verifiedOnly
-                ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
-                : 'bg-white text-neutral-600 border-neutral-200'
-            }`}
-          >
-            <ShieldCheck className="w-3 h-3" />
-            <span>Verificados</span>
-          </button>
-
-          <button
-            onClick={() => setOnly24h(!only24h)}
-            className={`h-7 px-2.5 rounded-md text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-              only24h
-                ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold'
-                : 'bg-white text-neutral-600 border-neutral-200'
-            }`}
-          >
-            <span>24 Horas</span>
-          </button>
-        </div>
-
-        {/* Advanced Filters Expandable Drawer */}
-        {showAdvancedFilters && (
-          <div className="pt-3 border-t border-neutral-200/80 space-y-3 animate-in fade-in duration-150">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">
-                Comodidades Essenciais
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.values(AMENITIES_CATALOG).slice(0, 8).map((amenity) => {
-                  const isChecked = selectedAmenities.includes(amenity.id);
-                  return (
-                    <button
-                      key={amenity.id}
-                      onClick={() => toggleAmenity(amenity.id)}
-                      className={`h-8 px-2.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
-                        isChecked
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold'
-                          : 'bg-neutral-50 border-neutral-200 text-neutral-700'
-                      }`}
-                    >
-                      {isChecked && <Check className="w-3 h-3 text-emerald-600" />}
-                      <span>{amenity.name}</span>
-                    </button>
-                  );
-                })}
+              {/* 5. Comodidades */}
+              <div>
+                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block mb-1.5">
+                  Comodidades
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.values(AMENITIES_CATALOG).slice(0, 8).map((amenity) => {
+                    const isChecked = selectedAmenities.includes(amenity.id);
+                    return (
+                      <button
+                        key={amenity.id}
+                        type="button"
+                        onClick={() => toggleAmenity(amenity.id)}
+                        className={`h-8 px-2.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isChecked
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold'
+                            : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+                        }`}
+                      >
+                        {isChecked && <Check className="w-3 h-3 text-emerald-600" />}
+                        <span>{amenity.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            {/* Modal Footer */}
+            <div className="p-3.5 border-t border-neutral-100 flex items-center gap-2 bg-neutral-50">
               <button
+                type="button"
                 onClick={resetFilters}
-                className="text-xs font-bold text-neutral-500 hover:text-neutral-900 flex items-center gap-1 cursor-pointer"
+                className="h-11 px-4 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-neutral-800 text-xs font-bold cursor-pointer transition-colors"
               >
-                <RotateCcw className="w-3 h-3" />
-                <span>Limpar Filtros</span>
+                Limpar Tudo
               </button>
               <button
+                type="button"
                 onClick={() => setShowAdvancedFilters(false)}
-                className="h-8 px-4 bg-neutral-900 text-white text-xs font-bold rounded-lg cursor-pointer"
+                className="flex-1 h-11 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-all"
               >
-                Aplicar
+                <span>Ver {filteredList.length} Acomodações</span>
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Accommodations Grid Header */}
       <div className="flex items-center justify-between px-1">

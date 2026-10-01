@@ -286,7 +286,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
     {
       id: 'slot-1',
       name: 'Vestido Kaftan Tie-Dye com Lenço Elegance',
-      price: 3500,
+      price: 1200,
       category: 'presentes',
       categoryLabel: 'Vestidos & Kaftans',
       photos: [
@@ -450,7 +450,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       {
         id: 'slot-1',
         name: 'Vestido Kaftan Tie-Dye com Lenço Elegance',
-        price: 3500,
+        price: 1200,
         category: 'presentes',
         categoryLabel: 'Vestidos & Kaftans',
         photos: [
@@ -465,7 +465,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       {
         id: 'slot-2',
         name: 'Vestido Boubou Seda Africana Estampado Exclusivo',
-        price: 4200,
+        price: 1200,
         category: 'presentes',
         categoryLabel: 'Vestidos & Kaftans',
         photos: [
@@ -477,7 +477,7 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
       {
         id: 'slot-3',
         name: 'Kaftan Cerimónia Amarelo Ouro e Roxo Tie-Dye',
-        price: 3800,
+        price: 1200,
         category: 'presentes',
         categoryLabel: 'Vestidos & Kaftans',
         photos: [
@@ -658,26 +658,25 @@ export const RegisterLoveShopStoreModal: React.FC<RegisterLoveShopStoreModalProp
             </button>
           </div>
 
-          {/* Stepper Navigation Indicator */}
-          <div className="px-5 py-2.5 bg-neutral-50 border-b border-neutral-200/80 flex items-center justify-between text-xs font-bold text-neutral-500 shrink-0 overflow-x-auto">
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'form' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'form' ? 'bg-rose-600 text-white' : 'bg-neutral-200'}`}>1</span>
-              <span>Dados</span>
+          {/* Stepper Navigation Indicator - Sleek, Responsive, Zero-Scrollbar */}
+          <div className="px-5 py-3 bg-neutral-50/90 border-b border-neutral-200/80 shrink-0 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-neutral-900">
+                {step === 'form' && '1. Dados Comerciais da Loja'}
+                {step === 'identity_verification' && '2. Verificação de Identidade (BI + Selfie)'}
+                {step === 'catalog_slots' && '3. Catálogo de Artigos (1 a 25)'}
+                {step === 'subscription' && '4. Ativação & Mensalidade'}
+              </span>
+              <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/70">
+                {step === 'form' ? 'Passo 1/4' : step === 'identity_verification' ? 'Passo 2/4' : step === 'catalog_slots' ? 'Passo 3/4' : 'Passo 4/4'}
+              </span>
             </div>
-            <span className="text-neutral-300">→</span>
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'identity_verification' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'identity_verification' ? 'bg-rose-600 text-white' : 'bg-neutral-200'}`}>2</span>
-              <span>Verificação</span>
-            </div>
-            <span className="text-neutral-300">→</span>
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'catalog_slots' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'catalog_slots' ? 'bg-rose-600 text-white' : 'bg-neutral-200'}`}>3</span>
-              <span>Catálogo</span>
-            </div>
-            <span className="text-neutral-300">→</span>
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'subscription' ? 'text-rose-600 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'subscription' ? 'bg-rose-600 text-white' : 'bg-neutral-200'}`}>4</span>
-              <span>Ativação</span>
+            {/* Segmented Progress Track */}
+            <div className="grid grid-cols-4 gap-1.5 h-1.5 w-full">
+              <div className={`rounded-full transition-all duration-300 ${step === 'form' || step === 'identity_verification' || step === 'catalog_slots' || step === 'subscription' ? 'bg-rose-600' : 'bg-neutral-200'}`} />
+              <div className={`rounded-full transition-all duration-300 ${step === 'identity_verification' || step === 'catalog_slots' || step === 'subscription' ? 'bg-rose-600' : 'bg-neutral-200'}`} />
+              <div className={`rounded-full transition-all duration-300 ${step === 'catalog_slots' || step === 'subscription' ? 'bg-rose-600' : 'bg-neutral-200'}`} />
+              <div className={`rounded-full transition-all duration-300 ${step === 'subscription' ? 'bg-rose-600' : 'bg-neutral-200'}`} />
             </div>
           </div>
 

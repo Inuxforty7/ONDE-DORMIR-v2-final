@@ -14,6 +14,7 @@ import {
   ShieldCheck, 
   Plus, 
   ChevronDown, 
+  ChevronUp,
   ArrowRight, 
   ArrowLeft, 
   Sparkles,
@@ -214,6 +215,17 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [withDriverOnly, setWithDriverOnly] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<CarRental | null>(null);
+  const [expandedSections, setExpandedSections] = useState<{
+    verification: boolean;
+    description: boolean;
+  }>({
+    verification: false,
+    description: false,
+  });
+
+  const toggleSection = (key: 'verification' | 'description') => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
   
   // KYC / Verification State for Client vs Owner
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
@@ -479,87 +491,37 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
           </div>
         </div>
 
-        {/* Quick Horizontal Province Chips */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => handleProvinceClick('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedProvince === 'all'
-                ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todas as Províncias
-          </button>
-          {MOZ_PROVINCES_LIST.map((p) => {
-            const isSelected = selectedProvince.toLowerCase() === p.toLowerCase();
-            return (
-              <button
-                key={p}
-                onClick={() => handleProvinceClick(isSelected ? 'all' : p)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Active Province Scope Indicator */}
-        {selectedProvince !== 'all' && (
-          <div className="flex items-center justify-between bg-orange-50 text-orange-950 px-3 py-1.5 rounded-xl border border-orange-200 text-xs font-semibold">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-              <span className="truncate">Apenas viaturas em: <strong>{selectedProvince}</strong> ({filteredVehicles.length})</span>
-            </div>
-            <button 
-              onClick={() => handleProvinceClick('all')}
-              className="text-[11px] text-orange-800 font-bold underline hover:text-orange-950 shrink-0 ml-2 cursor-pointer"
+        {/* Clean Responsive 2-Selector Row (Zero-Cutoff & Direct) */}
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
+          {/* Quick Province Dropdown Selector */}
+          <div className="relative">
+            <select
+              value={selectedProvince}
+              onChange={(e) => handleProvinceClick(e.target.value)}
+              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none cursor-pointer truncate"
             >
-              Ver Todas as Províncias
-            </button>
+              <option value="all">📍 Moçambique (Todas)</option>
+              {MOZ_PROVINCES_LIST.map((p) => (
+                <option key={p} value={p}>📍 {p}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-        )}
 
-        {/* Categories Bar */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-orange-600 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todas
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(selectedCategory === cat.id ? 'all' : cat.id)}
-              className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                selectedCategory === cat.id
-                  ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
-                  : 'bg-white text-neutral-700 border-neutral-200 hover:bg-orange-50'
-              }`}
+          {/* Quick Category Selector */}
+          <div className="relative">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none cursor-pointer truncate"
             >
-              {cat.label}
-            </button>
-          ))}
-          <button
-            onClick={() => setWithDriverOnly(!withDriverOnly)}
-            className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border flex items-center gap-1 ${
-              withDriverOnly
-                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-amber-50'
-            }`}
-          >
-            <span>👨‍✈️ Com Motorista</span>
-          </button>
+              <option value="all">🚗 Todas as Categorias</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
       </div>
 
@@ -580,7 +542,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             className="bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full group active:scale-[0.99] touch-manipulation"
           >
             {/* Photo */}
-            <div className="relative aspect-[16/10] sm:aspect-[16/9] bg-neutral-900 overflow-hidden shrink-0">
+            <div className="relative aspect-[16/10] sm:aspect-[16/9] bg-neutral-100 overflow-hidden shrink-0">
               <img
                 src={car.photo}
                 alt={car.model}
@@ -614,45 +576,47 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             {/* Body Content */}
             <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
               <div>
-                <h3 className="font-extrabold text-base text-neutral-900 leading-snug group-hover:text-orange-600 transition-colors line-clamp-1">
+                <h3 className="font-bold text-base text-neutral-900 leading-snug group-hover:text-orange-600 transition-colors line-clamp-1">
                   {car.model}
                 </h3>
 
-                {/* 🕒 Antiguidade do Proprietário na Plataforma */}
-                <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200/80 px-2 py-0.5 rounded-md w-fit">
-                  <Clock className="w-3 h-3 text-orange-600 shrink-0" />
-                  <span>{getPlatformTenureText(car.registeredAt, car.platformTenure, car.id)}</span>
-                </div>
-
-                <div className="flex items-center gap-1 text-xs text-neutral-600 mt-1">
-                  <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                  <span>{car.city}, {car.province}</span>
+                {/* Clean Unboxed Metadata Hierarchy */}
+                <div className="flex items-center gap-1.5 text-xs text-neutral-600 mt-1 flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                    <span>{car.city}, {car.province}</span>
+                  </span>
                   {car.plateNumber && (
-                    <span className="text-[10px] font-mono bg-neutral-100 border border-neutral-200 px-1 rounded ml-1 text-neutral-600">
-                      {car.plateNumber}
-                    </span>
+                    <>
+                      <span aria-hidden="true" className="text-neutral-300">·</span>
+                      <span className="font-mono font-bold text-neutral-700 bg-neutral-100 px-1 py-0.2 rounded text-[10.5px]">
+                        {car.plateNumber}
+                      </span>
+                    </>
                   )}
+                  <span aria-hidden="true" className="text-neutral-300">·</span>
+                  <span className="text-neutral-500 text-[11px]">{getPlatformTenureText(car.registeredAt, car.platformTenure, car.id)}</span>
                 </div>
 
-                {/* Owner info banner */}
+                {/* Owner info */}
                 {car.ownerName && (
-                  <div className="mt-1.5 flex items-center gap-1 text-[11px] text-neutral-600">
+                  <div className="mt-1.5 flex items-center gap-1 text-xs text-neutral-600 truncate">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">Proprietário: <strong className="text-neutral-800">{car.ownerName}</strong></span>
+                    <span className="truncate">Proprietário: <span className="text-neutral-800 font-semibold">{car.ownerName}</span></span>
                   </div>
                 )}
 
                 {/* Specs */}
-                <div className="grid grid-cols-3 gap-1.5 mt-2 text-[11px] font-semibold text-neutral-700">
-                  <div className="bg-neutral-50 p-1.5 rounded-lg border border-neutral-200 flex items-center justify-center gap-1">
+                <div className="grid grid-cols-3 gap-1.5 mt-2.5 text-[11px] font-semibold text-neutral-700">
+                  <div className="bg-neutral-50 p-1.5 rounded-xl border border-neutral-200/80 flex items-center justify-center gap-1">
                     <Users className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                    <span>{car.seats} L</span>
+                    <span>{car.seats} Lugares</span>
                   </div>
-                  <div className="bg-neutral-50 p-1.5 rounded-lg border border-neutral-200 flex items-center justify-center gap-1">
+                  <div className="bg-neutral-50 p-1.5 rounded-xl border border-neutral-200/80 flex items-center justify-center gap-1">
                     <Settings2 className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                     <span className="truncate">{car.transmission}</span>
                   </div>
-                  <div className="bg-neutral-50 p-1.5 rounded-lg border border-neutral-200 flex items-center justify-center gap-1">
+                  <div className="bg-neutral-50 p-1.5 rounded-xl border border-neutral-200/80 flex items-center justify-center gap-1">
                     <Fuel className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                     <span className="truncate">{car.fuel}</span>
                   </div>
@@ -661,17 +625,47 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
               {/* Footer - Fixed to bottom with mt-auto */}
               <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  {car.withDriverAvailable ? '✓ Motorista' : '✓ Self-Drive'}
+                <span className="text-xs font-semibold text-neutral-700">
+                  {car.withDriverAvailable ? 'Disponível com Motorista' : 'Self-Drive'}
                 </span>
 
-                <button
-                  onClick={(e) => handleBookVehicle(car, e)}
-                  className="h-9 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer touch-manipulation"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>Alugar</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <a
+                    href={`tel:${car.phone.replace(/\s+/g, '')}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const allowed = contactUnlockService.triggerContactAttempt(
+                        {
+                          id: car.id,
+                          name: car.model,
+                          photo: car.photo,
+                          phone: car.phone,
+                          whatsapp: car.whatsapp,
+                          module: 'car',
+                          moduleLabel: 'Rent-a-Car',
+                          unlockFee: 1000,
+                        },
+                        car.isContactUnlocked
+                      );
+                      if (!allowed) {
+                        e.preventDefault();
+                      }
+                    }}
+                    className="h-9 px-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 active:scale-95 text-neutral-800 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer touch-manipulation"
+                    title="Ligar para o proprietário"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-neutral-700" />
+                    <span>Ligar</span>
+                  </a>
+
+                  <button
+                    onClick={(e) => handleBookVehicle(car, e)}
+                    className="h-9 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer touch-manipulation"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -706,7 +700,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
                 return (
                   <div className="space-y-2">
-                    <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-200 group">
+                    <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200 group">
                       <img
                         src={activePhoto}
                         alt={`${selectedVehicle.model} - Foto ${selectedPhotoIndex + 1}`}
@@ -809,43 +803,71 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 </div>
               </div>
 
-              {/* Owner & Legal Documents Verification Badge */}
-              <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-neutral-800">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              {/* Owner & Legal Documents Verification Badge (Accordion) */}
+              <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-emerald-50/50">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('verification')}
+                  className="w-full p-2.5 flex items-center justify-between text-left hover:bg-emerald-100/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-neutral-800 text-xs">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Proprietário: {selectedVehicle.ownerName || 'Proprietário Verificado'}</span>
                   </div>
-                  <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    Facial + BI Ativo
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-neutral-200/80">
-                  <div className="flex items-center gap-1.5 text-neutral-600">
-                    <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Livrete Verificado (INATRO)</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase text-emerald-700 bg-white/80 px-2 py-0.5 rounded border border-emerald-200">
+                      Facial + BI Ativo
+                    </span>
+                    {expandedSections.verification ? (
+                      <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 text-neutral-600">
-                    <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Título de Propriedade Válido</span>
-                  </div>
-                </div>
+                </button>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-neutral-600 pt-1 border-t border-neutral-200/80">
-                  <Clock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                  <span>Registado na plataforma: <strong className="text-neutral-800 font-bold">{getPlatformTenureText(selectedVehicle.registeredAt, selectedVehicle.platformTenure, selectedVehicle.id)}</strong></span>
-                </div>
+                {expandedSections.verification && (
+                  <div className="p-3 pt-1 border-t border-emerald-100 space-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div className="flex items-center gap-1.5 text-neutral-600">
+                        <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Livrete Verificado (INATRO)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-neutral-600">
+                        <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Título de Propriedade Válido</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-[11px] text-neutral-600 pt-1 border-t border-emerald-100">
+                      <Clock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                      <span>Registado na plataforma: <strong className="text-neutral-800 font-bold">{getPlatformTenureText(selectedVehicle.registeredAt, selectedVehicle.platformTenure, selectedVehicle.id)}</strong></span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Description */}
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1">
-                  Sobre esta viatura
-                </span>
-                <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
-                  {selectedVehicle.description}
-                </p>
+              {/* Description (Accordion) */}
+              <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('description')}
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                    Sobre esta viatura
+                  </span>
+                  {expandedSections.description ? (
+                    <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                  )}
+                </button>
+                {expandedSections.description && (
+                  <div className="px-3 pb-3 pt-1 text-xs sm:text-sm text-neutral-700 leading-relaxed border-t border-neutral-100">
+                    {selectedVehicle.description}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}

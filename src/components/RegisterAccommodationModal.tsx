@@ -196,21 +196,24 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
             </button>
           </div>
 
-          {/* Stepper Navigation Indicator */}
-          <div className="px-5 py-2.5 bg-neutral-50 border-b border-neutral-200/80 flex items-center justify-between text-xs font-bold text-neutral-500 shrink-0 overflow-x-auto">
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'form' ? 'text-emerald-700 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'form' ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>1</span>
-              <span>Alojamento</span>
+          {/* Stepper Navigation Indicator - Sleek, Responsive, Zero-Scrollbar */}
+          <div className="px-5 py-3 bg-neutral-50/90 border-b border-neutral-200/80 shrink-0 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-neutral-900">
+                {step === 'form' && '1. Dados do Alojamento'}
+                {step === 'identity_verification' && '2. Verificação de Identidade (BI + Selfie)'}
+                {step === 'terms' && '3. Termos & Submissão'}
+                {step === 'success' && 'Submissão Concluída'}
+              </span>
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70">
+                {step === 'form' ? 'Passo 1/3' : step === 'identity_verification' ? 'Passo 2/3' : step === 'terms' ? 'Passo 3/3' : 'Concluído'}
+              </span>
             </div>
-            <span className="text-neutral-300">→</span>
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'identity_verification' ? 'text-emerald-700 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'identity_verification' ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>2</span>
-              <span>BI & Selfie</span>
-            </div>
-            <span className="text-neutral-300">→</span>
-            <div className={`flex items-center gap-1.5 shrink-0 ${step === 'terms' ? 'text-emerald-700 font-black' : 'text-neutral-500'}`}>
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 'terms' ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>3</span>
-              <span>Termos</span>
+            {/* Segmented Progress Track */}
+            <div className="grid grid-cols-3 gap-1.5 h-1.5 w-full">
+              <div className={`rounded-full transition-all duration-300 ${step === 'form' || step === 'identity_verification' || step === 'terms' || step === 'success' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+              <div className={`rounded-full transition-all duration-300 ${step === 'identity_verification' || step === 'terms' || step === 'success' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+              <div className={`rounded-full transition-all duration-300 ${step === 'terms' || step === 'success' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
             </div>
           </div>
 

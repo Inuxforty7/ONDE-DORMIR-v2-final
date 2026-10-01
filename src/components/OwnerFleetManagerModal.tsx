@@ -287,46 +287,48 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
           </div>
         ) : (
           <>
-            {/* Top Navigation Tabs */}
-            <div className="flex border-b border-neutral-200 bg-neutral-50 px-4 pt-2 gap-2 text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('vehicles')}
-                className={`pb-2.5 px-3 border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeSubTab === 'vehicles'
-                    ? 'border-orange-600 text-orange-600 font-black'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                <Car className="w-4 h-4" />
-                <span>Minhas Viaturas ({totalCount})</span>
-              </button>
+            {/* Top Navigation Segmented Bar (Zero-Cutoff, 100% Mobile Clean) */}
+            <div className="px-3 sm:px-4 pt-3 pb-1 border-b border-neutral-200 bg-neutral-50/70">
+              <div className="grid grid-cols-3 gap-1 bg-neutral-200/80 p-1 rounded-2xl">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('vehicles')}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+                    activeSubTab === 'vehicles'
+                      ? 'bg-white text-orange-600 font-extrabold shadow-2xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  <Car className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Viaturas ({totalCount})</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('add_vehicle')}
-                className={`pb-2.5 px-3 border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeSubTab === 'add_vehicle'
-                    ? 'border-orange-600 text-orange-600 font-black'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                <Plus className="w-4 h-4 text-emerald-600" />
-                <span>Adicionar Viatura (+)</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('add_vehicle')}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+                    activeSubTab === 'add_vehicle'
+                      ? 'bg-white text-emerald-700 font-extrabold shadow-2xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Adicionar</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('subscription')}
-                className={`pb-2.5 px-3 border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeSubTab === 'subscription'
-                    ? 'border-orange-600 text-orange-600 font-black'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                <CreditCard className="w-4 h-4 text-blue-600" />
-                <span>Mensalidades ({activeCount}/{totalCount} Ativas)</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('subscription')}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
+                    activeSubTab === 'subscription'
+                      ? 'bg-white text-blue-700 font-extrabold shadow-2xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Mensalidades ({activeCount})</span>
+                </button>
+              </div>
             </div>
 
             {/* Body */}
@@ -375,87 +377,75 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       {ownerFleet.vehicles.map((car) => {
                         const isActive = car.isActiveSubscription !== false;
                         return (
                           <div
                             key={car.id}
-                            className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                            className={`p-3 sm:p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
                               isActive 
-                                ? 'bg-white border-neutral-200/90 shadow-2xs' 
-                                : 'bg-neutral-50 border-neutral-300 opacity-85'
+                                ? 'bg-white border-neutral-200/90 shadow-2xs hover:border-neutral-300' 
+                                : 'bg-neutral-50/80 border-neutral-200 opacity-90'
                             }`}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
                               <img
                                 src={car.photo}
                                 alt={car.model}
-                                className="w-16 h-14 rounded-xl object-cover border shrink-0 bg-neutral-900"
+                                className="w-16 h-14 sm:w-18 sm:h-16 rounded-xl object-cover border border-neutral-200 shrink-0 bg-neutral-100"
                               />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-black text-sm text-neutral-900 leading-snug">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-bold text-sm sm:text-base text-neutral-900 truncate">
                                     {car.model}
                                   </h4>
                                   {car.plateNumber && (
-                                    <span className="text-[10px] font-mono font-bold bg-neutral-100 border border-neutral-300 px-1.5 py-0.5 rounded text-neutral-700">
+                                    <span className="text-[10.5px] font-mono font-bold bg-neutral-100 border border-neutral-300/80 px-1.5 py-0.2 rounded text-neutral-700">
                                       {car.plateNumber}
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
+                                <div className="text-xs text-neutral-600 flex items-center gap-1.5 flex-wrap mt-0.5">
                                   <span>{car.city}, {car.province}</span>
-                                  <span>•</span>
-                                  <strong className="text-neutral-900 font-bold">{car.ratePerDay?.toLocaleString()} MT / dia</strong>
+                                  <span aria-hidden="true" className="text-neutral-300">·</span>
+                                  <span className="text-neutral-900 font-bold">{car.ratePerDay?.toLocaleString()} MT/dia</span>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 mt-1.5">
-                                  {isActive ? (
-                                    <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                      <Eye className="w-3 h-3 text-emerald-600" />
-                                      Visível no Rent-a-Car (Activa)
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                      <EyeOff className="w-3 h-3 text-amber-700" />
-                                      Invisível (Mensalidade Pendente)
-                                    </span>
-                                  )}
-
-                                  {car.livretePhoto && (
-                                    <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
-                                      Livrete ✓
-                                    </span>
-                                  )}
-                                  {car.tituloPropriedadePhoto && (
-                                    <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
-                                      Título ✓
-                                    </span>
+                                <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1.5 flex-wrap">
+                                  <span className={`inline-flex items-center gap-1 font-semibold ${isActive ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                    {isActive ? 'Activa no Rent-a-Car' : 'Invisível (Pendente)'}
+                                  </span>
+                                  {car.livretePhoto && car.tituloPropriedadePhoto && (
+                                    <>
+                                      <span aria-hidden="true" className="text-neutral-300">·</span>
+                                      <span className="text-neutral-500 text-[11px]">Doc. Verificada</span>
+                                    </>
                                   )}
                                 </div>
                               </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2 self-end sm:self-center">
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
                               {!isActive ? (
                                 <button
                                   type="button"
                                   onClick={() => setPayingCarId(car.id)}
-                                  className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs rounded-xl flex items-center gap-1 shadow-sm cursor-pointer"
+                                  className="h-8 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer"
                                 >
-                                  <CreditCard className="w-3 h-3" />
+                                  <CreditCard className="w-3.5 h-3.5" />
                                   <span>Ativar (1.000 MT)</span>
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   onClick={() => handleToggleDeactivate(car.id)}
-                                  className="h-8 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                                  className="h-8 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold text-xs rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
                                   title="Pausar visibilidade sem remover"
                                 >
-                                  <EyeOff className="w-3 h-3" />
+                                  <EyeOff className="w-3.5 h-3.5" />
                                   <span>Pausar</span>
                                 </button>
                               )}

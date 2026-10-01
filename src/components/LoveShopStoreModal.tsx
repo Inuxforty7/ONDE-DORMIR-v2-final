@@ -41,7 +41,7 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
 
   // New product form state (1 to 4 photo slides + 1 optional video)
   const [newProdName, setNewProdName] = useState('');
-  const [newProdPrice, setNewProdPrice] = useState<number | ''>(3500);
+  const [newProdPrice, setNewProdPrice] = useState<number | ''>(1200);
   const [newProdCategory, setNewProdCategory] = useState<'presentes' | 'noivado' | 'casamento'>('presentes');
   const [newProdPhotos, setNewProdPhotos] = useState<string[]>([]);
   const [newProdVideoUrl, setNewProdVideoUrl] = useState('');
@@ -113,7 +113,7 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
       return;
     }
     setNewProdName('');
-    setNewProdPrice(3500);
+    setNewProdPrice(1200);
     setNewProdPhotos([]);
     setNewProdVideoUrl('');
     setNewProdDescription('');
@@ -296,63 +296,156 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                 Nenhum artigo adicionado ainda.
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {storeProducts.map((prod, idx) => (
-                  <div
-                    key={prod.id}
-                    onClick={() => {
-                      onSelectProduct(prod);
-                      onClose();
-                    }}
-                    className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group relative"
-                  >
-                    <div className="relative aspect-[3/4] bg-neutral-900 overflow-hidden">
-                      {prod.videoUrl && prod.id === 'prod-kaftan-1' ? (
-                        <video
-                          src={prod.videoUrl}
-                          poster={prod.photo}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <img
-                          src={prod.photo}
-                          alt={prod.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      )}
-                      
-                      {/* Video indicator if product has video */}
-                      {prod.videoUrl && (
-                        <div className="absolute bottom-2 left-2 w-5 h-5 rounded-full bg-black/65 backdrop-blur-xs text-white flex items-center justify-center shadow-md">
-                          <Play className="w-2.5 h-2.5 fill-white text-white ml-0.5" />
-                        </div>
-                      )}
+              <div className="grid grid-cols-2 gap-3 items-start">
+                {/* Left Column */}
+                <div className="flex flex-col gap-3">
+                  {storeProducts.filter((_, i) => i % 2 === 0).map((prod) => {
+                    const hasVideo = Boolean(prod.videoUrl);
+                    const isFashionModel = Boolean(
+                      prod.id.startsWith('prod-kaftan') ||
+                      prod.storeId === 'store-7' ||
+                      prod.name.toLowerCase().includes('vestido') ||
+                      prod.name.toLowerCase().includes('kaftan') ||
+                      prod.name.toLowerCase().includes('boubou')
+                    );
+                    const mediaAspectClass = (hasVideo || isFashionModel) ? 'aspect-[9/14]' : 'aspect-[4/5]';
 
-                      {/* Remove button */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleRemoveProduct(prod.id, e)}
-                        className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer"
-                        title="Remover artigo"
+                    return (
+                      <div
+                        key={prod.id}
+                        onClick={() => {
+                          onSelectProduct(prod);
+                          onClose();
+                        }}
+                        className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col group relative"
                       >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
+                        <div className={`relative ${mediaAspectClass} bg-neutral-100 overflow-hidden`}>
+                          {hasVideo ? (
+                            <video
+                              src={prod.videoUrl}
+                              poster={prod.photo}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <img
+                              src={prod.photo}
+                              alt={prod.name}
+                              className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            />
+                          )}
+                          
+                          {/* Video indicator if product has video (No Text) */}
+                          {hasVideo && (
+                            <div className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/60 backdrop-blur-xs text-white flex items-center justify-center shadow-md">
+                              <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                            </div>
+                          )}
 
-                    <div className="p-2.5 space-y-1">
-                      <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-rose-600 transition-colors">
-                        {prod.name}
-                      </h4>
-                      <div className="text-xs font-black text-rose-600">
-                        {prod.price.toLocaleString('pt-MZ')} MT
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveProduct(prod.id, e);
+                            }}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer shadow-sm"
+                            title="Remover artigo"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        <div className="p-2.5 space-y-1">
+                          <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-rose-600 transition-colors">
+                            {prod.name}
+                          </h4>
+                          <div className="text-xs font-black text-rose-600">
+                            {prod.price.toLocaleString('pt-MZ')} MT
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
+
+                {/* Right Column */}
+                <div className="flex flex-col gap-3">
+                  {storeProducts.filter((_, i) => i % 2 !== 0).map((prod) => {
+                    const hasVideo = Boolean(prod.videoUrl);
+                    const isFashionModel = Boolean(
+                      prod.id.startsWith('prod-kaftan') ||
+                      prod.storeId === 'store-7' ||
+                      prod.name.toLowerCase().includes('vestido') ||
+                      prod.name.toLowerCase().includes('kaftan') ||
+                      prod.name.toLowerCase().includes('boubou')
+                    );
+                    const mediaAspectClass = (hasVideo || isFashionModel) ? 'aspect-[9/14]' : 'aspect-[4/5]';
+
+                    return (
+                      <div
+                        key={prod.id}
+                        onClick={() => {
+                          onSelectProduct(prod);
+                          onClose();
+                        }}
+                        className="bg-white rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col group relative"
+                      >
+                        <div className={`relative ${mediaAspectClass} bg-neutral-100 overflow-hidden`}>
+                          {hasVideo ? (
+                            <video
+                              src={prod.videoUrl}
+                              poster={prod.photo}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <img
+                              src={prod.photo}
+                              alt={prod.name}
+                              className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            />
+                          )}
+                          
+                          {/* Video indicator if product has video (No Text) */}
+                          {hasVideo && (
+                            <div className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/60 backdrop-blur-xs text-white flex items-center justify-center shadow-md">
+                              <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                            </div>
+                          )}
+
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveProduct(prod.id, e);
+                            }}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer shadow-sm"
+                            title="Remover artigo"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        <div className="p-2.5 space-y-1">
+                          <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-rose-600 transition-colors">
+                            {prod.name}
+                          </h4>
+                          <div className="text-xs font-black text-rose-600">
+                            {prod.price.toLocaleString('pt-MZ')} MT
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

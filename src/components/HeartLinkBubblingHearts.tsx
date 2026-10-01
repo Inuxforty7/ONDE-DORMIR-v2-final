@@ -119,14 +119,14 @@ export const HeartLinkBubblingHearts: React.FC = () => {
   return (
     <>
       {/* CORNER FLOATING BUBBLING HEARTS WIDGET */}
-      <div className="fixed bottom-5 right-3.5 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end pointer-events-auto select-none">
+      <div className="fixed bottom-21 sm:bottom-24 right-3.5 sm:right-6 z-30 flex flex-col items-end pointer-events-auto select-none">
         
         {isActive ? (
           /* ACTIVE STATE: Bubbling Floating Hearts Stream & Glowing Heart Button */
           <div className="relative flex flex-col items-center">
             
             {/* The Bubbling Rising Hearts Stream */}
-            <div className="absolute -top-24 left-0 right-0 h-28 pointer-events-none overflow-visible">
+            <div className="absolute -top-20 left-0 right-0 h-24 pointer-events-none overflow-visible">
               {bubbles.map((bubble) => (
                 <span
                   key={bubble.id}
@@ -146,38 +146,38 @@ export const HeartLinkBubblingHearts: React.FC = () => {
             {/* Glowing Heart Trigger Button */}
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 text-white flex items-center justify-center shadow-xl border-2 border-white/90 hover:scale-110 active:scale-95 transition-all cursor-pointer animate-heart-pulse-glow group"
-              title="Corações Balbuciando HeartLink - Clique para activar ou desactivar"
+              className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 text-white flex items-center justify-center shadow-lg border-2 border-white/90 hover:scale-105 active:scale-95 transition-all cursor-pointer animate-heart-pulse-glow group"
+              title="Corações HeartLink - Clique para activar ou desactivar"
             >
-              <Heart className="w-7 h-7 sm:w-8 sm:h-8 fill-white text-white drop-shadow-md transition-transform group-hover:scale-115" />
+              <Heart className="w-6 h-6 sm:w-7 sm:h-7 fill-white text-white drop-shadow-sm transition-transform group-hover:scale-110" />
               
               {/* Little Sparkle Accent */}
-              <div className="absolute top-1 right-1.5 w-4 h-4 text-amber-200 animate-spin">
+              <div className="absolute top-1 right-1 w-3.5 h-3.5 text-amber-200">
                 <Sparkles className="w-full h-full" />
               </div>
 
               {/* Status Dot */}
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
             </button>
 
             {/* Micro Badge */}
-            <span className="mt-1 text-[8.5px] font-black uppercase text-rose-600 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full shadow-xs border border-rose-200">
+            <span className="mt-1 text-[8px] font-black uppercase text-rose-700 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-xs border border-rose-200">
               Corações ON
             </span>
 
           </div>
         ) : (
           /* DEACTIVATED STATE: Compact button allowing easy re-activation */
-          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md border border-neutral-300 px-3 py-1.5 rounded-2xl shadow-lg animate-in fade-in duration-200">
-            <span className="text-sm select-none">🤍</span>
+          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md border border-neutral-200 px-2.5 py-1.5 rounded-2xl shadow-md animate-in fade-in duration-200">
+            <span className="text-xs select-none">🤍</span>
             <div className="flex flex-col text-left">
-              <span className="text-[10px] font-bold text-neutral-500 leading-tight">Corações HeartLink</span>
-              <span className="text-[11px] font-black text-neutral-800 leading-tight">Desativado</span>
+              <span className="text-[9px] font-bold text-neutral-500 leading-none">Corações</span>
+              <span className="text-[10px] font-black text-neutral-800 leading-tight">Desativado</span>
             </div>
             <button
               onClick={() => toggleBubbles(true)}
-              className="ml-1 px-2.5 py-1 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-black text-[10px] uppercase rounded-xl shadow-xs active:scale-95 transition-all cursor-pointer"
-              title="Activar corações balbuciando"
+              className="ml-1 px-2 py-1 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-black text-[9px] uppercase rounded-lg shadow-xs active:scale-95 transition-all cursor-pointer"
+              title="Activar corações"
             >
               Activar
             </button>

@@ -29,7 +29,10 @@ import {
   EyeOff,
   Clock,
   Zap,
-  Home
+  Home,
+  Briefcase,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { HeartLinkProfile, HeartLinkIntention, Accommodation, UserLocationState } from '../types';
 import { INITIAL_HEARTLINK_PROFILES } from '../data/heartLinkProfiles';
@@ -178,6 +181,18 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
   });
+
+  const [expandedProfileSections, setExpandedProfileSections] = useState<{
+    about: boolean;
+    intentions: boolean;
+  }>({
+    about: false,
+    intentions: false,
+  });
+
+  const toggleProfileSection = (key: 'about' | 'intentions') => {
+    setExpandedProfileSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleProvinceClick = (prov: string) => {
     setSelectedProvince(prov);
@@ -452,12 +467,12 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
   return (
     <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-3.5">
-      {/* HeartLink Header */}
+      {/* 1. HeartLink Header */}
       <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
-              <HeartLinkTwoHeartsIcon className="w-8 h-8" variant="white" showStitches={true} />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
+              <HeartLinkTwoHeartsIcon className="w-7 h-7 sm:w-8 sm:h-8" variant="white" showStitches={true} />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -470,15 +485,15 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 </span>
               </div>
               <p className="text-xs text-pink-100 font-medium">
-                A sua privacidade é a nossa prioridade.
+                Conexões autênticas com privacidade e segurança.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={handleOpenRegister}
-              className="h-10 px-4 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              className="flex-1 sm:flex-none h-10 px-4 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Criar Perfil</span>
@@ -509,7 +524,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'fill-rose-700' : ''}`} />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className={`text-[10px] px-1.5 rounded-full font-bold ${isActive ? 'bg-rose-100 text-rose-700' : 'bg-white/30 text-white'}`}>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${isActive ? 'bg-rose-100 text-rose-700' : 'bg-white/30 text-white'}`}>
                     {tab.count}
                   </span>
                 )}
@@ -519,16 +534,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       </div>
 
-      {/* Security Status Line */}
-      <div className="p-2.5 sm:p-3 rounded-2xl bg-rose-50 border border-rose-200/90 flex items-center gap-2 text-xs text-rose-950">
-        <ShieldCheck className="w-4 h-4 text-rose-700 shrink-0" />
-        <span className="leading-tight">
-          Perfis autênticos e verificados para amizade e relacionamentos sérios.
-        </span>
-      </div>
-
-      {/* Visibility Status Banner (Modo Anónimo vs. Vitrine Pública) */}
-      <div className="overflow-hidden rounded-3xl border shadow-sm transition-all">
+      {/* 2. Visibility Status Banner (Modo Anónimo vs. Vitrine Pública) */}
+      <div className="overflow-hidden rounded-3xl border shadow-xs transition-all">
         {userVisibility.isUnlocked && userVisibility.mode === 'public_showcase' ? (
           /* Estado 1: Perfil Visível na Vitrine */
           <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 text-white p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -537,8 +544,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 <Eye className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-sm text-white">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-extrabold text-sm text-white">
                     ✨ Perfil em Destaque na Vitrine
                   </span>
                   <span className="text-[10px] font-black bg-black/25 text-amber-200 px-2 py-0.5 rounded-full border border-amber-200/30">
@@ -565,7 +572,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               <button
                 type="button"
                 onClick={() => setIsVisibilityModalOpen(true)}
-                className="h-9 px-3.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                className="flex-1 sm:flex-none h-9 px-3.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 <span>Renovar</span>
               </button>
@@ -607,7 +614,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               <button
                 type="button"
                 onClick={() => setIsVisibilityModalOpen(true)}
-                className="flex-1 sm:flex-none h-10 px-4 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Destacar Perfil</span>
@@ -617,285 +624,354 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         )}
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200 shadow-2xs space-y-2.5">
-        <div className="flex flex-col sm:flex-row gap-2">
-          {/* Search input */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Pesquisar por nome, cidade ou bio..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 sm:h-11 pl-9 pr-8 bg-neutral-50 rounded-xl text-xs sm:text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-rose-400 border border-neutral-200"
-            />
-            {searchQuery && (
+      {/* 3. MENSAGENS SUB-TAB (DEDICATED INBOX) */}
+      {activeSubTab === 'mensagens' && (
+        <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-neutral-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-extrabold text-neutral-900">Conversas</h2>
+              <p className="text-xs text-neutral-500">Suas mensagens e contactos no HeartLink</p>
+            </div>
+            <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200/80">
+              {Object.keys(chatMessages).length} conversas
+            </span>
+          </div>
+
+          <div className="divide-y divide-neutral-100">
+            {Object.keys(chatMessages).length === 0 ? (
+              <div className="p-8 text-center space-y-3">
+                <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto text-rose-600">
+                  <MessageCircle className="w-7 h-7" />
+                </div>
+                <h3 className="font-bold text-neutral-800 text-sm">Ainda não iniciou nenhuma conversa</h3>
+                <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+                  Explore os perfis verificados e toque em "Conversar" para quebrar o gelo!
+                </p>
+                <button
+                  onClick={() => setActiveSubTab('descobrir')}
+                  className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl active:scale-95 cursor-pointer"
+                >
+                  Descobrir Perfis
+                </button>
+              </div>
+            ) : (
+              Object.entries(chatMessages).map(([profileId, messages]) => {
+                const targetProf = profiles.find((p) => p.id === profileId) || {
+                  id: profileId,
+                  name: 'Contacto HeartLink',
+                  photo: '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+                  city: 'Maputo',
+                  verified: true,
+                } as HeartLinkProfile;
+
+                const lastMsg = messages[messages.length - 1];
+
+                return (
+                  <div
+                    key={profileId}
+                    onClick={() => setChatProfile(targetProf)}
+                    className="p-3.5 sm:p-4 hover:bg-neutral-50 flex items-center justify-between gap-3 cursor-pointer transition-colors active:bg-neutral-100"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-neutral-900 shrink-0 border border-neutral-200">
+                        <img src={targetProf.photo} alt={targetProf.name} className="w-full h-full object-cover" />
+                        {targetProf.verified && (
+                          <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-tl-lg flex items-center justify-center text-white">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-sm text-neutral-900 truncate">
+                            {targetProf.name}
+                          </h4>
+                          <span className="text-[10px] text-neutral-400 font-medium">
+                            {targetProf.city}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-600 truncate mt-0.5">
+                          {lastMsg?.sender === 'user' ? 'Você: ' : ''}{lastMsg?.text || 'Iniciar conversa...'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] font-medium text-neutral-400 block">
+                        {lastMsg?.time || 'Hoje'}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto mt-1" />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 4. DISCOVER, PESSOAS & CURTIDAS (SEARCH + FILTERS + GRID) */}
+      {activeSubTab !== 'mensagens' && (
+        <>
+          {/* Filter and Search Bar */}
+          <div className="bg-white p-3 sm:p-4 rounded-3xl border border-neutral-200 shadow-2xs space-y-2.5">
+            <div className="flex flex-col sm:flex-row gap-2">
+              {/* Search input */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar por nome, cidade ou biografia..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 sm:h-11 pl-9 pr-8 bg-neutral-50 rounded-xl text-xs sm:text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-rose-400 border border-neutral-200"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 flex items-center justify-center cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:flex gap-2">
+                {/* Gender Filter */}
+                <select
+                  value={selectedGender}
+                  onChange={(e) => setSelectedGender(e.target.value as any)}
+                  className="h-10 sm:h-11 px-3 bg-neutral-50 rounded-xl text-xs font-semibold text-neutral-800 border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+                >
+                  <option value="all">Género (Todos)</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="masculino">Masculino</option>
+                </select>
+
+                {/* Province Filter */}
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(e.target.value)}
+                  className="h-10 sm:h-11 px-3 bg-neutral-50 rounded-xl text-xs font-semibold text-neutral-800 border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+                >
+                  <option value="all">Províncias (Todas)</option>
+                  {mozProvinces.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Quick Objectives Chips */}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5 items-center">
+              <span className="text-[11px] font-bold text-neutral-500 shrink-0">Objectivo:</span>
               <button
-                onClick={() => setSearchQuery('')}
-                className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 flex items-center justify-center cursor-pointer"
+                onClick={() => setSelectedIntention('all')}
+                className={`h-7 px-2.5 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                  selectedIntention === 'all'
+                    ? 'bg-neutral-900 text-white shadow-xs'
+                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                }`}
               >
-                <X className="w-3.5 h-3.5" />
+                Todos
               </button>
+              {intentionsList.map((intent) => {
+                const isSelected = selectedIntention === intent.id;
+                return (
+                  <button
+                    key={intent.id}
+                    onClick={() => setSelectedIntention(isSelected ? 'all' : intent.id)}
+                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                        : 'bg-white text-neutral-700 border-neutral-200 hover:bg-rose-50'
+                    }`}
+                  >
+                    <span>{intent.icon}</span>
+                    <span>{intent.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Province Scope Indicator */}
+            {selectedProvince !== 'all' && (
+              <div className="flex items-center justify-between bg-rose-50 text-rose-950 px-3 py-1.5 rounded-xl border border-rose-200 text-xs font-semibold">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  <span className="truncate">Apenas perfis em: <strong>{selectedProvince}</strong> ({filteredProfiles.length})</span>
+                </div>
+                <button 
+                  onClick={() => handleProvinceClick('all')}
+                  className="text-[11px] text-rose-800 font-bold underline hover:text-rose-950 shrink-0 ml-2 cursor-pointer"
+                >
+                  Ver Todas as Províncias
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Gender Filter */}
-          <div className="relative w-full sm:w-32 shrink-0">
-            <select
-              value={selectedGender}
-              onChange={(e) => setSelectedGender(e.target.value as any)}
-              className="w-full h-10 sm:h-11 px-3 bg-neutral-50 rounded-xl text-xs sm:text-sm font-semibold text-neutral-800 border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-rose-400 appearance-none cursor-pointer"
-            >
-              <option value="all">Género (Todos)</option>
-              <option value="feminino">Feminino</option>
-              <option value="masculino">Masculino</option>
-            </select>
-          </div>
-
-          {/* Province Filter */}
-          <div className="relative w-full sm:w-40 shrink-0">
-            <select
-              value={selectedProvince}
-              onChange={(e) => setSelectedProvince(e.target.value)}
-              className="w-full h-10 sm:h-11 px-3 bg-neutral-50 rounded-xl text-xs sm:text-sm font-semibold text-neutral-800 border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-rose-400 appearance-none cursor-pointer"
-            >
-              <option value="all">Províncias</option>
-              {mozProvinces.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Quick Horizontal Province Chips */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => handleProvinceClick('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedProvince === 'all'
-                ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todas as Províncias
-          </button>
-          {MOZ_PROVINCES_LIST.map((p) => {
-            const isSelected = selectedProvince.toLowerCase() === p.toLowerCase();
-            return (
-              <button
-                key={p}
-                onClick={() => handleProvinceClick(isSelected ? 'all' : p)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Active Province Scope Indicator */}
-        {selectedProvince !== 'all' && (
-          <div className="flex items-center justify-between bg-rose-50 text-rose-950 px-3 py-1.5 rounded-xl border border-rose-200 text-xs font-semibold">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-              <span className="truncate">Apenas perfis em: <strong>{selectedProvince}</strong> ({filteredProfiles.length})</span>
+          {/* Main Grid of Profiles */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs text-neutral-600 px-1">
+              <span>
+                <strong className="text-neutral-900 font-bold">{filteredProfiles.length}</strong> {activeSubTab === 'curtidas' ? 'perfis curtidos' : 'perfis verificados'}
+              </span>
+              {activeSubTab === 'curtidas' && (
+                <span className="text-rose-600 font-semibold flex items-center gap-1">
+                  <Heart className="w-3.5 h-3.5 fill-rose-600" /> Os seus favoritos
+                </span>
+              )}
             </div>
-            <button 
-              onClick={() => handleProvinceClick('all')}
-              className="text-[11px] text-rose-800 font-bold underline hover:text-rose-950 shrink-0 ml-2 cursor-pointer"
-            >
-              Ver Todas as Províncias
-            </button>
-          </div>
-        )}
 
-        {/* Objectives (Amizade / Matrimónio) */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-          <button
-            onClick={() => setSelectedIntention('all')}
-            className={`h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              selectedIntention === 'all'
-                ? 'bg-neutral-900 text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-            }`}
-          >
-            Todos os Objectivos
-          </button>
-          {intentionsList.map((intent) => {
-            const isSelected = selectedIntention === intent.id;
-            return (
-              <button
-                key={intent.id}
-                onClick={() => setSelectedIntention(isSelected ? 'all' : intent.id)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border flex items-center gap-1 ${
-                  isSelected
-                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-rose-50'
-                }`}
-              >
-                <span>{intent.icon}</span>
-                <span>{intent.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Grid of Profiles */}
-      <div className="space-y-2.5">
-        <div className="text-xs text-neutral-600 px-1">
-          <strong className="text-neutral-900 font-bold">{filteredProfiles.length}</strong> perfis autenticados
-        </div>
-
-        {filteredProfiles.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 border border-neutral-200 text-center space-y-3 my-4 shadow-2xs">
-            <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto shadow-2xs">
-              <HeartLinkTwoHeartsIcon className="w-10 h-10" variant="embroidered" showStitches={true} />
-            </div>
-            <h3 className="font-black text-neutral-800 text-base">Nenhum perfil encontrado nesta região</h3>
-            <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-              Experimente selecionar outra província ou remover os filtros de género e intenção para ver mais perfis.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedProvince('all');
-                setSelectedCity('all');
-                setSelectedGender('all');
-                setSelectedIntention('all');
-                setSearchQuery('');
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer border border-rose-200"
-            >
-              <span>Ver todas as províncias e filtros</span>
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
-          {filteredProfiles.map((profile) => (
-            <div
-              key={profile.id}
-              onClick={() => setSelectedProfile(profile)}
-              className="group bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full active:scale-[0.99] touch-manipulation"
-            >
-              <div className="relative aspect-[4/5] w-full bg-neutral-900 overflow-hidden shrink-0">
-                <img
-                  src={profile.photo}
-                  alt={profile.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
-
-                <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none">
-                  {profile.verified && (
-                    <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Verificado
-                    </span>
-                  )}
-                  {profile.visibilityBadge && (
-                    <span className="text-[9px] font-black bg-gradient-to-r from-amber-500 to-rose-500 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5 text-amber-200" /> {profile.visibilityBadge}
-                    </span>
-                  )}
+            {filteredProfiles.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 border border-neutral-200 text-center space-y-3 my-4 shadow-2xs">
+                <div className="w-14 h-14 rounded-3xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto shadow-2xs">
+                  <HeartLinkTwoHeartsIcon className="w-8 h-8" variant="embroidered" showStitches={true} />
                 </div>
-
+                <h3 className="font-extrabold text-neutral-800 text-base">
+                  {activeSubTab === 'curtidas' ? 'Ainda não adicionou perfis aos favoritos' : 'Nenhum perfil encontrado com os filtros atuais'}
+                </h3>
+                <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                  {activeSubTab === 'curtidas'
+                    ? 'Toque no coração de qualquer perfil na vitrine para guardá-lo nesta lista de curtidas.'
+                    : 'Experimente selecionar outra província ou remover os filtros para ver mais pretendentes.'}
+                </p>
                 <button
-                  onClick={(e) => toggleLike(profile.id, e)}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-all cursor-pointer active:scale-90"
+                  onClick={() => {
+                    setActiveSubTab('descobrir');
+                    setSelectedProvince('all');
+                    setSelectedCity('all');
+                    setSelectedGender('all');
+                    setSelectedIntention('all');
+                    setSearchQuery('');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer border border-rose-200 active:scale-95"
                 >
-                  <Heart
-                    className={`w-3.5 h-3.5 ${
-                      likedProfileIds.includes(profile.id) ? 'fill-rose-500 text-rose-500' : 'text-white'
-                    }`}
-                  />
-                </button>
-
-                <div className="absolute bottom-2 left-2 right-2 text-white">
-                  <div className="font-extrabold text-sm truncate">
-                    {profile.name}, {profile.age}
-                  </div>
-                  <div className="text-[11px] text-neutral-200 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-rose-300 shrink-0" />
-                    <span className="truncate">{profile.city}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-2.5 space-y-2 flex-1 flex flex-col justify-between">
-                <div className="space-y-1">
-                  {/* 🕒 Antiguidade no HeartLink */}
-                  <div className="flex items-center gap-1 text-[10px] font-semibold text-neutral-600 bg-neutral-100/90 border border-neutral-200/80 px-1.5 py-0.5 rounded-md w-fit">
-                    <Clock className="w-2.5 h-2.5 text-rose-500 shrink-0" />
-                    <span>{getPlatformTenureText(profile.registeredAt, profile.platformTenure, profile.id)}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {profile.intentions.map((intentId) => {
-                      const found = intentionsList.find((i) => i.id === intentId);
-                      return (
-                        <span key={intentId} className="text-[9px] font-bold bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200/60">
-                          {found?.icon} {found?.label || intentId}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[11px] text-neutral-600 line-clamp-2 leading-tight">
-                    {profile.bio}
-                  </p>
-                </div>
-
-                <button
-                  onClick={(e) => handleOpenChat(profile, e)}
-                  className="w-full h-8 mt-auto bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs touch-manipulation"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>Conversar</span>
+                  <span>Explorar Todos os Perfis</span>
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-        )}
-      </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
+                {filteredProfiles.map((profile) => (
+                  <div
+                    key={profile.id}
+                    onClick={() => setSelectedProfile(profile)}
+                    className="group bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full active:scale-[0.99] touch-manipulation"
+                  >
+                    <div className="relative aspect-[4/5] w-full bg-neutral-100 overflow-hidden shrink-0">
+                      <img
+                        src={profile.photo}
+                        alt={profile.name}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover object-top group-hover:scale-103 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent pointer-events-none" />
 
-      {/* Profile Detail Modal */}
+                      {/* Top Badges */}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none">
+                        {profile.verified && (
+                          <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Verificado
+                          </span>
+                        )}
+                        {profile.visibilityBadge && (
+                          <span className="text-[9px] font-black bg-gradient-to-r from-amber-500 to-rose-500 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-amber-200" /> {profile.visibilityBadge}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Heart Button */}
+                      <button
+                        onClick={(e) => toggleLike(profile.id, e)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-all cursor-pointer active:scale-90"
+                      >
+                        <Heart
+                          className={`w-3.5 h-3.5 ${
+                            likedProfileIds.includes(profile.id) ? 'fill-rose-500 text-rose-500' : 'text-white'
+                          }`}
+                        />
+                      </button>
+
+                      {/* Bottom Name & Location Overlay */}
+                      <div className="absolute bottom-2 left-2.5 right-2.5 text-white">
+                        <div className="font-extrabold text-sm truncate">
+                          {profile.name}, {profile.age}
+                        </div>
+                        <div className="text-[11px] text-neutral-200 flex items-center gap-1 truncate">
+                          <MapPin className="w-3 h-3 text-rose-300 shrink-0" />
+                          <span className="truncate">{profile.city} · {getPlatformTenureText(profile.registeredAt, profile.platformTenure, profile.id)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 space-y-2 flex-1 flex flex-col justify-between">
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap gap-1">
+                          {profile.intentions.map((intentId) => {
+                            const found = intentionsList.find((i) => i.id === intentId);
+                            return (
+                              <span key={intentId} className="text-[9.5px] font-bold bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200/70">
+                                {found?.icon} {found?.label || intentId}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[11px] text-neutral-600 line-clamp-2 leading-tight">
+                          {profile.bio}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={(e) => handleOpenChat(profile, e)}
+                        className="w-full h-9 mt-auto bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs touch-manipulation"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>Conversar</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 5. Profile Detail Modal */}
       {selectedProfile && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="relative aspect-4/3 w-full bg-neutral-900">
+            <div className="relative aspect-[3/4] sm:aspect-[4/5] max-h-[380px] sm:max-h-[420px] w-full bg-neutral-100 flex items-center justify-center overflow-hidden">
               <img
                 src={selectedProfile.photo}
                 alt={selectedProfile.name}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
 
               <button
                 onClick={() => setSelectedProfile(null)}
-                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80"
+                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="absolute bottom-3 left-3 right-3 text-white space-y-0.5">
+              <div className="absolute bottom-3 left-3.5 right-3.5 text-white space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg sm:text-xl font-black">
                     {selectedProfile.name}, {selectedProfile.age}
                   </h2>
                   {selectedProfile.verified && (
-                    <span className="flex items-center gap-1 text-[11px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-md">
+                    <span className="flex items-center gap-1 text-[10.5px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md">
                       <CheckCircle2 className="w-3 h-3" /> Verificado
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-neutral-200">
+                <div className="flex items-center gap-1.5 text-xs text-neutral-200">
                   <MapPin className="w-3.5 h-3.5 text-rose-400" />
                   <span>{selectedProfile.city} • {selectedProfile.province}</span>
                 </div>
@@ -903,61 +979,81 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
 
             <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
-              <div className="flex items-center gap-2 flex-wrap">
+              {/* Metadata Row: Profession and Platform Tenure */}
+              <div className="flex items-center gap-2 flex-wrap text-xs text-neutral-700">
                 {selectedProfile.profession && (
-                  <div className="text-xs font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg w-fit">
-                    💼 {selectedProfile.profession}
+                  <div className="flex items-center gap-1.5 font-bold bg-neutral-100 px-2.5 py-1 rounded-lg">
+                    <Briefcase className="w-3.5 h-3.5 text-neutral-600" />
+                    <span>{selectedProfile.profession}</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-1.5 text-xs text-neutral-600 font-semibold bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-lg w-fit">
+                <div className="flex items-center gap-1.5 font-semibold text-neutral-600 bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-lg">
                   <Clock className="w-3.5 h-3.5 text-rose-600" />
                   <span>{getPlatformTenureText(selectedProfile.registeredAt, selectedProfile.platformTenure, selectedProfile.id)}</span>
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-0.5">
-                  Sobre Mim
-                </h4>
-                <p className="text-xs text-neutral-700 leading-relaxed">
-                  {selectedProfile.bio}
-                </p>
+              {/* 1. Sobre Mim (Accordion - Collapsed by default) */}
+              <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => toggleProfileSection('about')}
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                    Sobre Mim
+                  </span>
+                  {expandedProfileSections.about ? (
+                    <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                  )}
+                </button>
+                {expandedProfileSections.about && (
+                  <div className="px-3 pb-3 pt-1 text-xs sm:text-sm text-neutral-700 leading-relaxed border-t border-neutral-100">
+                    {selectedProfile.bio}
+                  </div>
+                )}
               </div>
 
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
-                  Objectivo do Perfil
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedProfile.intentions.map((intentId) => {
-                    const found = intentionsList.find((i) => i.id === intentId);
-                    return (
-                      <span key={intentId} className="text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                        <span>{found?.icon}</span>
-                        <span>{found?.label || intentId}</span>
-                      </span>
-                    );
-                  })}
-                </div>
+              {/* 2. Objectivo do Perfil (Accordion - Collapsed by default) */}
+              <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => toggleProfileSection('intentions')}
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                    Objectivo do Perfil
+                  </span>
+                  {expandedProfileSections.intentions ? (
+                    <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                  )}
+                </button>
+                {expandedProfileSections.intentions && (
+                  <div className="px-3 pb-3 pt-2 border-t border-neutral-100 flex flex-wrap gap-1.5">
+                    {selectedProfile.intentions.map((intentId) => {
+                      const found = intentionsList.find((i) => i.id === intentId);
+                      return (
+                        <span key={intentId} className="text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                          <span>{found?.icon}</span>
+                          <span>{found?.label || intentId}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Anonymous mode contact strip */}
-            {userVisibility.mode === 'anonymous' && (
-              <div className="px-4 py-2 bg-neutral-100 border-t border-neutral-200 flex items-center justify-between text-[11px] text-neutral-700 font-medium">
-                <span className="flex items-center gap-1.5 font-bold text-neutral-900">
-                  <EyeOff className="w-3.5 h-3.5 text-neutral-600" />
-                  <span>Navegando no Modo Anónimo (100% Grátis)</span>
-                </span>
-                <span className="text-[10px] text-neutral-500">Seu perfil não é visto</span>
-              </div>
-            )}
-
+            {/* Action Buttons */}
             <div className="p-3.5 border-t border-neutral-100 flex items-center gap-2 bg-neutral-50">
               <button
                 onClick={(e) => handleOpenChat(selectedProfile, e)}
-                className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Conversar no Chat</span>
@@ -966,7 +1062,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               {selectedProfile.whatsapp && (
                 <button
                   onClick={(e) => handleOpenWhatsApp(selectedProfile, e)}
-                  className="h-11 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                  className="h-11 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-sm cursor-pointer transition-colors"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   <span>WhatsApp</span>
@@ -977,7 +1073,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       )}
 
-      {/* Register Profile Modal */}
+      {/* 6. Register Profile Modal */}
       {isRegisterOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in fade-in zoom-in-95 duration-150">
@@ -1151,14 +1247,14 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 <textarea name="bio" required rows={2} placeholder="Descreva um pouco sobre si..." className="w-full p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none resize-none" />
               </div>
 
-              {/* Escolha de Visibilidade: Modo Anónimo vs Vitrine Pública */}
+              {/* Escolha de Visibilidade */}
               <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-rose-950 uppercase tracking-wide">
                     Escolha de Visibilidade
                   </span>
                   <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
-                    Cadastro 100% Grátis
+                    Cadastro Gratuito
                   </span>
                 </div>
 
@@ -1206,7 +1302,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                         <span>Desbloquear Visibilidade na Vitrine</span>
                       </div>
                       <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
-                        Apareça na vitrine pública do HeartLink para ser visto(a) e cortejado(a) por centenas de pretendentes. (150 MT, 450 MT ou 1.000 MT).
+                        Apareça na vitrine pública do HeartLink para ser visto(a) e cortejado(a) por centenas de pretendentes.
                       </p>
                     </div>
                   </div>
@@ -1234,7 +1330,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       )}
 
-      {/* Chat Window Modal */}
+      {/* 7. Chat Window Modal */}
       {chatProfile && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-3xl max-w-md w-full h-[85vh] max-h-[560px] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -1331,7 +1427,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       )}
 
-      {/* Visibility Modal (Pacotes 150 MT / 450 MT / 1.000 MT via M-Pesa / E-Mola) */}
+      {/* Visibility Modal */}
       <HeartLinkVisibilityModal
         isOpen={isVisibilityModalOpen}
         onClose={() => setIsVisibilityModalOpen(false)}
@@ -1349,7 +1445,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         onVerificationComplete={handleVerificationComplete}
       />
 
-      {/* Floating Bubbling Hearts in Corner (Activate / Deactivate) */}
+      {/* Floating Bubbling Hearts in Corner */}
       <HeartLinkBubblingHearts />
     </div>
   );

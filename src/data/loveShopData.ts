@@ -178,7 +178,7 @@ export const INITIAL_LOVE_SHOP_STORES: LoveShopStore[] = [
 ];
 
 export const INITIAL_LOVE_SHOP_PRODUCTS: LoveShopProduct[] = [
-  // 1. PRIMEIRO ARTIGO: Loja de Roupas - Vestido / Kaftan Tie-Dye com Lenço
+  // 1. PRIMEIRO ARTIGO: Loja de Roupas - Vestido / Kaftan Tie-Dye com Lenço (Vídeo e 4 fotos completas)
   {
     id: 'prod-kaftan-1',
     storeId: 'store-7',
@@ -188,9 +188,9 @@ export const INITIAL_LOVE_SHOP_PRODUCTS: LoveShopProduct[] = [
     description: 'Vestido longo Kaftan Boubou tradicional com tingimento artesanal Tie-Dye em tecido leve e fluido de toque acetinado. Acompanha lenço combinando para compor o look ou usar como turbante. Perfeito para festas, celebrações familiares e eventos de prestígio.',
     category: 'presentes',
     categoryLabel: 'Vestidos & Kaftans',
-    price: 3500,
-    originalPrice: 4200,
-    discountPercent: 17,
+    price: 1200,
+    originalPrice: 1500,
+    discountPercent: 20,
     photo: 'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg',
     videoUrl: 'https://res.cloudinary.com/dwlfwnbt0/video/upload/v1790851926/Dynamic_slide_transition_for_images_20261001125112_qxvkw0.mp4',
     videoDuration: '0:35 min',
@@ -538,9 +538,9 @@ export const DEFAULT_AFRO_CHIC_CATALOG: LoveShopProduct[] = [
     description: 'Vestido longo Kaftan Boubou tradicional com tingimento artesanal Tie-Dye em tecido leve e fluido de toque acetinado. Acompanha lenço combinando para compor o look ou usar como turbante.',
     category: 'presentes',
     categoryLabel: 'Vestidos & Kaftans',
-    price: 3500,
-    originalPrice: 4200,
-    discountPercent: 17,
+    price: 1200,
+    originalPrice: 1500,
+    discountPercent: 20,
     photo: 'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1790850247/WhatsApp_Image_2026-10-01_at_09.57.42_pazcz5.jpg',
     videoUrl: 'https://res.cloudinary.com/dwlfwnbt0/video/upload/v1790851926/Dynamic_slide_transition_for_images_20261001125112_qxvkw0.mp4',
     videoDuration: '0:35 min',

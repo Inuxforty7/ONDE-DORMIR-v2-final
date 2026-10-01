@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, EyeOff, UserX, Lock, MessageSquare, Scale } from 'lucide-react';
+import { X, ShieldCheck, EyeOff, UserX, Lock, MessageSquare, Scale, ChevronDown, ChevronUp } from 'lucide-react';
 import { TermsModal } from './TermsModal';
 
 interface PrivacyModalProps {
@@ -9,8 +9,36 @@ interface PrivacyModalProps {
 
 export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  const toggleItem = (idx: number) => {
+    setExpandedIndex((prev) => (prev === idx ? null : idx));
+  };
 
   if (!isOpen) return null;
+
+  const items = [
+    {
+      icon: EyeOff,
+      title: 'Sem rastreio de visualizações',
+      desc: 'Nenhum estabelecimento ou terceiro sabe quem pesquisou ou visualizou um alojamento.',
+    },
+    {
+      icon: UserX,
+      title: 'Sem motivo de hospedagem',
+      desc: 'Não perguntamos se viaja em trabalho, lazer, trânsito ou descanso. A sua discrição é inviolável.',
+    },
+    {
+      icon: Lock,
+      title: 'Sem atividade social pública',
+      desc: 'Sem feeds e sem comentários expostos. Estabelecimentos guardados ficam salvos apenas na memória do seu dispositivo.',
+    },
+    {
+      icon: MessageSquare,
+      title: 'Contacto direto sem intermediários',
+      desc: 'O contacto via WhatsApp ou chamada telefónica é feito diretamente do seu telemóvel para a recepção do estabelecimento.',
+    },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -49,46 +77,40 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
             O <strong>ONDE DORMIR</strong> foi concebido para ser uma ponte simples, rápida e 100% privada entre si e os alojamentos em Moçambique.
           </p>
 
-          <div className="space-y-3">
-            <div className="flex gap-3.5 p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80">
-              <EyeOff className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-neutral-900">Sem rastreio de visualizações</h4>
-                <p className="text-xs sm:text-sm text-neutral-600 mt-0.5 leading-relaxed">
-                  Nenhum estabelecimento ou terceiro sabe quem pesquisou ou visualizou um alojamento.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3.5 p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80">
-              <UserX className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-neutral-900">Sem motivo de hospedagem</h4>
-                <p className="text-xs sm:text-sm text-neutral-600 mt-0.5 leading-relaxed">
-                  Não perguntamos se viaja em trabalho, lazer, trânsito ou descanso. A sua discrição é inviolável.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3.5 p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80">
-              <Lock className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-neutral-900">Sem atividade social pública</h4>
-                <p className="text-xs sm:text-sm text-neutral-600 mt-0.5 leading-relaxed">
-                  Sem feeds e sem comentários expostos. Estabelecimentos guardados ficam salvos apenas na memória do seu dispositivo.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3.5 p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80">
-              <MessageSquare className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-neutral-900">Contacto direto sem intermediários</h4>
-                <p className="text-xs sm:text-sm text-neutral-600 mt-0.5 leading-relaxed">
-                  O contacto via WhatsApp ou chamada telefónica é feito diretamente do seu telemóvel para a recepção do estabelecimento.
-                </p>
-              </div>
-            </div>
+          <div className="space-y-2.5">
+            {items.map((item, idx) => {
+              const Icon = item.icon;
+              const isExpanded = expandedIndex === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className="rounded-2xl bg-neutral-50 border border-neutral-200/80 overflow-hidden transition-all"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleItem(idx)}
+                    className="w-full p-3.5 flex items-center justify-between text-left hover:bg-neutral-100/60 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <Icon className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <h4 className="text-xs sm:text-sm font-bold text-neutral-900 truncate">
+                        {item.title}
+                      </h4>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-neutral-400 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-neutral-400 shrink-0" />
+                    )}
+                  </button>
+                  {isExpanded && (
+                    <div className="px-3.5 pb-3.5 pt-0 text-xs sm:text-sm text-neutral-600 leading-relaxed border-t border-neutral-200/50 pt-2">
+                      {item.desc}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {/* Official Legal Terms Button */}
             <div className="pt-2">

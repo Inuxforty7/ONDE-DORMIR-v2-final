@@ -256,31 +256,31 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               </div>
 
               {/* 3 Packages Cards */}
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block">
                   Escolha o seu Pacote de Visibilidade:
                 </label>
 
-                <div className="grid grid-cols-1 gap-2.5">
+                <div className="grid grid-cols-1 gap-2">
                   {VISIBILITY_PLANS.map((plan) => {
                     const isSelected = selectedPlanId === plan.id;
                     return (
                       <div
                         key={plan.id}
                         onClick={() => setSelectedPlanId(plan.id)}
-                        className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer relative flex items-center justify-between ${
+                        className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex items-center justify-between gap-3 ${
                           isSelected
-                            ? 'border-rose-600 bg-rose-50/60 shadow-sm'
+                            ? 'border-rose-600 bg-rose-50/70 shadow-xs ring-1 ring-rose-600/20'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
-                        <div className="space-y-1 pr-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-black text-sm sm:text-base text-neutral-900">
+                        <div className="space-y-0.5 pr-2 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-sm text-neutral-900">
                               {plan.name}
                             </span>
                             {plan.badge && (
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                              <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-md ${
                                 plan.isPopular
                                   ? 'bg-rose-600 text-white'
                                   : 'bg-amber-100 text-amber-900 border border-amber-300/80'
@@ -289,22 +289,22 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-neutral-600 leading-snug">
+                          <p className="text-[11px] text-neutral-600 leading-snug">
                             {plan.description}
                           </p>
                         </div>
 
                         <div className="text-right shrink-0">
-                          <div className="font-black text-lg sm:text-xl text-rose-600">
+                          <div className="font-black text-base sm:text-lg text-rose-600">
                             {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
                           </div>
-                          <div className="text-[10px] text-neutral-500 font-bold">
+                          <div className="text-[10px] text-neutral-500 font-semibold">
                             {plan.durationLabel}
                           </div>
                         </div>
 
                         {isSelected && (
-                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center">
+                          <div className="absolute top-2 right-2 w-4.5 h-4.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-2xs">
                             <Check className="w-3 h-3 stroke-[3]" />
                           </div>
                         )}
@@ -315,35 +315,35 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               </div>
 
               {/* Payment Method Selector (M-Pesa / E-Mola) */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block">
                   Método de Pagamento Instantâneo:
                 </label>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('mpesa')}
-                    className={`h-13 rounded-2xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
+                    className={`h-11 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
                       paymentMethod === 'mpesa'
                         ? 'border-red-600 bg-red-50 text-red-700 shadow-2xs'
                         : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
                     }`}
                   >
-                    <span className="w-3 h-3 rounded-full bg-red-600 shrink-0" />
-                    <span>M-Pesa (Vodacom)</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0" />
+                    <span>M-Pesa</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('emola')}
-                    className={`h-13 rounded-2xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
+                    className={`h-11 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
                       paymentMethod === 'emola'
                         ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-2xs'
                         : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
                     }`}
                   >
-                    <span className="w-3 h-3 rounded-full bg-orange-500 shrink-0" />
-                    <span>E-Mola (Movitel)</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shrink-0" />
+                    <span>E-Mola</span>
                   </button>
                 </div>
               </div>
@@ -362,24 +362,24 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 9))}
                     placeholder={paymentMethod === 'mpesa' ? '84 123 4567' : '86 123 4567'}
-                    className="w-full h-11 pl-14 pr-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-bold text-neutral-900 focus:ring-2 focus:ring-rose-500 focus:bg-white outline-none"
+                    className="w-full h-10 pl-14 pr-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-sm font-bold text-neutral-900 focus:ring-2 focus:ring-rose-500 focus:bg-white outline-none"
                   />
                 </div>
-                <p className="text-[11px] text-neutral-500">
+                <p className="text-[10.5px] text-neutral-500">
                   Irá receber um pedido USSD no ecrã do seu telemóvel para inserir o seu PIN com total segurança.
                 </p>
               </div>
 
               {/* Terms Acceptance Checkbox (Adults 18+ and HeartLink Terms) */}
-              <div className="pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer p-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
+              <div className="pt-0.5">
+                <label className="flex items-start gap-2.5 cursor-pointer p-2.5 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
                   <input
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-0.5 rounded text-rose-600 focus:ring-rose-500 w-4.5 h-4.5 accent-rose-600 shrink-0 cursor-pointer"
+                    className="mt-0.5 rounded text-rose-600 focus:ring-rose-500 w-4 h-4 accent-rose-600 shrink-0 cursor-pointer"
                   />
-                  <div className="text-xs text-neutral-700 leading-snug">
+                  <div className="text-[11px] text-neutral-700 leading-snug">
                     <span>Declaro que sou maior de 18 anos e aceito os </span>
                     <button
                       type="button"
@@ -389,7 +389,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                       }}
                       className="text-rose-700 font-bold underline hover:text-rose-900 cursor-pointer"
                     >
-                      Termos e Condições Gerais
+                      Termos Gerais
                     </button>{' '}
                     <span>do Onde Dormir Moçambique (Cláusula 11 - HeartLink).</span>
                   </div>
@@ -397,11 +397,11 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-2">
+              <div className="pt-1 flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold cursor-pointer"
+                  className="h-11 px-4 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
                   Continuar no Modo Anónimo (Grátis)
                 </button>
@@ -409,7 +409,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   type="button"
                   onClick={handleConfirmPayment}
                   disabled={phoneNumber.length < 8 || !agreedToTerms}
-                  className="flex-1 h-12 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
+                  className="flex-1 h-11 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
                   <span>Pagar {selectedPlan.priceMt} MT e Desbloquear</span>
                   <ArrowRight className="w-4 h-4" />
