@@ -1,87 +1,128 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { ShoppingBag, Store, Plus, PackageCheck } from 'lucide-react';
 
 interface LoveShopHeaderBannerProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onTagSelect?: (tag: string) => void;
+  userRoleMode: 'visitante' | 'comerciante';
+  onSelectRole: (role: 'visitante' | 'comerciante') => void;
+  onOpenOrders: () => void;
+  onOpenRegisterStore: () => void;
+  pendingReviewsCount?: number;
 }
 
 export const LoveShopHeaderBanner: React.FC<LoveShopHeaderBannerProps> = ({
-  searchQuery,
-  onSearchChange,
+  userRoleMode,
+  onSelectRole,
+  onOpenOrders,
+  onOpenRegisterStore,
+  pendingReviewsCount = 0,
 }) => {
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden shadow-xl bg-[#67001a] text-white border border-rose-800/40 p-4 sm:p-5.5 min-h-[160px] sm:min-h-[175px] flex flex-col justify-between group">
-      
+    <div className="relative w-full rounded-3xl overflow-hidden shadow-xl bg-[#67001a] text-white border border-rose-800/40 p-3 sm:p-4 min-h-[170px] sm:min-h-[190px] flex flex-col justify-between group">
       {/* 
-        Scenic Romantic Background on Right Side:
-        White gift box with satin red bow, velvety red roses, glowing candles, red heart and perfume bottle in bokeh
+        Scenic Romantic Background:
+        Subtle bokeh, roses & candles vignette overlaid with rich burgundy gradient
       */}
-      <div className="absolute inset-y-0 right-0 w-3/5 sm:w-7/12 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80"
-          alt="Presentes românticos Love Shop"
-          className="w-full h-full object-cover object-center scale-105 group-hover:scale-110 transition-transform duration-700"
+          src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=80"
+          alt="Love Shop"
+          className="w-full h-full object-cover object-center scale-105 opacity-25 group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
         />
-        {/* Horizontal blend gradient from left to right */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#67001a] via-[#67001a]/70 to-transparent" />
-        {/* Soft top & bottom vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#67001a]/80 via-transparent to-black/25" />
+        {/* Gradients blending smoothly across the entire plate */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#67001a]/95 via-[#540015]/85 to-[#67001a]/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/35" />
 
         {/* Ambient floating romantic bokeh heart particles */}
-        <div className="absolute top-3 right-12 w-4 h-4 text-rose-300/40 animate-pulse text-xs select-none">
+        <div className="absolute top-4 left-1/4 w-4 h-4 text-rose-300/30 animate-pulse text-xs select-none">
           ❤️
         </div>
-        <div className="absolute bottom-6 right-20 w-3 h-3 text-pink-300/35 animate-ping text-[10px] select-none">
+        <div className="absolute bottom-4 right-1/4 w-3 h-3 text-pink-300/30 animate-ping text-[10px] select-none">
           ✨
         </div>
       </div>
 
-      {/* Top Left: Logo & Slogan (Faithfully matching image.png) */}
-      <div className="relative z-10 space-y-1.5 max-w-[65%] sm:max-w-xs">
-        {/* Heart + Love Shop */}
-        <div className="flex items-center gap-2">
-          <span className="text-2xl sm:text-3xl select-none shrink-0 filter drop-shadow-md">
+      {/* TOP ROW: 2 CORNER BUTTONS (Visitante top-left, Comerciante top-right) */}
+      <div className="relative z-10 flex items-center justify-between gap-2 w-full">
+        {/* Top-Left: Visitante */}
+        <button
+          type="button"
+          onClick={() => onSelectRole('visitante')}
+          className={`h-8 sm:h-8.5 px-3 sm:px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-md shadow-xs active:scale-95 ${
+            userRoleMode === 'visitante'
+              ? 'bg-white text-[#67001a] font-black shadow-md ring-2 ring-white/80'
+              : 'bg-black/35 hover:bg-black/50 text-white/95 border border-white/20'
+          }`}
+          title="Modo Visitante"
+        >
+          <ShoppingBag className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+          <span>Visitante</span>
+        </button>
+
+        {/* Top-Right: Comerciante */}
+        <button
+          type="button"
+          onClick={() => onSelectRole('comerciante')}
+          className={`h-8 sm:h-8.5 px-3 sm:px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-md shadow-xs active:scale-95 ${
+            userRoleMode === 'comerciante'
+              ? 'bg-white text-neutral-900 font-black shadow-md ring-2 ring-white/80'
+              : 'bg-black/35 hover:bg-black/50 text-white/95 border border-white/20'
+          }`}
+          title="Modo Comerciante"
+        >
+          <Store className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+          <span>Comerciante</span>
+        </button>
+      </div>
+
+      {/* CENTER: Module Name ("Love Shop") & Subtitle ("Presentes que aproximam corações") */}
+      <div className="relative z-10 my-2.5 sm:my-3 text-center px-4 space-y-1">
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-2xl sm:text-3xl select-none shrink-0 filter drop-shadow-md animate-pulse">
             ❤️
           </span>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight drop-shadow-md leading-none">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg leading-none">
             <span className="text-white">Love </span>
-            <span className="bg-gradient-to-r from-pink-200 via-rose-200 to-pink-300 bg-clip-text text-transparent">Shop</span>
+            <span className="bg-gradient-to-r from-pink-200 via-rose-200 to-pink-300 bg-clip-text text-transparent">
+              Shop
+            </span>
           </h1>
         </div>
 
-        {/* Slogan on 2 lines matching the print: "Presentes que aproximam / corações." */}
-        <div className="text-xs sm:text-sm font-extrabold leading-snug drop-shadow-md">
-          <div className="text-white">Presentes que aproximam</div>
-          <div className="text-pink-200 font-black">corações.</div>
-        </div>
+        <p className="text-xs sm:text-sm font-bold text-pink-100/95 tracking-wide drop-shadow-md">
+          Presentes que aproximam corações
+        </p>
       </div>
 
-      {/* Middle/Bottom: White Pill Search Bar Input (Exact match to image.png) */}
-      <div className="relative z-10 pt-3 sm:pt-4 max-w-[260px] sm:max-w-xs md:max-w-sm">
-        <div className="relative w-full shadow-lg rounded-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-600 shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar produtos ou lojas..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full h-9 sm:h-10 pl-9 pr-8 rounded-full bg-white text-neutral-900 placeholder:text-neutral-400 text-xs sm:text-sm font-semibold shadow-inner border border-white/90 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all touch-manipulation"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-neutral-400 hover:text-neutral-800 cursor-pointer"
-              title="Limpar busca"
-            >
-              ×
-            </button>
+      {/* BOTTOM ROW: 2 CORNER BUTTONS (Meus Pedidos bottom-left, Registar Loja bottom-right) */}
+      <div className="relative z-10 flex items-center justify-between gap-2 w-full pt-1">
+        {/* Bottom-Left: Meus Pedidos */}
+        <button
+          type="button"
+          onClick={onOpenOrders}
+          className="relative h-8 sm:h-8.5 px-3 sm:px-3.5 rounded-xl bg-black/35 hover:bg-black/50 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/20 backdrop-blur-md cursor-pointer shadow-xs active:scale-95"
+          title="Ver Meus Pedidos"
+        >
+          <PackageCheck className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+          <span>Meus Pedidos</span>
+          {pendingReviewsCount > 0 && (
+            <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 animate-pulse">
+              {pendingReviewsCount}
+            </span>
           )}
-        </div>
-      </div>
+        </button>
 
+        {/* Bottom-Right: Registar Loja */}
+        <button
+          type="button"
+          onClick={onOpenRegisterStore}
+          className="h-8 sm:h-8.5 px-3 sm:px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-rose-950/40 cursor-pointer border border-rose-400/40 whitespace-nowrap"
+          title="Registar Loja na Love Shop"
+        >
+          <Plus className="w-3.5 h-3.5 shrink-0" />
+          <span>Registar Loja</span>
+        </button>
+      </div>
     </div>
   );
 };

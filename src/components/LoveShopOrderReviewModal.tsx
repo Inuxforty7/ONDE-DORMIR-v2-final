@@ -60,8 +60,7 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
     label: string,
     sublabel: string,
     value: number,
-    onChange: (val: number) => void,
-    affects: 'produto' | 'loja'
+    onChange: (val: number) => void
   ) => (
     <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/80 space-y-1.5">
       <div className="flex items-center justify-between">
@@ -69,15 +68,6 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
           <span className="text-xs font-bold text-neutral-900 block">{label}</span>
           <span className="text-[10px] text-neutral-500">{sublabel}</span>
         </div>
-        <span
-          className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
-            affects === 'produto'
-              ? 'bg-purple-100 text-purple-800'
-              : 'bg-rose-100 text-rose-800'
-          }`}
-        >
-          {affects === 'produto' ? 'Afeta Produto' : 'Afeta Loja'}
-        </span>
       </div>
 
       <div className="flex items-center gap-1.5 pt-1">
@@ -144,7 +134,7 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
                 Avaliação Registada com Sucesso!
               </h4>
               <p className="text-xs text-neutral-600 leading-relaxed">
-                Obrigado pelo feedback! A sua avaliação afeta a reputação do produto e do serviço da loja de forma inteligente e verificada.
+                Agradecemos o seu feedback! A sua avaliação verificada foi registada com sucesso e apoia a qualidade das compras na plataforma.
               </p>
             </div>
           ) : (
@@ -170,51 +160,41 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
                 </div>
               </div>
 
-              {/* Informative Banner */}
-              <div className="p-2.5 bg-rose-50/70 border border-rose-100 rounded-xl text-[11px] text-rose-900 leading-relaxed">
-                💡 <strong>Reputação Inteligente:</strong> A <em>Qualidade do Produto</em> avalia o artigo, enquanto <em>Tempo de Entrega, Atendimento e Recomendação</em> compõem a reputação da loja.
-              </div>
-
               {/* 5 Rating Criteria */}
               <div className="space-y-2.5">
                 {renderStarSelector(
                   '1. Qualidade do Produto',
                   'Acabamento, tecido/material e conformidade com o anúncio',
                   productQuality,
-                  setProductQuality,
-                  'produto'
+                  setProductQuality
                 )}
 
                 {renderStarSelector(
                   '2. Tempo de Entrega',
                   'Rapidez e pontualidade na entrega ou disponibilidade do artigo',
                   deliverySpeed,
-                  setDeliverySpeed,
-                  'loja'
+                  setDeliverySpeed
                 )}
 
                 {renderStarSelector(
                   '3. Atendimento & Cordialidade',
                   'Atenção no WhatsApp, esclarecimento de dúvidas e educação',
                   customerService,
-                  setCustomerService,
-                  'loja'
+                  setCustomerService
                 )}
 
                 {renderStarSelector(
                   '4. Recomendação',
-                  'Probabilidade de recomendar esta loja a amigos ou familiares',
+                  'Probabilidade de recomendar a amigos ou familiares',
                   recommendation,
-                  setRecommendation,
-                  'loja'
+                  setRecommendation
                 )}
 
                 {renderStarSelector(
                   '5. Satisfação Geral',
                   'Experiência global com esta compra',
                   overallSatisfaction,
-                  setOverallSatisfaction,
-                  'loja'
+                  setOverallSatisfaction
                 )}
               </div>
 
