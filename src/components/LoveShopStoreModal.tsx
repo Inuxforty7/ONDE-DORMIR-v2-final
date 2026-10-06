@@ -628,7 +628,7 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                         Reputação Global da Loja
                       </h4>
                       <p className="text-[11px] text-neutral-500">
-                        Calculada exclusivamente com base nos 3 critérios do Vendedor (Atendimento, Entrega e Recomendação)
+                        Calculada exclusivamente com base nos 3 critérios do Vendedor (Atendimento, Recomendação e Satisfação Geral)
                       </p>
                     </div>
                     <div className="text-right">
@@ -648,12 +648,12 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                       <strong className="text-neutral-900 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ⭐</strong>
                     </div>
                     <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">2. Tempo de Entrega</span>
-                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.deliverySpeed.toFixed(1)} ⭐</strong>
+                      <span className="text-neutral-500 block text-[10.5px]">2. Recomendação</span>
+                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ⭐</strong>
                     </div>
                     <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">3. Recomendação</span>
-                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ⭐</strong>
+                      <span className="text-neutral-500 block text-[10.5px]">3. Satisfação Geral</span>
+                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ⭐</strong>
                     </div>
                   </div>
                 </div>
@@ -665,8 +665,8 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                   </h4>
 
                   {storeReviews.length === 0 ? (
-                    <div className="p-6 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500">
-                      Nenhuma avaliação verificada registada ainda.
+                    <div className="p-6 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500 font-bold">
+                      Ainda sem avaliações verificadas.
                     </div>
                   ) : (
                     storeReviews.map((rev) => (

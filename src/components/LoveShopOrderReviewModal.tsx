@@ -29,19 +29,21 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userName.trim()) return; // Name is REQUIRED. Comment is OPTIONAL!
+
     const ratings: DetailedReviewRating = {
-      productQuality,
-      customerService,
-      deliverySpeed,
-      recommendation,
+      productQuality: Math.max(1, productQuality),
+      customerService: Math.max(1, customerService),
+      recommendation: Math.max(1, recommendation),
+      overallSatisfaction: Math.max(1, deliverySpeed),
     };
 
     const review = loveShopOrderService.submitReview(
       order.id,
       ratings,
       comment,
-      userName || order.clientName,
-      userCity
+      userName.trim(),
+      userCity.trim() || 'Maputo'
     );
 
     if (review) {
@@ -194,17 +196,17 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
                     )}
 
                     {renderStarSelector(
-                      '3. Tempo de Entrega',
-                      'Rapidez e pontualidade na entrega ou disponibilidade',
-                      deliverySpeed,
-                      setDeliverySpeed
-                    )}
-
-                    {renderStarSelector(
-                      '4. Recomendação do Vendedor',
+                      '3. Recomendação do Vendedor',
                       'Probabilidade de recomendar este vendedor/loja',
                       recommendation,
                       setRecommendation
+                    )}
+
+                    {renderStarSelector(
+                      '4. Satisfação Geral',
+                      'Nível global de satisfação com a compra nesta loja',
+                      deliverySpeed,
+                      setDeliverySpeed
                     )}
                   </div>
                 </div>

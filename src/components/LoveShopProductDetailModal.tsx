@@ -47,7 +47,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
   const [isReviewsDrawerOpen, setIsReviewsDrawerOpen] = useState<boolean>(false);
   const [isDescriptionOpen, setIsDescriptionOpen] = useState<boolean>(false);
 
-  // Reviews System State (4 Critérios de Avaliação)
+  // Reviews System State (4 Critérios de Avaliação - Dataset Único via loveShopOrderService)
   const [isAddingReview, setIsAddingReview] = useState<boolean>(false);
   const [newReviewName, setNewReviewName] = useState<string>('');
   const [newReviewCity, setNewReviewCity] = useState<string>('Maputo');
@@ -57,87 +57,42 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
   const [newRecommendation, setNewRecommendation] = useState<number>(5);
   const [newReviewComment, setNewReviewComment] = useState<string>('');
 
-  const [reviews, setReviews] = useState<ProductReview[]>(() => {
-    const defaultReviews: ProductReview[] = [
-      {
-        id: 'rev-1',
-        userName: 'João M.',
-        userCity: 'Maputo',
-        rating: 5,
-        date: 'Há 2 dias',
-        comment: 'Produto excelente e exatamente conforme o anúncio. Atendimento muito ágil e cordial.',
-        verifiedPurchase: true,
-        satisfactionTags: ['Produto conforme anunciado', 'Boa qualidade'],
-      },
-      {
-        id: 'rev-2',
-        userName: 'Artur C.',
-        userCity: 'Matola',
-        rating: 5,
-        date: 'Há 5 dias',
-        comment: 'Entrega rápida e qualidade impecável. Recomendo 100%!',
-        verifiedPurchase: true,
-        satisfactionTags: ['Entrega rápida', 'Recomendo'],
-      },
-      {
-        id: 'rev-3',
-        userName: 'Helena V.',
-        userCity: 'Beira',
-        rating: 5,
-        date: 'Há 1 semana',
-        comment: 'Atendimento atencioso e produto maravilhoso. Fiquei muito satisfeita com a compra.',
-        verifiedPurchase: true,
-        satisfactionTags: ['Bom atendimento', 'Boa qualidade'],
-      },
-      {
-        id: 'rev-4',
-        userName: 'Carlos B.',
-        userCity: 'Nampula',
-        rating: 5,
-        date: 'Há 2 semanas',
-        comment: 'Chegou bem embalado e em perfeitas condições. Experiência 5 estrelas.',
-        verifiedPurchase: true,
-        satisfactionTags: ['Boa qualidade', 'Recomendo'],
-      }
-    ];
-
+  const [reviews, setReviews] = useState(() => {
     if (product) {
-      const stored = localStorage.getItem(`loveshop_reviews_${product.id}`);
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch (e) {
-          return defaultReviews;
-        }
-      }
+      return loveShopOrderService.getReviewsByStoreId(product.storeId);
     }
-    return defaultReviews;
+    return [];
   });
+
+  // Keep reviews synced when product changes
+  useEffect(() => {
+    if (product) {
+      setReviews(loveShopOrderService.getReviewsByStoreId(product.storeId));
+    }
+  }, [product?.id, product?.storeId]);
 
   const handleAddReview = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newReviewName.trim()) return; // Required: User Name. Comment is OPTIONAL!
+    if (!newReviewName.trim() || !product) return; // Name & Stars required. Comment is OPTIONAL!
 
-    const avgRating = Math.max(1, Math.min(5, Math.round(
-      (newQuality + newCustomerService + newDeliverySpeed + newRecommendation) / 4
-    )));
+    loveShopOrderService.addDirectProductReview(
+      product.id,
+      product.storeId,
+      product.name,
+      newReviewName,
+      newReviewCity,
+      {
+        productQuality: newQuality,
+        customerService: newCustomerService,
+        recommendation: newRecommendation,
+        overallSatisfaction: newDeliverySpeed,
+        deliverySpeed: newDeliverySpeed,
+      },
+      newReviewComment
+    );
 
-    const newRev: ProductReview = {
-      id: `rev-${Date.now()}`,
-      userName: newReviewName.trim(),
-      userCity: newReviewCity.trim() || 'Moçambique',
-      rating: avgRating,
-      date: 'Hoje',
-      comment: newReviewComment.trim(),
-      verifiedPurchase: true,
-      satisfactionTags: ['Qualidade do produto', 'Bom atendimento'],
-    };
-
-    const updated = [newRev, ...reviews];
-    setReviews(updated);
-    if (product) {
-      localStorage.setItem(`loveshop_reviews_${product.id}`, JSON.stringify(updated));
-    }
+    // Refresh reviews from the ONE unified source of truth immediately
+    setReviews(loveShopOrderService.getReviewsByStoreId(product.storeId));
 
     setNewReviewName('');
     setNewReviewComment('');
@@ -230,7 +185,7 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 relative"
+        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 relative"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
@@ -270,9 +225,9 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
         {/* Scrollable Content Body */}
         <div className="overflow-y-auto flex-1 pb-4">
           
-          {/* 1. Pure Visual Showcase Area (Vertical Framing - Clean Backdrop, Zero Bottom Cropping, Shows Full Body & Feet) */}
+          {/* 1. Pure Visual Showcase Area (Compact Vertical Framing for Screen Ergonomics) */}
           <div 
-            className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-h-[380px] sm:max-h-[420px] bg-gradient-to-b from-neutral-100 to-neutral-200/70 select-none overflow-hidden flex items-center justify-center p-2"
+            className="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[260px] sm:max-h-[310px] bg-gradient-to-b from-neutral-100 to-neutral-200/70 select-none overflow-hidden flex items-center justify-center p-2"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -345,15 +300,15 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
           </div>
 
           {/* 2. Clean Row of Thumbnails (Below the Image, on White Background) */}
-          <div className="px-4 py-3 bg-white border-b border-neutral-100">
-            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar">
+          <div className="px-4 py-2 bg-white border-b border-neutral-100">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
               {mediaItems.map((item, idx) => {
                 const isActive = idx === activeMediaIndex;
                 return (
                   <button
                     key={item.id}
                     onClick={() => setActiveMediaIndex(idx)}
-                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 transition-all cursor-pointer border-2 bg-neutral-100 ${
+                    className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden shrink-0 transition-all cursor-pointer border-2 bg-neutral-100 ${
                       isActive
                         ? 'border-rose-600 ring-2 ring-rose-500/30 scale-102 shadow-sm'
                         : 'border-neutral-200/90 hover:border-neutral-400 opacity-70 hover:opacity-100'
@@ -597,242 +552,302 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
             {/* Drawer Body (Scrollable) */}
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
-              {/* 1. RELATÓRIO DE CLASSIFICAÇÃO GERAL (Layout 100% Auditado, Sem Leaks/Vazados) */}
-              <div className="p-3.5 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 space-y-3.5 shadow-2xs overflow-hidden">
-                {/* Header: Title & 100% AUDITADO Badge */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
-                      Relatório de Classificação Geral
-                    </h3>
-                    <p className="text-[11px] text-neutral-500 mt-1 leading-snug">
-                      Relatório consolidado baseado em {reviews.length} avaliações individuais de compras verificadas
-                    </p>
-                  </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-black uppercase tracking-wider border border-emerald-200 shrink-0 shadow-2xs">
-                    100% AUDITADO
-                  </span>
-                </div>
+              {(() => {
+                const storeReputation = loveShopOrderService.calculateStoreReputation(product.storeId);
+                const sellerApprovalPercent = Math.round((storeReputation.rating / 5) * 100);
 
-                {/* Button: + Avaliar Critérios */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddingReview(!isAddingReview);
-                      setIsReviewsDrawerOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-black border border-rose-200/80 transition-colors shadow-2xs cursor-pointer active:scale-95"
-                  >
-                    <span>{isAddingReview ? '✕ Fechar Formulário' : '+ Avaliar Critérios'}</span>
-                  </button>
-                </div>
-
-                {/* Inline Form when + Avaliar Critérios is clicked */}
-                {isAddingReview && (
-                  <form 
-                    onSubmit={handleAddReview} 
-                    className="p-3.5 sm:p-4 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-3 animate-in fade-in duration-200 shadow-2xs"
-                  >
-                    <div className="flex items-center justify-between border-b border-rose-200/80 pb-2">
-                      <div className="text-xs sm:text-sm font-black text-neutral-900 flex items-center gap-1.5">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                        <span>Avaliar Compra por Estrelas (4 Critérios)</span>
+                return (
+                  <>
+                    {/* 1. RELATÓRIO DE CLASSIFICAÇÃO GERAL */}
+                    <div className="p-3.5 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 space-y-3 shadow-2xs overflow-hidden">
+                      {/* Header: Title */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
+                            Relatório de Classificação Geral da Loja
+                          </h3>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">
+                            Calculado estritamente pelos 3 critérios do Vendedor
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsAddingReview(false)}
-                        className="text-xs font-bold text-neutral-500 hover:text-neutral-800"
-                      >
-                        ✕
-                      </button>
-                    </div>
 
-                    <div className="space-y-2">
-                      {[
-                        { label: 'Qualidade do produto', value: newQuality, setValue: setNewQuality },
-                        { label: 'Bom atendimento', value: newCustomerService, setValue: setNewCustomerService },
-                        { label: 'Entrega rápida', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
-                        { label: 'Recomendação', value: newRecommendation, setValue: setNewRecommendation },
-                      ].map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="py-2 px-3 bg-white rounded-xl border border-neutral-200/90 flex items-center justify-between gap-2 shadow-2xs"
+                      {/* Button: Avaliar esta Loja */}
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingReview(!isAddingReview);
+                            setIsReviewsDrawerOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-black border border-rose-200/80 transition-colors shadow-2xs cursor-pointer active:scale-95"
                         >
-                          <span className="text-xs font-bold text-neutral-900">
-                            {item.label}
-                          </span>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={star}
-                                type="button"
-                                onClick={() => item.setValue(star)}
-                                className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
-                                title={`${item.label}: ${star} estrelas`}
-                              >
-                                <Star
-                                  className={`w-4 h-4 transition-colors ${
-                                    star <= item.value
-                                      ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
-                                      : 'text-neutral-300'
-                                  }`}
-                                />
-                              </button>
-                            ))}
+                          <Star className="w-3.5 h-3.5 fill-rose-600" />
+                          <span>{isAddingReview ? '✕ Fechar Formulário' : 'Avaliar esta Loja'}</span>
+                        </button>
+                      </div>
+
+                      {/* Inline Form when Avaliar esta Loja is clicked */}
+                      {isAddingReview && (
+                        <form 
+                          onSubmit={handleAddReview} 
+                          className="p-3.5 sm:p-4 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-3 animate-in fade-in duration-200 shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between border-b border-rose-200/80 pb-2">
+                            <div className="text-xs sm:text-sm font-black text-neutral-900 flex items-center gap-1.5">
+                              <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                              <span>Avaliar Compra por Estrelas (4 Critérios)</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingReview(false)}
+                              className="text-xs font-bold text-neutral-500 hover:text-neutral-800"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="space-y-2.5">
+                            {/* Secção Artigo */}
+                            <div className="p-2.5 bg-rose-100/60 rounded-xl border border-rose-200/90 space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-rose-800 block">
+                                ARTIGO
+                              </span>
+                              <div className="py-2 px-3 bg-white rounded-lg border border-neutral-200/90 flex items-center justify-between gap-2 shadow-2xs">
+                                <div>
+                                  <span className="text-xs font-bold text-neutral-900 block">
+                                    Qualidade do produto
+                                  </span>
+                                  <span className="text-[9.5px] text-rose-600 font-semibold">
+                                    Afeta apenas a nota do artigo
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                      key={star}
+                                      type="button"
+                                      onClick={() => setNewQuality(star)}
+                                      className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
+                                      title={`Qualidade do produto: ${star} estrelas`}
+                                    >
+                                      <Star
+                                        className={`w-4 h-4 transition-colors ${
+                                          star <= newQuality
+                                            ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
+                                            : 'text-neutral-300'
+                                        }`}
+                                      />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Secção Loja */}
+                            <div className="p-2.5 bg-emerald-100/50 rounded-xl border border-emerald-200/80 space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
+                                LOJA / VENDEDOR
+                              </span>
+                              {[
+                                { label: 'Atendimento', value: newCustomerService, setValue: setNewCustomerService },
+                                { label: 'Recomendação', value: newRecommendation, setValue: setNewRecommendation },
+                                { label: 'Satisfação Geral', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
+                              ].map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className="py-2 px-3 bg-white rounded-lg border border-neutral-200/90 flex items-center justify-between gap-2 shadow-2xs"
+                                >
+                                  <div>
+                                    <span className="text-xs font-bold text-neutral-900 block">
+                                      {item.label}
+                                    </span>
+                                    <span className="text-[9.5px] text-emerald-700 font-semibold">
+                                      Afeta a reputação da loja
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => item.setValue(star)}
+                                        className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
+                                        title={`${item.label}: ${star} estrelas`}
+                                      >
+                                        <Star
+                                          className={`w-4 h-4 transition-colors ${
+                                            star <= item.value
+                                              ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
+                                              : 'text-neutral-300'
+                                          }`}
+                                        />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            <input
+                              type="text"
+                              required
+                              placeholder="Seu nome (ex: Artur M.)"
+                              value={newReviewName}
+                              onChange={(e) => setNewReviewName(e.target.value)}
+                              className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 font-medium"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Sua cidade (ex: Matola, Maputo)"
+                              value={newReviewCity}
+                              onChange={(e) => setNewReviewCity(e.target.value)}
+                              className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 font-medium"
+                            />
+                          </div>
+
+                          <textarea
+                            rows={2}
+                            placeholder="Qual é a sua experiência? (Comentário opcional...)"
+                            value={newReviewComment}
+                            onChange={(e) => setNewReviewComment(e.target.value)}
+                            className="w-full p-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 resize-none font-medium"
+                          />
+
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingReview(false)}
+                              className="h-10 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="submit"
+                              className="flex-1 h-10 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/30"
+                            >
+                              <Star className="w-4 h-4 fill-white" />
+                              <span>Submeter Avaliação</span>
+                            </button>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Dark Metric Box (ÍNDICE GLOBAL DE APROVAMENTO) - Baseado estritamente nos 3 critérios do Vendedor */}
+                      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-emerald-500/30 shadow-lg space-y-3 overflow-hidden">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-400 block leading-tight">
+                              ÍNDICE GLOBAL DE APROVAMENTO
+                            </span>
+                            <span className="text-[10px] text-neutral-400">
+                              Overall Rating {storeReputation.rating.toFixed(1)} ⭐
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5 text-right">
+                            <span className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
+                              {sellerApprovalPercent}%
+                            </span>
+                            <span className="text-[11px] text-neutral-300 font-bold">
+                              de Satisfação
+                            </span>
                           </div>
                         </div>
-                      ))}
+
+                        {/* 3 Store-Level Criteria Breakdown */}
+                        <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-neutral-800 text-[10.5px]">
+                          <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                            <span className="text-neutral-400 block text-[9.5px]">Atendimento</span>
+                            <strong className="text-amber-400 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ★</strong>
+                          </div>
+                          <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                            <span className="text-neutral-400 block text-[9.5px]">Recomendação</span>
+                            <strong className="text-amber-400 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ★</strong>
+                          </div>
+                          <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                            <span className="text-neutral-400 block text-[9.5px]">Satisfação Geral</span>
+                            <strong className="text-amber-400 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ★</strong>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Seu nome (ex: Artur M.)"
-                        value={newReviewName}
-                        onChange={(e) => setNewReviewName(e.target.value)}
-                        className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 font-medium"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Sua cidade (ex: Matola, Maputo)"
-                        value={newReviewCity}
-                        onChange={(e) => setNewReviewCity(e.target.value)}
-                        className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 font-medium"
-                      />
-                    </div>
-
-                    <textarea
-                      rows={2}
-                      placeholder="Qual é a sua experiência? (Comentário opcional...)"
-                      value={newReviewComment}
-                      onChange={(e) => setNewReviewComment(e.target.value)}
-                      className="w-full p-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 resize-none font-medium"
-                    />
-
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setIsAddingReview(false)}
-                        className="h-10 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        className="flex-1 h-10 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/30"
-                      >
-                        <Star className="w-4 h-4 fill-white" />
-                        <span>Submeter Avaliação</span>
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {/* Dark Metric Box (ÍNDICE GLOBAL DE APROVAMENTO) - Clean single-line header, zero text break */}
-                <div className="p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-emerald-500/30 shadow-lg space-y-1.5 overflow-hidden">
-                  <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-400 block leading-tight">
-                    ÍNDICE GLOBAL DE APROVAMENTO
-                  </span>
-
-                  <div className="flex items-baseline gap-2 pt-0.5">
-                    <span className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tight">
-                      97.2%
-                    </span>
-                    <span className="text-xs sm:text-sm text-neutral-300 font-bold">
-                      de Satisfação
-                    </span>
-                  </div>
-                </div>
-              </div>
+                  </>
+                );
+              })()}
 
               {/* 2. AVALIAÇÃO INDIVIDUAL DE COMPRADORES VERIFICADOS (LISTA + ESTRELAS) */}
               <div className="p-4 bg-white rounded-2xl border border-neutral-200/90 space-y-3.5 shadow-2xs">
                 <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-neutral-100">
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                      <span>Avaliações Individuais de Compradores</span>
-                      <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
-                        {reviews.length} Verificadas
-                      </span>
-                    </h4>
-                    <p className="text-[11px] text-neutral-500 mt-0.5">
-                      Avaliações em estrelas submetidas por clientes após a conclusão da compra
-                    </p>
-                  </div>
+                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                    <span>Avaliações Individuais de Compradores</span>
+                    <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
+                      {reviews.length} Verificadas
+                    </span>
+                  </h4>
                 </div>
 
-                <div className="space-y-3">
-                  {reviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="p-3.5 bg-neutral-50/80 rounded-2xl border border-neutral-200/90 space-y-2.5 shadow-2xs hover:border-neutral-300 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center shrink-0 border border-rose-200">
-                            {rev.userName.charAt(0)}
-                          </div>
-                          <div>
-                            <span className="font-extrabold text-xs text-neutral-900 block">
-                              {rev.userName} <span className="text-[10px] text-neutral-400 font-normal">({rev.userCity})</span>
-                            </span>
-                            <div className="flex items-center text-amber-400">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-3 h-3 ${i < rev.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-200'}`}
-                                />
-                              ))}
+                {reviews.length === 0 ? (
+                  <div className="p-6 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500 font-medium space-y-1">
+                    <p className="font-bold text-neutral-800">Ainda sem avaliações verificadas.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {reviews.map((rev) => (
+                      <div
+                        key={rev.id}
+                        className="p-3.5 bg-neutral-50/80 rounded-2xl border border-neutral-200/90 space-y-2 shadow-2xs hover:border-neutral-300 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center shrink-0 border border-rose-200">
+                              {rev.userName.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-extrabold text-xs text-neutral-900 block">
+                                {rev.userName} <span className="text-[10px] text-neutral-400 font-normal">({rev.userCity})</span>
+                              </span>
+                              <div className="flex items-center text-amber-400 gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-3 h-3 ${i < Math.round(rev.storeRatingAverage) ? 'fill-amber-400 text-amber-400' : 'text-neutral-200'}`}
+                                  />
+                                ))}
+                                <span className="text-[11px] font-bold text-neutral-700 ml-1">
+                                  {rev.storeRatingAverage.toFixed(1)}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-neutral-400 font-medium block">
+                              {rev.date}
+                            </span>
+                            <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-block mt-0.5">
+                              ✓ Compra Verificada
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-neutral-400 font-medium">
-                          {rev.date}
-                        </span>
-                      </div>
 
-                      <p className="text-xs text-neutral-700 leading-relaxed font-medium">
-                        "{rev.comment}"
-                      </p>
-
-                      {/* Critérios de Avaliação por Estrelas (4 Critérios) */}
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {[
-                          { label: 'Qualidade do produto', scope: 'Produto' },
-                          { label: 'Bom atendimento', scope: 'Vendedor' },
-                          { label: 'Entrega rápida', scope: 'Vendedor' },
-                          { label: 'Recomendo', scope: 'Vendedor' }
-                        ].map((criterion, cIdx) => (
-                          <span
-                            key={cIdx}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border shadow-2xs ${
-                              criterion.scope === 'Produto'
-                                ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                : 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                            }`}
-                          >
-                            <CheckCircle2 className={`w-3 h-3 shrink-0 ${criterion.scope === 'Produto' ? 'text-rose-600' : 'text-emerald-600'}`} />
-                            <span>{criterion.label}</span>
-                            <span className="text-amber-500 font-black ml-0.5">5.0 ★</span>
-                          </span>
-                        ))}
+                        {rev.comment && (
+                          <p className="text-xs text-neutral-700 leading-relaxed font-medium pt-1">
+                            "{rev.comment}"
+                          </p>
+                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Drawer Bottom Bar */}
-            <div className="p-3 bg-white border-t border-neutral-200 flex items-center justify-between">
-              <span className="text-xs text-neutral-500 font-medium">
-                Garantia de avaliação genuína
-              </span>
+            <div className="p-3 bg-white border-t border-neutral-200 flex items-center justify-end">
               <button
                 onClick={() => setIsReviewsDrawerOpen(false)}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="px-5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 Voltar ao Artigo
               </button>

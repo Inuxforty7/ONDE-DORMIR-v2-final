@@ -70,8 +70,9 @@ const INITIAL_MOCK_REVIEWS: LoveShopReview[] = [
     ratings: {
       productQuality: 5,
       customerService: 5,
-      deliverySpeed: 5,
       recommendation: 5,
+      overallSatisfaction: 5,
+      deliverySpeed: 5,
     },
     storeRatingAverage: 5.0,
     productQualityRating: 5.0,
@@ -207,11 +208,11 @@ class LoveShopOrderService {
     const reviews = this.loadReviews();
     const reviewId = `rev-ls-${Date.now()}`;
 
-    // Separate calculations strictly per user rules:
-    // Store Rating = Average of 3 Seller Criteria (customerService + deliverySpeed + recommendation) ONLY!
+    // Store Rating = Average of 3 Seller Criteria (customerService + recommendation + overallSatisfaction) ONLY!
     // Product Quality DOES NOT affect the store rating.
+    const overallSatisfaction = ratings.overallSatisfaction ?? ratings.deliverySpeed ?? 5;
     const storeRatingAverage = Number(
-      ((ratings.customerService + ratings.deliverySpeed + ratings.recommendation) / 3).toFixed(1)
+      ((ratings.customerService + ratings.recommendation + overallSatisfaction) / 3).toFixed(1)
     );
     // Product Rating = Product Quality only!
     const productQualityRating = ratings.productQuality;
@@ -247,6 +248,49 @@ class LoveShopOrderService {
     return newReview;
   }
 
+  /**
+   * Direct review submission for product/store (creates entry in unified review dataset)
+   */
+  public addDirectProductReview(
+    productId: string,
+    storeId: string,
+    productName: string,
+    userName: string,
+    userCity: string,
+    ratings: DetailedReviewRating,
+    comment?: string
+  ): LoveShopReview {
+    const reviews = this.loadReviews();
+    const reviewId = `rev-ls-${Date.now()}`;
+
+    // Store Rating = Average of 3 Seller Criteria (customerService + recommendation + overallSatisfaction) ONLY!
+    // Product Quality DOES NOT affect store rating.
+    const overallSat = ratings.overallSatisfaction ?? ratings.deliverySpeed ?? 5;
+    const storeRatingAverage = Number(
+      ((ratings.customerService + ratings.recommendation + overallSat) / 3).toFixed(1)
+    );
+
+    const newReview: LoveShopReview = {
+      id: reviewId,
+      orderId: `DIR-${Date.now().toString().slice(-6)}`,
+      storeId,
+      productId,
+      productName,
+      userName: userName.trim(),
+      userCity: userCity.trim() || 'Maputo',
+      date: 'Hoje',
+      ratings,
+      storeRatingAverage,
+      productQualityRating: ratings.productQuality,
+      comment: comment?.trim() || '',
+      verifiedPurchase: true,
+    };
+
+    const updatedReviews = [newReview, ...reviews];
+    this.saveReviews(updatedReviews);
+    return newReview;
+  }
+
   public getReviewsByProductId(productId: string): LoveShopReview[] {
     return this.loadReviews().filter((r) => r.productId === productId && !r.isReported);
   }
@@ -279,7 +323,7 @@ class LoveShopOrderService {
   }
 
   /**
-   * Store Reputation: Based strictly on the 3 Seller-level criteria: Customer Service, Delivery Speed, and Recommendation
+   * Store Reputation: Based strictly on the 3 Seller-level criteria: Customer Service, Recommendation, and Overall Satisfaction
    * Product Quality DOES NOT affect store reputation.
    */
   public calculateStoreReputation(storeId: string): {
@@ -287,8 +331,8 @@ class LoveShopOrderService {
     count: number;
     breakdown: {
       customerService: number;
-      deliverySpeed: number;
       recommendation: number;
+      overallSatisfaction: number;
     };
   } {
     const reviews = this.getReviewsByStoreId(storeId).filter((r) => !r.isReported);
@@ -298,22 +342,22 @@ class LoveShopOrderService {
         count: 0,
         breakdown: {
           customerService: 5.0,
-          deliverySpeed: 5.0,
           recommendation: 5.0,
+          overallSatisfaction: 5.0,
         },
       };
     }
 
     let totalStoreAvg = 0;
     let totalService = 0;
-    let totalDelivery = 0;
     let totalRecom = 0;
+    let totalOverall = 0;
 
     reviews.forEach((r) => {
       totalStoreAvg += r.storeRatingAverage;
       totalService += r.ratings.customerService;
-      totalDelivery += r.ratings.deliverySpeed;
       totalRecom += r.ratings.recommendation;
+      totalOverall += r.ratings.overallSatisfaction ?? r.ratings.deliverySpeed ?? 5;
     });
 
     const count = reviews.length;
@@ -322,8 +366,8 @@ class LoveShopOrderService {
       count,
       breakdown: {
         customerService: Number((totalService / count).toFixed(1)),
-        deliverySpeed: Number((totalDelivery / count).toFixed(1)),
         recommendation: Number((totalRecom / count).toFixed(1)),
+        overallSatisfaction: Number((totalOverall / count).toFixed(1)),
       },
     };
   }

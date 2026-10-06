@@ -581,19 +581,11 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 
               {expandedSections.ratings && (
                 <div className="px-3.5 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-3.5">
-                  {/* Header: Title & 100% AUDITADO Badge */}
-                  <div className="flex items-start justify-between gap-2 pt-1">
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
-                        Relatório de Classificação Geral
-                      </h4>
-                      <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
-                        Relatório consolidado baseado em {reviewsCount} avaliações individuais de estadias verificadas
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-black uppercase tracking-wider border border-emerald-200 shrink-0 shadow-2xs">
-                      100% AUDITADO
-                    </span>
+                  {/* Header: Title */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <h4 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
+                      Relatório de Classificação Geral
+                    </h4>
                   </div>
 
                   {/* Button: + Avaliar Critérios */}

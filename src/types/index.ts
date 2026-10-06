@@ -169,10 +169,11 @@ export interface ProductMediaItem {
 }
 
 export interface DetailedReviewRating {
-  productQuality: number; // 1 to 5 (Exclusivo da Avaliação do Produto)
-  customerService: number;// 1 to 5 (Critério 1 da Reputação do Vendedor)
-  deliverySpeed: number;  // 1 to 5 (Critério 2 da Reputação do Vendedor)
-  recommendation: number; // 1 to 5 (Critério 3 da Reputação do Vendedor)
+  productQuality: number;     // 1 to 5 (Exclusivo da Avaliação do Produto)
+  customerService: number;    // 1 to 5 (Critério 1 da Reputação da Loja: Atendimento)
+  recommendation: number;     // 1 to 5 (Critério 2 da Reputação da Loja: Recomendação)
+  overallSatisfaction: number;// 1 to 5 (Critério 3 da Reputação da Loja: Satisfação Geral)
+  deliverySpeed?: number;     // Opcional para legado
 }
 
 export interface LoveShopReview {
