@@ -51,7 +51,10 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
   const [isAddingReview, setIsAddingReview] = useState<boolean>(false);
   const [newReviewName, setNewReviewName] = useState<string>('');
   const [newReviewCity, setNewReviewCity] = useState<string>('Maputo');
-  const [newReviewRating, setNewReviewRating] = useState<number>(5);
+  const [newDeliverySpeed, setNewDeliverySpeed] = useState<number>(5);
+  const [newCustomerService, setNewCustomerService] = useState<number>(5);
+  const [newRecommendation, setNewRecommendation] = useState<number>(5);
+  const [newOverallSatisfaction, setNewOverallSatisfaction] = useState<number>(5);
   const [newReviewComment, setNewReviewComment] = useState<string>('');
 
   const [reviews, setReviews] = useState<ProductReview[]>(() => {
@@ -115,15 +118,19 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
     e.preventDefault();
     if (!newReviewName.trim() || !newReviewComment.trim()) return;
 
+    const avgRating = Math.max(1, Math.min(5, Math.round(
+      (newDeliverySpeed + newCustomerService + newRecommendation + newOverallSatisfaction) / 4
+    )));
+
     const newRev: ProductReview = {
       id: `rev-${Date.now()}`,
       userName: newReviewName.trim(),
       userCity: newReviewCity.trim() || 'Moçambique',
-      rating: newReviewRating,
+      rating: avgRating,
       date: 'Hoje',
       comment: newReviewComment.trim(),
       verifiedPurchase: true,
-      satisfactionTags: ['Produto conforme anunciado', 'Recomendo'],
+      satisfactionTags: ['Tempo de Entrega', 'Atendimento', 'Recomendo'].slice(0, 2),
     };
 
     const updated = [newRev, ...reviews];
@@ -134,6 +141,10 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
     setNewReviewName('');
     setNewReviewComment('');
+    setNewDeliverySpeed(5);
+    setNewCustomerService(5);
+    setNewRecommendation(5);
+    setNewOverallSatisfaction(5);
     setIsAddingReview(false);
   };
 
@@ -586,120 +597,164 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
             {/* Drawer Body (Scrollable) */}
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
-              {/* Resumo & Tabelinha de Parâmetros Fixos */}
-              <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2.5">
+              {/* Resumo & Critérios de Avaliação (Estilo das 4 cartas com estrelas, sem porcentagem) */}
+              <div className="p-3.5 bg-neutral-50/70 rounded-2xl border border-neutral-200/90 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-black text-neutral-900">
                       Classificação dos Clientes
                     </h3>
                     <p className="text-[11px] text-neutral-500">
-                      Baseado em 575 compras verificadas
+                      Baseado em {reviews.length + 571} compras verificadas
                     </p>
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => setIsAddingReview(!isAddingReview)}
-                    className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200 transition-colors cursor-pointer whitespace-nowrap"
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition-colors cursor-pointer whitespace-nowrap active:scale-95 shadow-2xs"
                   >
                     {isAddingReview ? 'Cancelar' : '+ Deixar Avaliação'}
                   </button>
                 </div>
 
-                {/* Tabelinha / Critérios Fixos */}
-                <div className="grid grid-cols-2 gap-1.5 pt-1">
-                  {[
-                    { label: 'Produto conforme o anunciado', pct: '98%' },
-                    { label: 'Entrega rápida', pct: '94%' },
-                    { label: 'Boa qualidade', pct: '96%' },
-                    { label: 'Bom atendimento', pct: '95%' },
-                    { label: 'Preço justo', pct: '91%' },
-                    { label: 'Recomendo', pct: '99%' },
-                  ].map((crit, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2 bg-white rounded-xl border border-neutral-200/80 flex items-center justify-between gap-1 shadow-2xs"
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-emerald-600 font-black text-xs shrink-0">✓</span>
-                        <span className="text-[11px] font-bold text-neutral-800 truncate">
-                          {crit.label}
+                {/* Visão Padrão: Critérios de Classificação dos Clientes (quando o botão não está ativo) */}
+                {!isAddingReview && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {[
+                      { label: 'Produto conforme o anunciado', pct: '98%' },
+                      { label: 'Entrega rápida', pct: '94%' },
+                      { label: 'Boa qualidade', pct: '96%' },
+                      { label: 'Bom atendimento', pct: '95%' },
+                      { label: 'Preço justo', pct: '91%' },
+                      { label: 'Recomendo', pct: '99%' },
+                    ].map((crit, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 bg-white rounded-xl border border-neutral-200/90 flex items-center justify-between gap-1.5 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-emerald-600 font-black text-xs shrink-0">✓</span>
+                          <span className="text-[11.5px] font-bold text-neutral-800 leading-tight">
+                            {crit.label}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0 border border-emerald-200/60">
+                          {crit.pct}
                         </span>
                       </div>
-                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0">
-                        {crit.pct}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Form de Nova Avaliação (se ativado) */}
-              {isAddingReview && (
-                <form 
-                  onSubmit={handleAddReview} 
-                  className="p-3.5 bg-white rounded-2xl border border-rose-200 shadow-sm space-y-2.5 animate-in fade-in duration-150"
-                >
-                  <h4 className="text-xs font-bold text-neutral-900">
-                    Sua Avaliação sobre este Artigo:
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Seu nome (ex: Artur)"
-                      value={newReviewName}
-                      onChange={(e) => setNewReviewName(e.target.value)}
-                      className="h-9 px-3 rounded-xl border border-neutral-300 text-xs focus:outline-none focus:border-rose-600"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Sua cidade (ex: Matola)"
-                      value={newReviewCity}
-                      onChange={(e) => setNewReviewCity(e.target.value)}
-                      className="h-9 px-3 rounded-xl border border-neutral-300 text-xs focus:outline-none focus:border-rose-600"
-                    />
+                    ))}
                   </div>
+                )}
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-neutral-600">Sua nota:</span>
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setNewReviewRating(star)}
-                          className="cursor-pointer"
+                {/* Form de Nova Avaliação (Ativado pelo botão + Deixar Avaliação) */}
+                {isAddingReview && (
+                  <form 
+                    onSubmit={handleAddReview} 
+                    className="pt-1 space-y-3 animate-in fade-in duration-150"
+                  >
+                    <div className="space-y-2">
+                      <div className="text-xs font-bold text-neutral-800">
+                        Selecione as estrelas para cada critério:
+                      </div>
+                      {[
+                        {
+                          label: 'Tempo de Entrega',
+                          value: newDeliverySpeed,
+                          setValue: setNewDeliverySpeed,
+                        },
+                        {
+                          label: 'Atendimento',
+                          value: newCustomerService,
+                          setValue: setNewCustomerService,
+                        },
+                        {
+                          label: 'Recomendação',
+                          value: newRecommendation,
+                          setValue: setNewRecommendation,
+                        },
+                        {
+                          label: 'Satisfação Geral',
+                          value: newOverallSatisfaction,
+                          setValue: setNewOverallSatisfaction,
+                        },
+                      ].map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="py-3 px-4 bg-white rounded-2xl border border-neutral-200/90 flex items-center justify-between gap-3 shadow-2xs hover:border-rose-300 transition-colors"
                         >
-                          <Star
-                            className={`w-5 h-5 ${
-                              star <= newReviewRating
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-neutral-300'
-                            }`}
-                          />
-                        </button>
+                          <span className="text-xs sm:text-sm font-bold text-neutral-900 whitespace-normal">
+                            {item.label}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => item.setValue(star)}
+                                className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
+                                title={`${item.label}: ${star} estrelas`}
+                              >
+                                <Star
+                                  className={`w-4.5 h-4.5 transition-colors ${
+                                    star <= item.value
+                                      ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
+                                      : 'text-neutral-300'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </div>
 
-                  <textarea
-                    required
-                    rows={2}
-                    placeholder="Conte como foi a sua experiência com este artigo..."
-                    value={newReviewComment}
-                    onChange={(e) => setNewReviewComment(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 text-xs focus:outline-none focus:border-rose-600 resize-none"
-                  />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Seu nome (ex: Artur M.)"
+                        value={newReviewName}
+                        onChange={(e) => setNewReviewName(e.target.value)}
+                        className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500/30"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Sua cidade (ex: Matola, Maputo)"
+                        value={newReviewCity}
+                        onChange={(e) => setNewReviewCity(e.target.value)}
+                        className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500/30"
+                      />
+                    </div>
 
-                  <button
-                    type="submit"
-                    className="w-full h-9 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Publicar Avaliação
-                  </button>
-                </form>
-              )}
+                    <textarea
+                      required
+                      rows={2}
+                      placeholder="Conte como foi a sua experiência com o produto e atendimento..."
+                      value={newReviewComment}
+                      onChange={(e) => setNewReviewComment(e.target.value)}
+                      className="w-full p-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500/30 resize-none"
+                    />
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingReview(false)}
+                        className="h-10 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 h-10 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/30"
+                      >
+                        <Star className="w-4 h-4 fill-white" />
+                        <span>Publicar Avaliação</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
 
               {/* Feed Rolável de Comentários (João, Artur, etc.) */}
               <div className="space-y-2">

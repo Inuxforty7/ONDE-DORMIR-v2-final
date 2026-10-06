@@ -9,7 +9,8 @@ import {
   MessageCircle, 
   Store, 
   ShoppingBag,
-  ArrowRight
+  ArrowRight,
+  Plus
 } from 'lucide-react';
 import { LoveShopOrder } from '../types';
 import { loveShopOrderService } from '../services/loveShopOrderService';
@@ -19,15 +20,26 @@ interface LoveShopClientOrdersModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectProduct?: (productId: string) => void;
+  initialTab?: 'compras' | 'vendas';
 }
 
 export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps> = ({
   isOpen,
   onClose,
   onSelectProduct,
+  initialTab = 'compras',
 }) => {
+  const [activeTab, setActiveTab] = useState<'compras' | 'vendas'>(initialTab);
   const [orders, setOrders] = useState<LoveShopOrder[]>(() => loveShopOrderService.getOrders());
   const [selectedOrderToReview, setSelectedOrderToReview] = useState<LoveShopOrder | null>(null);
+
+  // Sync tab if initialTab changes on open
+  React.useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+      setOrders(loveShopOrderService.getOrders());
+    }
+  }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
 
@@ -35,8 +47,17 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
     setOrders(loveShopOrderService.getOrders());
   };
 
+  const handleUpdateStatus = (orderId: string, status: 'concluido' | 'cancelado') => {
+    loveShopOrderService.updateOrderStatus(orderId, status);
+    refreshOrders();
+  };
+
   const completedWaitingReviewCount = orders.filter(
     (o) => o.status === 'concluido' && !o.hasReviewed
+  ).length;
+
+  const pendingMerchantOrdersCount = orders.filter(
+    (o) => o.status === 'pendente'
   ).length;
 
   return (
@@ -48,7 +69,7 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
+          {/* Header matching Image 2 */}
           <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center">
@@ -63,16 +84,68 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-7.5 px-3 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                title="Fazer novo pedido"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Pedir</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Top Notice */}
-          {completedWaitingReviewCount > 0 && (
+          {/* Segmented Tab Switcher (Compras as Visitor vs Vendas as Merchant) */}
+          <div className="px-5 pt-3 pb-1 bg-neutral-50/70 border-b border-neutral-100 shrink-0">
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-neutral-200/70 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setActiveTab('compras')}
+                className={`h-9 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'compras'
+                    ? 'bg-white text-rose-600 shadow-sm font-black'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Minhas Compras</span>
+                {completedWaitingReviewCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center">
+                    {completedWaitingReviewCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('vendas')}
+                className={`h-9 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'vendas'
+                    ? 'bg-white text-neutral-900 shadow-sm font-black'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                <Store className="w-3.5 h-3.5 text-amber-600" />
+                <span>Minhas Vendas</span>
+                {pendingMerchantOrdersCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center">
+                    {pendingMerchantOrdersCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Notice banner for Buyer Tab */}
+          {activeTab === 'compras' && completedWaitingReviewCount > 0 && (
             <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-200/70 flex items-center justify-between text-xs text-amber-900 font-medium shrink-0">
               <span className="flex items-center gap-1.5">
                 <Star className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
@@ -83,16 +156,30 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
             </div>
           )}
 
+          {/* Notice banner for Merchant Tab */}
+          {activeTab === 'vendas' && pendingMerchantOrdersCount > 0 && (
+            <div className="px-5 py-2.5 bg-emerald-50 border-b border-emerald-200/70 flex items-center justify-between text-xs text-emerald-900 font-medium shrink-0">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  Tem <strong>{pendingMerchantOrdersCount} pedido{pendingMerchantOrdersCount > 1 ? 's' : ''} pendente{pendingMerchantOrdersCount > 1 ? 's' : ''}</strong> de clientes. Confirme as vendas após entrega.
+                </span>
+              </span>
+            </div>
+          )}
+
           {/* Orders List */}
           <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1">
             {orders.length === 0 ? (
               <div className="p-8 text-center bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2">
-                <ShoppingBag className="w-8 h-8 text-neutral-400 mx-auto" />
+                <PackageCheck className="w-8 h-8 text-neutral-400 mx-auto" />
                 <h4 className="text-xs font-bold text-neutral-800">
-                  Nenhum pedido registado ainda
+                  {activeTab === 'compras' ? 'Nenhuma compra registada ainda' : 'Nenhum pedido de venda recebido ainda'}
                 </h4>
                 <p className="text-[11px] text-neutral-500 leading-relaxed max-w-xs mx-auto">
-                  Ao clicar em "Contactar Vendedor" no WhatsApp de qualquer produto, o sistema gera automaticamente o registo do seu pedido.
+                  {activeTab === 'compras'
+                    ? 'Ao contactar um vendedor no WhatsApp de qualquer produto, o sistema gera automaticamente o registo da sua compra.'
+                    : 'Quando os clientes clicam para encomendar os seus artigos no WhatsApp, os pedidos surgem listados aqui para confirmação de entrega.'}
                 </p>
               </div>
             ) : (
@@ -113,7 +200,7 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
                       </span>
                       {isPending && (
                         <span className="inline-flex items-center gap-1 text-[10.5px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md border border-amber-200/70">
-                          <Clock className="w-3 h-3 text-amber-600" /> Negociação Pendente
+                          <Clock className="w-3 h-3 text-amber-600" /> Pendente
                         </span>
                       )}
                       {isCompleted && (
@@ -123,7 +210,7 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
                       )}
                       {isCancelled && (
                         <span className="inline-flex items-center gap-1 text-[10.5px] font-bold bg-neutral-200 text-neutral-700 px-2 py-0.5 rounded-md">
-                          <XCircle className="w-3 h-3 text-neutral-500" /> Negócio Cancelado
+                          <XCircle className="w-3 h-3 text-neutral-500" /> Cancelado
                         </span>
                       )}
                     </div>
@@ -148,37 +235,81 @@ export const LoveShopClientOrdersModal: React.FC<LoveShopClientOrdersModalProps>
                           </span>
                         </div>
                         <div className="text-[10.5px] text-neutral-400">
-                          Contactado em: {ord.createdAt}
+                          Data do pedido: {ord.createdAt}
                         </div>
                       </div>
                     </div>
 
-                    {/* Bottom Action Area */}
-                    <div className="pt-2 border-t border-neutral-200/80 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-neutral-500">
-                        {isPending && 'Aguarde o fecho do negócio com a loja.'}
-                        {isCompleted && !ord.hasReviewed && 'Avaliação desbloqueada pelo vendedor!'}
-                        {isCompleted && ord.hasReviewed && 'Avaliação verificada publicada ✅'}
-                        {isCancelled && 'Contacto encerrado sem compra.'}
-                      </span>
-
-                      {isCompleted && !ord.hasReviewed && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrderToReview(ord)}
-                          className="h-8 px-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
-                        >
-                          <Star className="w-3.5 h-3.5 fill-white" />
-                          <span>Avaliar Compra</span>
-                        </button>
-                      )}
-
-                      {isCompleted && ord.hasReviewed && (
-                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          Avaliado ⭐
+                    {/* Actions Area */}
+                    {activeTab === 'compras' ? (
+                      /* Buyer Actions */
+                      <div className="pt-2 border-t border-neutral-200/80 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-neutral-500">
+                          {isPending && 'Aguardando entrega e confirmação da loja.'}
+                          {isCompleted && !ord.hasReviewed && 'Avaliação desbloqueada pelo vendedor!'}
+                          {isCompleted && ord.hasReviewed && 'Avaliação verificada publicada ✅'}
+                          {isCancelled && 'Contacto encerrado sem compra.'}
                         </span>
-                      )}
-                    </div>
+
+                        {isCompleted && !ord.hasReviewed && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrderToReview(ord)}
+                            className="h-8 px-3.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-white" />
+                            <span>Avaliar Compra</span>
+                          </button>
+                        )}
+
+                        {isCompleted && ord.hasReviewed && (
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            Avaliado ⭐
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      /* Merchant Actions */
+                      <div className="pt-2 border-t border-neutral-200/80 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[11px] text-neutral-500">
+                          {isPending && 'Gestão de entrega / fecho de venda:'}
+                          {isCompleted && (
+                            <span className="text-emerald-700 font-semibold">
+                              Entrega confirmada pelo comerciante.
+                            </span>
+                          )}
+                          {isCancelled && 'Venda cancelada pelo comerciante.'}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          {isPending && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateStatus(ord.id, 'cancelado')}
+                                className="h-7 px-2.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateStatus(ord.id, 'concluido')}
+                                className="h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                              >
+                                <CheckCircle2 className="w-3 h-3 text-white" />
+                                <span>Concluir Venda</span>
+                              </button>
+                            </>
+                          )}
+
+                          {isCompleted && (
+                            <span className="text-[11px] font-bold text-neutral-600">
+                              {ord.hasReviewed ? 'Cliente avaliou ⭐' : 'Aguardando avaliação do cliente'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })

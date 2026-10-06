@@ -6,15 +6,14 @@ import {
   MessageCircle, 
   Plus, 
   MapPin, 
-  Clock,
-  Gift,
-  ArrowLeft,
-  Home,
-  Play,
-  ShoppingBag,
-  Star,
-  PackageCheck,
-  Search
+  Clock, 
+  Gift, 
+  ArrowLeft, 
+  Home, 
+  Play, 
+  ShoppingBag, 
+  Star, 
+  Search 
 } from 'lucide-react';
 import { 
   LoveShopStore, 
@@ -95,9 +94,10 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   const [selectedStore, setSelectedStore] = useState<LoveShopStore | null>(null);
   const [viewAllStores, setViewAllStores] = useState(false);
 
-  // Client Orders pending reviews count for real-time badge
+  // Client & Merchant Orders pending count for real-time badge
   const clientOrders = useMemo(() => loveShopOrderService.getOrders(), [isClientOrdersOpen, selectedProduct, isRegisterStoreOpen]);
   const pendingReviewsCount = clientOrders.filter((o) => o.status === 'concluido' && !o.hasReviewed).length;
+  const pendingMerchantOrdersCount = clientOrders.filter((o) => o.status === 'pendente').length;
 
   // Handle Add Store with its 15 to 25 catalog products (Saved strictly inside store details, NOT on the main screen)
   const handleAddStore = (newStore: LoveShopStore, newProducts?: LoveShopProduct[]) => {
@@ -154,7 +154,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         onSelectRole={setUserRoleMode}
         onOpenOrders={() => setIsClientOrdersOpen(true)}
         onOpenRegisterStore={() => setIsRegisterStoreOpen(true)}
-        pendingReviewsCount={pendingReviewsCount}
+        pendingReviewsCount={userRoleMode === 'comerciante' ? pendingMerchantOrdersCount : pendingReviewsCount}
       />
 
       {/* 2. Campo de Busca Reposicionado (Deslocalizado para fora / logo abaixo da placa principal) */}
@@ -179,97 +179,6 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
           )}
         </div>
       </div>
-
-      {/* Painel Rápido do Comerciante (visível apenas quando o modo Comerciante está ativo) */}
-      {userRoleMode === 'comerciante' && (
-        <div className="animate-in fade-in duration-200 space-y-2.5">
-          <div className="p-4 sm:p-5 bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 text-white rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-md space-y-3">
-            <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-black text-white tracking-tight">
-                Venda na Love Shop
-              </h3>
-              <p className="text-xs text-neutral-300 leading-relaxed max-w-md">
-                Publique o catálogo da sua loja e receba encomendas diretamente no seu WhatsApp.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setIsRegisterStoreOpen(true)}
-                className="h-10 px-5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Registar Loja</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (stores.length > 0) {
-                    setStoreModalInitialTab('pedidos');
-                    setSelectedStore(stores[0]);
-                  }
-                }}
-                className="h-10 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <PackageCheck className="w-4 h-4 text-emerald-400" />
-                <span>Pedidos Recebidos</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Atalhos Rápidos para Gerir as Lojas do Comerciante */}
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[11px] font-bold text-neutral-600 block px-1">
-              Suas Lojas Cadastradas & Gestão de Vendas:
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {stores.slice(0, 4).map((s) => {
-                const sOrders = loveShopOrderService.getOrdersByStoreId(s.id);
-                const pendingOrders = sOrders.filter((o) => o.status === 'pendente').length;
-
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => {
-                      setStoreModalInitialTab('pedidos');
-                      setSelectedStore(s);
-                    }}
-                    className="p-2.5 bg-neutral-50 hover:bg-rose-50/50 rounded-xl border border-neutral-200/90 hover:border-rose-300 transition-all flex items-center justify-between cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0">
-                        {s.name.charAt(0)}
-                      </div>
-                      <div className="truncate">
-                        <div className="text-xs font-bold text-neutral-900 group-hover:text-rose-700 truncate">
-                          {s.name}
-                        </div>
-                        <div className="text-[10px] text-neutral-500">
-                          {s.city} • {sOrders.length} pedido{sOrders.length !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {pendingOrders > 0 ? (
-                        <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md border border-amber-200">
-                          {pendingOrders} pendente{pendingOrders > 1 ? 's' : ''}
-                        </span>
-                      ) : (
-                        <span className="text-[10.5px] font-bold text-rose-600 group-hover:translate-x-0.5 transition-transform">
-                          Gerir &rarr;
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 3. Category Buttons (Exact match to Image 3 - Pra Ela, Pra Ele, Surpresas removed) */}
       <div className="grid grid-cols-4 gap-2 px-1">
@@ -368,23 +277,6 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
           <h2 className="text-base font-black text-neutral-900">
             Artigos ({filteredProducts.length})
           </h2>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsClientOrdersOpen(true)}
-              className="text-xs font-bold text-neutral-700 hover:text-rose-600 bg-neutral-100 hover:bg-rose-50 px-2.5 py-1 rounded-xl border border-neutral-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-rose-600" />
-              <span>Meus Pedidos</span>
-            </button>
-
-            <button
-              onClick={() => setIsRegisterStoreOpen(true)}
-              className="text-xs font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
-            >
-              + Registar Loja
-            </button>
-          </div>
         </div>
 
         {filteredProducts.length === 0 ? (
@@ -699,26 +591,6 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         )}
       </div>
 
-      {/* 5. Faixa do Comerciante */}
-      <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h3 className="text-sm sm:text-base font-black text-white">
-            Venda na Love Shop
-          </h3>
-          <p className="text-xs text-neutral-300 leading-relaxed">
-            Publique o catálogo da sua loja e receba encomendas diretamente no seu WhatsApp.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setIsRegisterStoreOpen(true)}
-          className="h-10 px-5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Registar Loja</span>
-        </button>
-      </div>
-
       {/* Modals */}
       <RegisterLoveShopStoreModal
         isOpen={isRegisterStoreOpen}
@@ -750,9 +622,10 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         onSelectProduct={(prod) => setSelectedProduct(prod)}
       />
 
-      {/* Client Orders & Reviews Modal */}
+      {/* Client & Merchant Orders Modal */}
       <LoveShopClientOrdersModal
         isOpen={isClientOrdersOpen}
+        initialTab={userRoleMode === 'comerciante' ? 'vendas' : 'compras'}
         onClose={() => setIsClientOrdersOpen(false)}
         onSelectProduct={(prodId) => {
           const found = products.find((p) => p.id === prodId);

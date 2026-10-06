@@ -17,25 +17,32 @@ export const Logo: React.FC<LogoProps> = ({
     sm: 'w-8 h-8 rounded-xl',
     md: 'w-10 h-10 sm:w-11 sm:h-11 rounded-2xl',
     lg: 'w-12 h-12 sm:w-14 sm:h-14 rounded-2xl',
-    xl: 'w-16 h-16 sm:w-20 sm:h-20 rounded-3xl',
+    xl: 'w-[84px] h-[84px] sm:w-[98px] sm:h-[98px] md:w-[112px] md:h-[112px] rounded-[24px] sm:rounded-[28px] md:rounded-[32px]',
+  };
+
+  const gapClasses = {
+    sm: 'gap-2',
+    md: 'gap-2.5',
+    lg: 'gap-3 sm:gap-3.5',
+    xl: 'gap-3.5 sm:gap-4 md:gap-5',
   };
 
   const textClasses = {
-    sm: 'text-xs sm:text-[13px] font-black',
-    md: 'text-[13px] sm:text-sm md:text-base font-black',
-    lg: 'text-base sm:text-lg font-black',
-    xl: 'text-xl sm:text-2xl font-black',
+    sm: 'text-[12.5px] sm:text-sm font-black',
+    md: 'text-sm sm:text-base md:text-lg font-black',
+    lg: 'text-base sm:text-lg md:text-xl font-black',
+    xl: 'text-[29px] sm:text-[35px] md:text-[40px] font-black',
   };
 
   const subTextClasses = {
-    sm: 'text-[7.5px] sm:text-[8.5px] font-black tracking-[0.20em] sm:tracking-[0.22em]',
-    md: 'text-[8.5px] sm:text-[9.5px] font-black tracking-[0.22em] sm:tracking-[0.24em]',
-    lg: 'text-[9.5px] sm:text-[10.5px] font-black tracking-[0.24em] sm:tracking-[0.26em]',
-    xl: 'text-[10.5px] sm:text-xs font-black tracking-[0.26em] sm:tracking-[0.30em]',
+    sm: 'text-[9px] font-black',
+    md: 'text-[11px] font-black',
+    lg: 'text-[13px] font-black',
+    xl: 'text-[16px] sm:text-[19px] md:text-[22px] font-black',
   };
 
   return (
-    <div className={`flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0 ${className}`}>
+    <div className={`flex items-center justify-center ${gapClasses[size]} shrink-0 min-w-0 ${className}`}>
       {/* Official App Icon SVG - 100% Faithful to Image Reference */}
       <div 
         className={`${sizeClasses[size]} relative overflow-hidden shrink-0 shadow-lg shadow-blue-950/40 border border-white/40 transition-transform active:scale-95`}
@@ -176,8 +183,8 @@ export const Logo: React.FC<LogoProps> = ({
 
       {/* Brand Text - ONDE DORMIR MOÇAMBIQUE */}
       {showText && (
-        <div className="flex flex-col shrink min-w-0 justify-center text-left">
-          <div className={`${textClasses[size]} tracking-tight font-black leading-none`}>
+        <div className="flex flex-col shrink-0 min-w-0 justify-center text-left">
+          <div className={`${textClasses[size]} tracking-tight font-black leading-none whitespace-nowrap`}>
             {theme === 'light' ? (
               <>
                 <span className="text-[#071739] font-black drop-shadow-xs">ONDE </span>
@@ -190,13 +197,26 @@ export const Logo: React.FC<LogoProps> = ({
               </>
             )}
           </div>
-          <span 
-            className={`${subTextClasses[size]} uppercase leading-tight mt-0.5 ${
-              theme === 'light' ? 'text-[#1E293B]' : 'text-white/95 drop-shadow-sm'
+          {/* Line 2: MOÇAMBIQUE - Perfectly framed to full width of ONDE DORMIR */}
+          <div 
+            aria-label="MOÇAMBIQUE"
+            className={`w-full flex justify-between items-center ${subTextClasses[size]} uppercase leading-none select-none ${
+              size === 'xl' ? 'mt-1.5 sm:mt-2.5' : 'mt-0.5'
+            } ${
+              theme === 'light' ? 'text-[#1E293B]' : 'text-white drop-shadow-md'
             }`}
           >
-            MOÇAMBIQUE
-          </span>
+            <span>M</span>
+            <span>O</span>
+            <span>Ç</span>
+            <span>A</span>
+            <span>M</span>
+            <span>B</span>
+            <span>I</span>
+            <span>Q</span>
+            <span>U</span>
+            <span>E</span>
+          </div>
         </div>
       )}
     </div>

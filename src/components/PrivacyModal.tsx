@@ -123,7 +123,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
                   <Scale className="w-4 h-4 text-blue-700 shrink-0" />
                   <div>
                     <span className="block font-black">Termos e Condições Gerais</span>
-                    <span className="text-[10.5px] text-blue-700/80 font-medium">Águia Soluções & Serviços, SU, LDA</span>
+                    <span className="text-[10.5px] text-blue-700/80 font-medium">ÁGUIA Soluções & Serviços (Conexões Rápidas)</span>
                   </div>
                 </div>
                 <span className="text-xs font-black text-blue-600 group-hover:translate-x-0.5 transition-transform">Ler →</span>

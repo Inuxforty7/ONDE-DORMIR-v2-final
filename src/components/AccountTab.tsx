@@ -167,7 +167,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
             </div>
             <div>
               <div className="text-xs sm:text-sm font-bold text-neutral-900">Termos e Condições Gerais</div>
-              <div className="text-xs text-neutral-500 mt-0.5 font-medium">Águia Soluções & Serviços - Conexões Rápidas, SU, LDA</div>
+              <div className="text-xs text-neutral-500 mt-0.5 font-medium">ÁGUIA Soluções & Serviços (Conexões Rápidas)</div>
             </div>
           </div>
           <span className="text-xs text-blue-700 font-bold bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">Ler</span>
@@ -244,7 +244,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
           </p>
         </div>
         <a
-          href="https://wa.me/258843210980?text=Ol%C3%A1!%20Contacto%20a%20partir%20do%20Onde%20Dormir%20Mo%C3%A7ambique."
+          href="https://wa.me/258847282824?text=Ol%C3%A1!%20Contacto%20a%20partir%20do%20Onde%20Dormir%20Mo%C3%A7ambique."
           target="_blank"
           rel="noopener noreferrer"
           className="h-11 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-colors shrink-0 cursor-pointer touch-manipulation"
@@ -257,6 +257,9 @@ export const AccountTab: React.FC<AccountTabProps> = ({
       {/* App Version Footer */}
       <div className="text-center text-xs text-neutral-400 space-y-0.5 pt-2">
         <div className="font-semibold">ONDE DORMIR MOÇAMBIQUE • Directório Nacional</div>
+        <div className="text-[10.5px] text-neutral-400 font-medium">
+          ÁGUIA Soluções & Serviços (Conexões Rápidas)
+        </div>
       </div>
 
       {/* Terms Modal */}

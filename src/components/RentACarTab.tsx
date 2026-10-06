@@ -1076,7 +1076,7 @@ const RegisterCarModal: React.FC<RegisterCarModalProps> = ({ onClose, onRegister
                 >
                   Termos e Condições Gerais
                 </button>{' '}
-                <span>do Onde Dormir Moçambique (Águia Soluções & Serviços).</span>
+                <span>do Onde Dormir Moçambique (ÁGUIA Soluções & Serviços - Conexões Rápidas).</span>
               </div>
             </label>
           </div>

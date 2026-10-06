@@ -60,7 +60,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         <div className="w-full flex flex-col items-center text-center pt-1 sm:pt-3 space-y-2 sm:space-y-2.5">
           
           {/* Official Logo with Vector Emblem & Typography */}
-          <Logo size="xl" showText={true} theme="dark" />
+          <Logo size="xl" showText={true} theme="dark" className="w-full justify-between sm:justify-center px-0.5 sm:px-2" />
 
           {/* Slogan exactly as written on the print */}
           <p className="text-xs sm:text-sm font-semibold text-white/95 max-w-xs drop-shadow-lg leading-snug px-2 text-center">
@@ -90,11 +90,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 aria-label="Notificações"
               >
                 <Bell className="w-3.5 h-3.5 text-amber-300" />
-                {unreadCount > 0 && (
-                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded-full text-[9px] font-black animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded-full text-[9px] font-black">
+                  {unreadCount > 0 ? unreadCount : 2}
+                </span>
               </button>
             )}
           </div>
@@ -324,9 +322,12 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           {/* Corporate Attribution */}
           <div className="space-y-0.5">
             <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white/90 drop-shadow-md">
-              ÁGUIA SOLUÇÕES & SERVIÇOS - CONEXÕES RÁPIDAS, SU, LDA
+              ÁGUIA Soluções & Serviços (Conexões Rápidas)
             </p>
-            <p className="text-[9.5px] sm:text-[10px] text-white/75 font-medium drop-shadow-sm">
+            <p className="text-[9px] sm:text-[9.5px] italic text-white/80 font-normal drop-shadow-sm max-w-md mx-auto">
+              "Conectando negócios e necessidades à solução, com agilidade – confiança – acessibilidade"
+            </p>
+            <p className="text-[9.5px] sm:text-[10px] text-white/70 font-medium drop-shadow-sm pt-0.5">
               Onde Dormir • Guia Turístico • Rent-a-Car • HeartLink • Love Shop
             </p>
           </div>

@@ -57,7 +57,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({
                 Termos e Condições Gerais de Utilização
               </h2>
               <p className="text-[11px] text-neutral-500 font-semibold">
-                Onde Dormir Moçambique • Águia Soluções & Serviços, SU, LDA
+                Onde Dormir Moçambique • ÁGUIA Soluções & Serviços (Conexões Rápidas)
               </p>
             </div>
           </div>
@@ -89,10 +89,10 @@ export const TermsModal: React.FC<TermsModalProps> = ({
           </div>
         )}
 
-        {/* Scrollable Terms Content (Exact Text Provided by User - 100% Unaltered) */}
+        {/* Scrollable Terms Content */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 text-xs sm:text-[13px] text-neutral-800 leading-relaxed font-normal select-text">
           
-          {/* Main Title & Modules Banner */}
+          {/* Main Title & Corporate Info */}
           <div className="text-center pb-4 border-b border-neutral-200 space-y-1.5">
             <span className="text-[10.5px] font-black uppercase tracking-widest text-neutral-400">
               Documento Legal Oficial
@@ -103,10 +103,20 @@ export const TermsModal: React.FC<TermsModalProps> = ({
             <h2 className="text-sm sm:text-base font-bold text-blue-700">
               ONDE DORMIR MOÇAMBIQUE
             </h2>
-            <p className="text-xs font-semibold text-neutral-600">
+            <p className="text-xs font-bold text-neutral-800">
+              ÁGUIA Soluções & Serviços (Conexões Rápidas) • NUIT: 401880178
+            </p>
+            <p className="text-[11px] italic text-neutral-600">
+              "Conectando negócios e necessidades à solução, com agilidade – confiança – acessibilidade"
+            </p>
+            <div className="text-[11px] text-neutral-500 leading-relaxed pt-1 bg-neutral-50 p-2.5 rounded-xl border border-neutral-200 text-left sm:text-center">
+              <p><strong>Endereço:</strong> Moçambique, Província de Maputo, Distrito da Matola, Bairro de Ndlavela, Quarteirão 1, Casa n.º 502</p>
+              <p><strong>Contactos Telefónicos:</strong> 876482824 / 847282824 | <strong>E-mail:</strong> contacto@conexoesrapidas.com</p>
+            </div>
+            <p className="text-xs font-semibold text-neutral-600 pt-1">
               Onde Dormir • Guia Turístico • Rent-a-Car • HeartLink • Love Shop
             </p>
-            <p className="text-xs font-bold text-neutral-900 pt-2 italic">
+            <p className="text-xs font-bold text-neutral-900 pt-1 italic">
               Ao utilizar ou registar-se no ONDE DORMIR MOÇAMBIQUE, o utilizador declara que leu, compreendeu e aceitou integralmente os presentes Termos e Condições.
             </p>
           </div>
@@ -621,10 +631,15 @@ export const TermsModal: React.FC<TermsModalProps> = ({
             <p className="text-neutral-900 font-bold">
               Ao utilizar, registar-se ou anunciar serviços no Onde Dormir Moçambique, o utilizador declara que leu, compreendeu e aceitou integralmente os presentes Termos e Condições.
             </p>
-            <div className="p-3 bg-neutral-100 rounded-2xl border border-neutral-200 text-neutral-900 font-bold space-y-1">
+            <div className="p-3.5 bg-neutral-100 rounded-2xl border border-neutral-200 text-neutral-900 font-bold space-y-2">
               <p className="text-xs text-blue-900 font-black">
-                Onde Dormir Moçambique é uma plataforma de conexões rápidas e divulgação sob gestão da Águia Soluções & Serviços - Conexões Rápidas, SU, LDA.
+                Onde Dormir Moçambique é uma plataforma de conexões rápidas e divulgação sob gestão da ÁGUIA Soluções & Serviços (Conexões Rápidas) — NUIT: 401880178.
               </p>
+              <div className="text-[11px] text-neutral-600 font-medium space-y-0.5 bg-white/70 p-2.5 rounded-xl border border-neutral-200/80">
+                <p><strong>Slogan:</strong> "Conectando negócios e necessidades à solução, com agilidade – confiança – acessibilidade"</p>
+                <p><strong>Endereço:</strong> Moçambique, Província de Maputo, Distrito da Matola, Bairro de Ndlavela, Quarteirão 1, Casa n.º 502</p>
+                <p><strong>Contactos Telefónicos:</strong> 876482824 / 847282824 | <strong>E-mail:</strong> contacto@conexoesrapidas.com</p>
+              </div>
               <p className="text-[11.5px] text-neutral-700 font-medium">
                 Todas as negociações, pagamentos, reservas, encontros, alugueres, hospedagens, transportes e demais acordos são realizados exclusivamente entre os utilizadores independentes, sob sua inteira responsabilidade, não assumindo a plataforma qualquer responsabilidade por actos, omissões, prejuízos, conflitos ou incumprimentos ocorridos entre as partes.
               </p>
@@ -646,7 +661,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({
                 className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-300 cursor-pointer shrink-0"
               />
               <span className="text-[11px] sm:text-xs text-neutral-800 font-bold leading-tight group-hover:text-neutral-950">
-                Declaro que li, compreendi e aceito integralmente os presentes Termos e Condições Gerais de Utilização do Onde Dormir Moçambique (Águia Soluções & Serviços).
+                Declaro que li, compreendi e aceito integralmente os presentes Termos e Condições Gerais de Utilização do Onde Dormir Moçambique (ÁGUIA Soluções & Serviços - Conexões Rápidas).
               </span>
             </label>
           )}

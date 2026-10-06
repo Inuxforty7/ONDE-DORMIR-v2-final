@@ -564,7 +564,7 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                       >
                         Termos e Condições Gerais
                       </button>{' '}
-                      <span>do directório Onde Dormir Moçambique (Águia Soluções & Serviços).</span>
+                      <span>do directório Onde Dormir Moçambique (ÁGUIA Soluções & Serviços - Conexões Rápidas).</span>
                     </div>
                   </label>
                 </div>

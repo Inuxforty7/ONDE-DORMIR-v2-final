@@ -821,7 +821,7 @@ export const OwnerFleetManagerModal: React.FC<OwnerFleetManagerModalProps> = ({
                         <span>Faturação e Comprovativo Fiscal Oficial (Bill)</span>
                       </span>
                       <p className="text-[11px] text-neutral-300 mt-0.5">
-                        Emitida em conformidade pelo operador com NUIT 401298450 e IVA 16%.
+                        Emitida em conformidade pelo operador com NUIT 401880178 e IVA 16%.
                       </p>
                     </div>
 

@@ -490,15 +490,13 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={handleOpenRegister}
-              className="flex-1 sm:flex-none h-10 px-4 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Criar Perfil</span>
-            </button>
-          </div>
+          <button
+            onClick={handleOpenRegister}
+            className="w-full sm:w-auto h-10 px-4 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Criar Perfil</span>
+          </button>
         </div>
 
         {/* Sub Navigation Tabs */}

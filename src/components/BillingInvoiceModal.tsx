@@ -192,13 +192,16 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                   OFICIAL
                 </span>
               </div>
-              <p className="text-[11px] font-bold text-neutral-600 mt-1 uppercase tracking-wide">
-                ÁGUIA SOLUÇÕES & SERVIÇOS - CONEXÕES RÁPIDAS, SU, LDA
+              <p className="text-[11px] font-black text-neutral-900 mt-1 uppercase tracking-wide">
+                ÁGUIA Soluções & Serviços (Conexões Rápidas)
               </p>
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
-                NUIT: <strong>401298450</strong> | Conservatória de Maputo<br />
-                Av. 24 de Julho nº 1895, Sommerschield, Maputo - Moçambique<br />
-                Email: facturacao@ondedormir.co.mz | WhatsApp: +258 84 900 1122
+              <p className="text-[10px] italic text-neutral-500 font-medium mt-0.5">
+                "Conectando negócios e necessidades à solução, com agilidade – confiança – acessibilidade"
+              </p>
+              <p className="text-[11px] text-neutral-600 leading-relaxed mt-1">
+                NUIT: <strong>401880178</strong><br />
+                Endereço: Moçambique, Província de Maputo, Distrito da Matola, Bairro de Ndlavela, Quarteirão 1, Casa n.º 502<br />
+                Contactos Telefónicos: 876482824 / 847282824 | E-mail: contacto@conexoesrapidas.com
               </p>
             </div>
 
@@ -324,7 +327,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
         {/* Footer (No-Print) */}
         <div className="bg-neutral-100 p-3 sm:p-4 border-t border-neutral-200 flex items-center justify-between print:hidden">
           <span className="text-[11px] text-neutral-500 font-semibold">
-            Águia Soluções & Serviços - Conexões Rápidas, SU, LDA
+            ÁGUIA Soluções & Serviços (Conexões Rápidas) • NUIT: 401880178
           </span>
           <button
             onClick={onClose}

@@ -1150,7 +1150,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
               </div>
 
               <p className="text-[11px] text-neutral-500 text-center leading-tight px-2">
-                Ao confirmar, declara a veracidade das informações nos termos da legislação moçambicana e aceitação dos Termos e Condições Gerais (Águia Soluções & Serviços, SU, LDA).
+                Ao confirmar, declara a veracidade das informações nos termos da legislação moçambicana e aceitação dos Termos e Condições Gerais (ÁGUIA Soluções & Serviços - Conexões Rápidas).
               </p>
 
               <button
