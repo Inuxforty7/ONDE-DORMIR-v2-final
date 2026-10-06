@@ -413,7 +413,7 @@ export default function App() {
       )}
 
       {/* Main Tab Content */}
-      <main className={`flex-1 w-full overflow-x-hidden ${activeTab !== 'home' ? 'pt-[52px] sm:pt-[56px]' : ''} ${activeTab !== 'map' ? 'pb-20 sm:pb-24' : ''}`}>
+      <main className={`flex-1 w-full overflow-x-hidden ${activeTab !== 'home' ? 'pt-[52px] sm:pt-[56px]' : ''} ${activeTab !== 'home' && activeTab !== 'map' ? 'pb-20 sm:pb-24' : 'pb-0'}`}>
         {activeTab === 'home' && (
           <HomeTab
             userLocation={userLocation}
@@ -548,8 +548,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Bottom Navigation Dock - Persistently rendered across all main tabs */}
-      {activeTab !== 'map' && (
+      {/* Bottom Navigation Dock - Rendered ONLY when user is inside a module (not on home or map) */}
+      {activeTab !== 'home' && activeTab !== 'map' && (
         <BottomNavBar
           activeTab={activeTab}
           onNavigateTab={handleNavigateToTab}

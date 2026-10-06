@@ -17,7 +17,7 @@ export const Logo: React.FC<LogoProps> = ({
     sm: 'w-8 h-8 rounded-xl',
     md: 'w-10 h-10 sm:w-11 sm:h-11 rounded-2xl',
     lg: 'w-12 h-12 sm:w-14 sm:h-14 rounded-2xl',
-    xl: 'w-[84px] h-[84px] sm:w-[98px] sm:h-[98px] md:w-[112px] md:h-[112px] rounded-[24px] sm:rounded-[28px] md:rounded-[32px]',
+    xl: 'w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] md:w-[120px] md:h-[120px] rounded-[24px] sm:rounded-[28px] md:rounded-[32px]',
   };
 
   const gapClasses = {
@@ -31,14 +31,14 @@ export const Logo: React.FC<LogoProps> = ({
     sm: 'text-[12.5px] sm:text-sm font-black',
     md: 'text-sm sm:text-base md:text-lg font-black',
     lg: 'text-base sm:text-lg md:text-xl font-black',
-    xl: 'text-[29px] sm:text-[35px] md:text-[40px] font-black',
+    xl: 'text-[28px] sm:text-[34px] md:text-[42px] font-black',
   };
 
   const subTextClasses = {
     sm: 'text-[9px] font-black',
     md: 'text-[11px] font-black',
     lg: 'text-[13px] font-black',
-    xl: 'text-[16px] sm:text-[19px] md:text-[22px] font-black',
+    xl: 'text-[15px] sm:text-[18px] md:text-[22px] font-black',
   };
 
   return (

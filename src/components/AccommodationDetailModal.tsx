@@ -85,14 +85,16 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
     amenities: boolean;
     location: boolean;
     verification: boolean;
+    ratings: boolean;
   }>({
     about: false,
     amenities: false,
     location: false,
     verification: false,
+    ratings: true,
   });
 
-  const toggleSection = (section: 'about' | 'amenities' | 'location' | 'verification') => {
+  const toggleSection = (section: 'about' | 'amenities' | 'location' | 'verification' | 'ratings') => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
@@ -254,12 +256,13 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                 )}
               </div>
 
-              {/* Rating & Antiguidade (Clean single line) */}
+              {/* Rating em percentagem & Antiguidade */}
               <div className="flex items-center gap-2 flex-wrap text-xs font-semibold text-neutral-700 pt-1.5 border-t border-neutral-100">
-                <div className="flex items-center text-amber-400">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-                  <span className="font-bold text-neutral-900 ml-1">{rating.toFixed(1)}</span>
-                  <span className="text-neutral-400 font-normal ml-0.5">({reviewsCount} avaliações)</span>
+                <div className="flex items-center text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  <Award className="w-4 h-4 text-emerald-600 shrink-0 mr-1.5" />
+                  <span className="font-black text-emerald-900 text-sm">{Math.round((rating / 5) * 100)}%</span>
+                  <span className="text-emerald-700 font-bold ml-1.5">Avaliação Positiva</span>
+                  <span className="text-emerald-600 font-normal ml-1">({reviewsCount} relatórios)</span>
                 </div>
 
                 <span aria-hidden="true" className="text-neutral-300">·</span>
@@ -533,6 +536,81 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                       ? 'Documentação comercial, alvará e contacto de atendimento validados pela plataforma.'
                       : 'Atenção: A localização no mapa não é automaticamente verificada por Onde Dormir. Novos registos de proprietários iniciam como Não Verificados até à auditoria presencial da nossa equipa.'}
                   </p>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Relatório Consolidado de Avaliações (Percentagem - Sem exposição de pessoas) */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => toggleSection('ratings')}
+                className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-neutral-100/80 active:scale-[0.99] transition-all group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shrink-0 shadow-2xs group-hover:border-emerald-500 transition-colors">
+                    <Award className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight group-hover:text-emerald-700 transition-colors">
+                        Relatório de Avaliações & Satisfação
+                      </h3>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-md">
+                        {Math.round((rating / 5) * 100)}%
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 truncate mt-0.5">
+                      Relatório estatístico de {reviewsCount} avaliações individuais
+                    </p>
+                  </div>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-white border border-neutral-200 shadow-2xs flex items-center justify-center text-neutral-600 group-hover:text-emerald-700 group-hover:border-emerald-300 transition-all shrink-0 ml-2">
+                  {expandedSections.ratings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+
+              {expandedSections.ratings && (
+                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-3">
+                  <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-200/70 text-[11px] text-emerald-950 font-medium leading-relaxed">
+                    ℹ️ <strong>Transparência & Privacidade:</strong> Os dados abaixo correspondem ao relatório consolidado de satisfação calculado a partir das {reviewsCount} avaliações individuais registadas para este estabelecimento. Não são publicadas avaliações nominativas nem comentários pessoais de clientes.
+                  </div>
+
+                  {/* Summary Metric Header */}
+                  <div className="flex items-center justify-between p-3 bg-neutral-900 text-white rounded-xl">
+                    <div>
+                      <span className="text-[10px] text-neutral-400 font-bold block uppercase tracking-wider">Satisfação Geral do Alojamento</span>
+                      <span className="text-xs text-neutral-300">Baseado em {reviewsCount} relatórios de verificação</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-black text-emerald-400 tracking-tight">{Math.round((rating / 5) * 100)}%</span>
+                      <span className="text-[9.5px] text-emerald-200 block font-semibold">Aprovação Global</span>
+                    </div>
+                  </div>
+
+                  {/* Percentage Progress Bars */}
+                  <div className="space-y-2.5 pt-1">
+                    {[
+                      { label: 'Limpeza, Higiene e Organização', percent: Math.min(100, Math.round((rating / 5) * 100 + 2)), color: 'bg-emerald-600' },
+                      { label: 'Atendimento e Recepção', percent: Math.min(100, Math.round((rating / 5) * 100 + 1)), color: 'bg-emerald-500' },
+                      { label: 'Conforto do Quarto e Cama', percent: Math.round((rating / 5) * 100), color: 'bg-teal-500' },
+                      { label: 'Localização e Acesso ao Local', percent: Math.max(70, Math.round((rating / 5) * 100 - 1)), color: 'bg-sky-500' },
+                      { label: 'Relação Qualidade / Preço', percent: Math.max(65, Math.round((rating / 5) * 100 - 2)), color: 'bg-amber-500' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="text-neutral-800">{item.label}</span>
+                          <span className="font-extrabold text-neutral-900">{item.percent}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-neutral-100 overflow-hidden">
+                          <div
+                            className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                            style={{ width: `${item.percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

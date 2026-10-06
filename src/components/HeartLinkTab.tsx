@@ -467,25 +467,25 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   };
 
   return (
-    <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-3.5">
+    <div className="pb-16 sm:pb-20 pt-1 sm:pt-3 max-w-5xl mx-auto px-2.5 sm:px-4 space-y-2.5 sm:space-y-3.5">
       {/* 1. HeartLink Header */}
-      <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
-              <HeartLinkTwoHeartsIcon className="w-7 h-7 sm:w-8 sm:h-8" variant="white" showStitches={true} />
+      <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-lg relative overflow-hidden">
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
+              <HeartLinkTwoHeartsIcon className="w-6 h-6 sm:w-8 sm:h-8" variant="white" showStitches={true} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight">
+                <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-none">
                   Heart<span className="text-pink-200">Link</span>
                 </h1>
-                <span className="text-[10px] uppercase font-black tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-300/30 flex items-center gap-1">
+                <span className="text-[9.5px] uppercase font-black tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-300/30 flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-amber-300" />
                   Verificado
                 </span>
               </div>
-              <p className="text-xs text-pink-100 font-medium">
+              <p className="text-[11px] sm:text-xs text-pink-100 font-medium mt-0.5">
                 Conexões autênticas com privacidade e segurança.
               </p>
             </div>
@@ -493,7 +493,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
           <button
             onClick={handleOpenRegister}
-            className="w-full sm:w-auto h-10 px-4 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Criar Perfil</span>
@@ -501,7 +501,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
 
         {/* Sub Navigation Tabs */}
-        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/20 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-white/20 overflow-x-auto no-scrollbar">
           {[
             { id: 'descobrir', label: 'Descobrir', icon: Sparkles },
             { id: 'pessoas', label: 'Pessoas', icon: Users },
@@ -712,8 +712,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       {/* 4. DISCOVER, PESSOAS & CURTIDAS (SEARCH + FILTERS + GRID) */}
       {activeSubTab !== 'mensagens' && (
         <>
-          {/* Filter and Search Bar */}
-          <div className="bg-white p-3 sm:p-4 rounded-3xl border border-neutral-200 shadow-2xs space-y-2.5">
+          {/* Filter and Search Bar - Sticky on scroll for instant access */}
+          <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border border-neutral-200 shadow-sm space-y-2">
             <div className="flex flex-col sm:flex-row gap-2">
               {/* Search input */}
               <div className="relative flex-1">

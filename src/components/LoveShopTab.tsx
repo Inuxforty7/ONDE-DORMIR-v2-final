@@ -146,7 +146,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   }, [products, selectedCategory, searchQuery]);
 
   return (
-    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-3 sm:px-4 pt-2 pb-16 sm:pb-20 space-y-3.5 animate-in fade-in duration-200">
+    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-2.5 sm:px-4 pt-1 sm:pt-3 pb-16 sm:pb-20 space-y-2.5 sm:space-y-3.5 animate-in fade-in duration-200">
       
       {/* 1. Placa Principal "Love Shop" (Cabeçalho do Módulo, sem botões a sobrepor-se no topo) */}
       <LoveShopHeaderBanner
@@ -157,58 +157,61 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
         pendingReviewsCount={userRoleMode === 'comerciante' ? pendingMerchantOrdersCount : pendingReviewsCount}
       />
 
-      {/* 2. Campo de Busca Reposicionado (Deslocalizado para fora / logo abaixo da placa principal) */}
-      <div className="w-full">
-        <div className="relative w-full shadow-sm rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 transition-colors">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-600 shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar produtos ou lojas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-9 rounded-2xl bg-transparent text-neutral-900 placeholder:text-neutral-400 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/30 transition-all touch-manipulation"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-500 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
-              title="Limpar busca"
-            >
-              ×
-            </button>
-          )}
+      {/* 2. Sticky Search Bar & Category Selector Bar */}
+      <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-sm space-y-2">
+        {/* Campo de Busca */}
+        <div className="w-full">
+          <div className="relative w-full shadow-2xs rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200/90 hover:border-neutral-300 transition-colors">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-600 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar produtos ou lojas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 sm:h-11 pl-10 pr-9 rounded-xl sm:rounded-2xl bg-transparent text-neutral-900 placeholder:text-neutral-400 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/30 transition-all touch-manipulation"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-neutral-200 hover:bg-neutral-300 text-neutral-600 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                title="Limpar busca"
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* 3. Category Buttons (Exact match to Image 3 - Pra Ela, Pra Ele, Surpresas removed) */}
-      <div className="grid grid-cols-4 gap-2 px-1">
-        {CLEAN_CATEGORIES.map((cat) => {
-          const isSelected = selectedCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                if (cat.id === 'todos') {
-                  setIsMoreCategoriesOpen(!isMoreCategoriesOpen);
-                  setSelectedCategory('todos');
-                } else {
-                  setSelectedCategory(cat.id);
-                  setIsMoreCategoriesOpen(false);
-                }
-              }}
-              className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all cursor-pointer touch-manipulation active:scale-95 ${
-                isSelected
-                  ? 'bg-rose-50 text-rose-700 border-2 border-rose-400/80 shadow-xs font-black'
-                  : 'bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200/80 shadow-2xs font-bold'
-              }`}
-            >
-              <span className="text-xl sm:text-2xl mb-1">{cat.icon}</span>
-              <span className="text-[11px] sm:text-xs truncate max-w-full">
-                {cat.label}
-              </span>
-            </button>
-          );
-        })}
+        {/* Category Buttons */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+          {CLEAN_CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  if (cat.id === 'todos') {
+                    setIsMoreCategoriesOpen(!isMoreCategoriesOpen);
+                    setSelectedCategory('todos');
+                  } else {
+                    setSelectedCategory(cat.id);
+                    setIsMoreCategoriesOpen(false);
+                  }
+                }}
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl sm:rounded-2xl transition-all cursor-pointer touch-manipulation active:scale-95 ${
+                  isSelected
+                    ? 'bg-rose-50 text-rose-700 border-2 border-rose-400/80 shadow-xs font-black'
+                    : 'bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200/80 shadow-2xs font-bold'
+                }`}
+              >
+                <span className="text-lg sm:text-xl mb-0.5">{cat.icon}</span>
+                <span className="text-[10.5px] sm:text-xs truncate max-w-full">
+                  {cat.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Extra categories sheet when "Mais" is tapped */}

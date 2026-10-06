@@ -359,25 +359,25 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   };
 
   return (
-    <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-3.5">
+    <div className="pb-16 sm:pb-20 pt-1 sm:pt-3 max-w-5xl mx-auto px-2.5 sm:px-4 space-y-2.5 sm:space-y-3.5">
       {/* Top Banner: TURISMO MOÇAMBIQUE */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-cyan-950 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden border border-emerald-500/20">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
-              <Compass className="w-6 h-6 text-emerald-300" />
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-cyan-950 text-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-lg relative overflow-hidden border border-emerald-500/20">
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
+              <Compass className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight">
+                <h1 className="text-base sm:text-2xl font-black tracking-tight leading-none">
                   <span>TURISMO </span>
                   <span className="text-amber-400">MOÇAMBIQUE</span>
                 </h1>
-                <span className="text-[10px] uppercase font-black tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                <span className="text-[9.5px] sm:text-[10px] uppercase font-black tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
                   <ShieldCheck className="w-3 h-3" /> Oficial
                 </span>
               </div>
-              <p className="text-xs text-emerald-100 font-medium mt-0.5">
+              <p className="text-[11px] sm:text-xs text-emerald-100 font-medium mt-0.5">
                 Explore lugares, experiências e encontre quem o pode guiar.
               </p>
             </div>
@@ -385,7 +385,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
           <button
             onClick={handleStartGuideRegistration}
-            className="w-full sm:w-auto h-10 px-4 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
             <span>+ Registar como Guia</span>
@@ -393,8 +393,8 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         </div>
       </div>
 
-      {/* Main Search Bar & Quick Filters */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">
+      {/* Sticky Main Search Bar & Quick Segment Tabs */}
+      <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-sm space-y-2">
         {/* Search input */}
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />

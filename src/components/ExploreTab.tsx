@@ -418,25 +418,25 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     selectedAmenities.length;
 
   return (
-    <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-3.5">
+    <div className="pb-16 sm:pb-20 pt-1 sm:pt-3 max-w-5xl mx-auto px-2.5 sm:px-4 space-y-2.5 sm:space-y-3.5">
       {/* Top Brand Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-sky-950 text-white p-3.5 sm:p-4 rounded-3xl border border-sky-400/20 shadow-md flex items-center justify-between gap-3">
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-sky-950 text-white p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-sky-400/20 shadow-md flex items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base sm:text-lg font-black tracking-tight leading-none">
+            <h2 className="text-sm sm:text-lg font-black tracking-tight leading-none">
               <span>ONDE </span>
               <span className="text-amber-400">DORMIR</span>{' '}
-              <span className="text-sky-300 font-black text-xs sm:text-sm tracking-wider uppercase">MOÇAMBIQUE</span>
+              <span className="text-sky-300 font-black text-[11px] sm:text-sm tracking-wider uppercase">MOÇAMBIQUE</span>
             </h2>
           </div>
-          <p className="text-[11px] sm:text-xs text-sky-100 font-medium mt-1 leading-snug">
+          <p className="text-[10.5px] sm:text-xs text-sky-100 font-medium mt-0.5 sm:mt-1 leading-snug">
             Pensões, Guest Houses e Residenciais verificadas · Alojamento seguro perto de si.
           </p>
         </div>
       </div>
 
-      {/* Main Search and Location Bar */}
-      <div className="bg-white p-3 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-2.5">
+      {/* Main Search and Location Bar - Sticky on scroll for instant access */}
+      <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-sm space-y-2">
         {/* Search Input Row + "Perto de mim" + Filtros Trigger */}
         <div className="flex items-center gap-2">
           {/* Search Input */}
