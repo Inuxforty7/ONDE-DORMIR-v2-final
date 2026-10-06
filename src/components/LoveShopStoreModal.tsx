@@ -628,7 +628,7 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                         Reputação Global da Loja
                       </h4>
                       <p className="text-[11px] text-neutral-500">
-                        Calculada com base no Atendimento, Entrega, Recomendação e Satisfação
+                        Calculada exclusivamente com base nos 3 critérios do Vendedor (Atendimento, Entrega e Recomendação)
                       </p>
                     </div>
                     <div className="text-right">
@@ -642,22 +642,18 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-neutral-200 text-xs">
                     <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">Atendimento</span>
+                      <span className="text-neutral-500 block text-[10.5px]">1. Atendimento</span>
                       <strong className="text-neutral-900 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ⭐</strong>
                     </div>
                     <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">Tempo de Entrega</span>
+                      <span className="text-neutral-500 block text-[10.5px]">2. Tempo de Entrega</span>
                       <strong className="text-neutral-900 font-black">{storeReputation.breakdown.deliverySpeed.toFixed(1)} ⭐</strong>
                     </div>
                     <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">Recomendação</span>
+                      <span className="text-neutral-500 block text-[10.5px]">3. Recomendação</span>
                       <strong className="text-neutral-900 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ⭐</strong>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">Satisfação Geral</span>
-                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ⭐</strong>
                     </div>
                   </div>
                 </div>

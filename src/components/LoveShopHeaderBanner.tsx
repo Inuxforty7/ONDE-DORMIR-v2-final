@@ -15,7 +15,7 @@ export const LoveShopHeaderBanner: React.FC<LoveShopHeaderBannerProps> = ({
   pendingReviewsCount = 0,
 }) => {
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-[#67001a] text-white border border-rose-800/50 p-3.5 sm:p-5 md:p-6 min-h-[190px] sm:min-h-[210px] flex flex-col justify-between group">
+    <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl bg-[#67001a] text-white border border-rose-800/50 p-3 sm:p-4.5 min-h-[160px] sm:min-h-[185px] flex flex-col justify-between group">
       {/* 
         Scenic Romantic Background:
         Subtle bokeh, roses & candles vignette overlaid with rich burgundy gradient

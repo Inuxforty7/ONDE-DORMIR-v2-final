@@ -69,10 +69,9 @@ const INITIAL_MOCK_REVIEWS: LoveShopReview[] = [
     date: 'Há 2 dias',
     ratings: {
       productQuality: 5,
-      deliverySpeed: 5,
       customerService: 5,
+      deliverySpeed: 5,
       recommendation: 5,
-      overallSatisfaction: 5,
     },
     storeRatingAverage: 5.0,
     productQualityRating: 5.0,
@@ -208,10 +207,11 @@ class LoveShopOrderService {
     const reviews = this.loadReviews();
     const reviewId = `rev-ls-${Date.now()}`;
 
-    // Separate calculations:
-    // Store Rating = Average of (Delivery + Service + Recommendation + Overall)
+    // Separate calculations strictly per user rules:
+    // Store Rating = Average of 3 Seller Criteria (customerService + deliverySpeed + recommendation) ONLY!
+    // Product Quality DOES NOT affect the store rating.
     const storeRatingAverage = Number(
-      ((ratings.deliverySpeed + ratings.customerService + ratings.recommendation + ratings.overallSatisfaction) / 4).toFixed(1)
+      ((ratings.customerService + ratings.deliverySpeed + ratings.recommendation) / 3).toFixed(1)
     );
     // Product Rating = Product Quality only!
     const productQualityRating = ratings.productQuality;
@@ -279,7 +279,8 @@ class LoveShopOrderService {
   }
 
   /**
-   * Store Reputation: Based on Customer Service, Delivery Speed, Recommendation, and Overall Satisfaction
+   * Store Reputation: Based strictly on the 3 Seller-level criteria: Customer Service, Delivery Speed, and Recommendation
+   * Product Quality DOES NOT affect store reputation.
    */
   public calculateStoreReputation(storeId: string): {
     rating: number;
@@ -288,7 +289,6 @@ class LoveShopOrderService {
       customerService: number;
       deliverySpeed: number;
       recommendation: number;
-      overallSatisfaction: number;
     };
   } {
     const reviews = this.getReviewsByStoreId(storeId).filter((r) => !r.isReported);
@@ -300,7 +300,6 @@ class LoveShopOrderService {
           customerService: 5.0,
           deliverySpeed: 5.0,
           recommendation: 5.0,
-          overallSatisfaction: 5.0,
         },
       };
     }
@@ -309,14 +308,12 @@ class LoveShopOrderService {
     let totalService = 0;
     let totalDelivery = 0;
     let totalRecom = 0;
-    let totalSat = 0;
 
     reviews.forEach((r) => {
       totalStoreAvg += r.storeRatingAverage;
       totalService += r.ratings.customerService;
       totalDelivery += r.ratings.deliverySpeed;
       totalRecom += r.ratings.recommendation;
-      totalSat += r.ratings.overallSatisfaction;
     });
 
     const count = reviews.length;
@@ -327,7 +324,6 @@ class LoveShopOrderService {
         customerService: Number((totalService / count).toFixed(1)),
         deliverySpeed: Number((totalDelivery / count).toFixed(1)),
         recommendation: Number((totalRecom / count).toFixed(1)),
-        overallSatisfaction: Number((totalSat / count).toFixed(1)),
       },
     };
   }

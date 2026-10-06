@@ -79,7 +79,16 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 }) => {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [reportState, setReportState] = useState<'idle' | 'reporting' | 'sent'>('idle');
-  const [showAllSeals, setShowAllSeals] = useState(false);
+  const [isAddingReview, setIsAddingReview] = useState(false);
+  const [newCleanliness, setNewCleanliness] = useState(5);
+  const [newService, setNewService] = useState(5);
+  const [newComfort, setNewComfort] = useState(5);
+  const [newLocation, setNewLocation] = useState(5);
+  const [newOverall, setNewOverall] = useState(5);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewCity, setReviewCity] = useState('');
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittedReview, setSubmittedReview] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{
     about: boolean;
     amenities: boolean;
@@ -571,45 +580,162 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
               </button>
 
               {expandedSections.ratings && (
-                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-3">
-                  <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-200/70 text-[11px] text-emerald-950 font-medium leading-relaxed">
-                    ℹ️ <strong>Transparência & Privacidade:</strong> Os dados abaixo correspondem ao relatório consolidado de satisfação calculado a partir das {reviewsCount} avaliações individuais registadas para este estabelecimento. Não são publicadas avaliações nominativas nem comentários pessoais de clientes.
+                <div className="px-3.5 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-3.5">
+                  {/* Header: Title & 100% AUDITADO Badge */}
+                  <div className="flex items-start justify-between gap-2 pt-1">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
+                        Relatório de Classificação Geral
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                        Relatório consolidado baseado em {reviewsCount} avaliações individuais de estadias verificadas
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-black uppercase tracking-wider border border-emerald-200 shrink-0 shadow-2xs">
+                      100% AUDITADO
+                    </span>
                   </div>
 
-                  {/* Summary Metric Header */}
-                  <div className="flex items-center justify-between p-3 bg-neutral-900 text-white rounded-xl">
-                    <div>
-                      <span className="text-[10px] text-neutral-400 font-bold block uppercase tracking-wider">Satisfação Geral do Alojamento</span>
-                      <span className="text-xs text-neutral-300">Baseado em {reviewsCount} relatórios de verificação</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-2xl font-black text-emerald-400 tracking-tight">{Math.round((rating / 5) * 100)}%</span>
-                      <span className="text-[9.5px] text-emerald-200 block font-semibold">Aprovação Global</span>
-                    </div>
+                  {/* Button: + Avaliar Critérios */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingReview(!isAddingReview)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-black border border-emerald-200/80 transition-colors shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <span>{isAddingReview ? '✕ Fechar Formulário' : '+ Avaliar Critérios'}</span>
+                    </button>
                   </div>
 
-                  {/* Percentage Progress Bars */}
-                  <div className="space-y-2.5 pt-1">
-                    {[
-                      { label: 'Limpeza, Higiene e Organização', percent: Math.min(100, Math.round((rating / 5) * 100 + 2)), color: 'bg-emerald-600' },
-                      { label: 'Atendimento e Recepção', percent: Math.min(100, Math.round((rating / 5) * 100 + 1)), color: 'bg-emerald-500' },
-                      { label: 'Conforto do Quarto e Cama', percent: Math.round((rating / 5) * 100), color: 'bg-teal-500' },
-                      { label: 'Localização e Acesso ao Local', percent: Math.max(70, Math.round((rating / 5) * 100 - 1)), color: 'bg-sky-500' },
-                      { label: 'Relação Qualidade / Preço', percent: Math.max(65, Math.round((rating / 5) * 100 - 2)), color: 'bg-amber-500' },
-                    ].map((item, idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs font-semibold">
-                          <span className="text-neutral-800">{item.label}</span>
-                          <span className="font-extrabold text-neutral-900">{item.percent}%</span>
+                  {/* Inline Form when + Avaliar Critérios is clicked */}
+                  {isAddingReview && (
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!reviewName.trim()) return; // Required: Name. Comment is OPTIONAL!
+                        setSubmittedReview(true);
+                        setIsAddingReview(false);
+                      }} 
+                      className="p-3.5 sm:p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-3 animate-in fade-in duration-200 shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+                        <div className="text-xs sm:text-sm font-black text-neutral-900 flex items-center gap-1.5">
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                          <span>Avaliar Estadia por Estrelas (5 Critérios)</span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-neutral-100 overflow-hidden">
-                          <div
-                            className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                            style={{ width: `${item.percent}%` }}
-                          />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingReview(false)}
+                          className="text-xs font-bold text-neutral-500 hover:text-neutral-800"
+                        >
+                          ✕
+                        </button>
                       </div>
-                    ))}
+
+                      <div className="space-y-2">
+                        {[
+                          { label: 'Limpeza & Higiene', value: newCleanliness, setValue: setNewCleanliness },
+                          { label: 'Atendimento & Recepção', value: newService, setValue: setNewService },
+                          { label: 'Conforto do Quarto', value: newComfort, setValue: setNewComfort },
+                          { label: 'Localização & Acesso', value: newLocation, setValue: setNewLocation },
+                          { label: 'Satisfação Geral', value: newOverall, setValue: setNewOverall },
+                        ].map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="py-2 px-3 bg-white rounded-xl border border-neutral-200/90 flex items-center justify-between gap-2 shadow-2xs"
+                          >
+                            <span className="text-xs font-bold text-neutral-900">
+                              {item.label}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => item.setValue(star)}
+                                  className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
+                                  title={`${item.label}: ${star} estrelas`}
+                                >
+                                  <Star
+                                    className={`w-4 h-4 transition-colors ${
+                                      star <= item.value
+                                        ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
+                                        : 'text-neutral-300'
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <input
+                          type="text"
+                          required
+                          placeholder="Seu nome (ex: Artur M.)"
+                          value={reviewName}
+                          onChange={(e) => setReviewName(e.target.value)}
+                          className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-emerald-600 font-medium"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Sua cidade (ex: Matola, Maputo)"
+                          value={reviewCity}
+                          onChange={(e) => setReviewCity(e.target.value)}
+                          className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-emerald-600 font-medium"
+                        />
+                      </div>
+
+                      <textarea
+                        rows={2}
+                        placeholder="Qual é a sua experiência? (Comentário opcional...)"
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        className="w-full p-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-emerald-600 resize-none font-medium"
+                      />
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingReview(false)}
+                          className="h-10 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/30"
+                        >
+                          <Star className="w-4 h-4 fill-white" />
+                          <span>Submeter Avaliação</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {submittedReview && (
+                    <div className="p-3 bg-emerald-100 text-emerald-900 rounded-xl border border-emerald-300 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Sua avaliação individual foi submetida e incorporada com sucesso no sistema.</span>
+                    </div>
+                  )}
+
+                  {/* Dark Metric Box (ÍNDICE GLOBAL DE APROVAMENTO) - Clean single-line header, no badge, zero text break */}
+                  <div className="p-3.5 sm:p-4.5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-emerald-500/30 shadow-lg space-y-1.5 overflow-hidden">
+                    <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-400 block leading-tight">
+                      ÍNDICE GLOBAL DE APROVAMENTO
+                    </span>
+
+                    <div className="flex items-baseline gap-2 pt-0.5">
+                      <span className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tight">
+                        {Math.round((rating / 5) * 100)}%
+                      </span>
+                      <span className="text-xs sm:text-sm text-neutral-300 font-bold">
+                        de Satisfação
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}

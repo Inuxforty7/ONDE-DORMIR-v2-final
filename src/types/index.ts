@@ -169,11 +169,10 @@ export interface ProductMediaItem {
 }
 
 export interface DetailedReviewRating {
-  productQuality: number; // 1 to 5 (Afeta Reputação do Produto)
-  deliverySpeed: number;  // 1 to 5 (Afeta Reputação da Loja)
-  customerService: number;// 1 to 5 (Afeta Reputação da Loja)
-  recommendation: number; // 1 to 5 (Afeta Reputação da Loja)
-  overallSatisfaction: number; // 1 to 5 (Afeta Reputação da Loja)
+  productQuality: number; // 1 to 5 (Exclusivo da Avaliação do Produto)
+  customerService: number;// 1 to 5 (Critério 1 da Reputação do Vendedor)
+  deliverySpeed: number;  // 1 to 5 (Critério 2 da Reputação do Vendedor)
+  recommendation: number; // 1 to 5 (Critério 3 da Reputação do Vendedor)
 }
 
 export interface LoveShopReview {
@@ -186,8 +185,8 @@ export interface LoveShopReview {
   userCity: string;
   date: string;
   ratings: DetailedReviewRating;
-  storeRatingAverage: number; // (deliverySpeed + customerService + recommendation + overallSatisfaction) / 4
-  productQualityRating: number; // ratings.productQuality
+  storeRatingAverage: number; // (customerService + deliverySpeed + recommendation) / 3 (Vendedor)
+  productQualityRating: number; // ratings.productQuality (Produto)
   comment?: string;
   verifiedPurchase: boolean;
   isReported?: boolean;

@@ -146,7 +146,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
   }, [products, selectedCategory, searchQuery]);
 
   return (
-    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-2.5 sm:px-4 pt-1 sm:pt-3 pb-16 sm:pb-20 space-y-2.5 sm:space-y-3.5 animate-in fade-in duration-200">
+    <div className="w-full max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto px-2.5 sm:px-4 pt-1 sm:pt-2 pb-16 sm:pb-20 space-y-2.5 sm:space-y-3.5 animate-in fade-in duration-200">
       
       {/* 1. Placa Principal "Love Shop" (Cabeçalho do Módulo, sem botões a sobrepor-se no topo) */}
       <LoveShopHeaderBanner
@@ -158,7 +158,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
       />
 
       {/* 2. Sticky Search Bar & Category Selector Bar */}
-      <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-sm space-y-2">
+      <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2 sm:p-3 rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-2xs space-y-2">
         {/* Campo de Busca */}
         <div className="w-full">
           <div className="relative w-full shadow-2xs rounded-xl sm:rounded-2xl bg-neutral-50 border border-neutral-200/90 hover:border-neutral-300 transition-colors">
@@ -313,7 +313,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                   prod.name.toLowerCase().includes('boubou')
                 );
                 const mediaAspectClass = (hasVideo || isFashionModel)
-                  ? 'aspect-[9/14]' 
+                  ? 'aspect-[3/4]' 
                   : prod.category === 'casamento' || prod.category === 'noivado'
                     ? 'aspect-[4/5]' 
                     : 'aspect-square';
@@ -335,7 +335,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                           loop
                           muted
                           playsInline
-                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
                         <img
@@ -349,8 +349,9 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                       {/* Top Left: Media Count / Video Indicator (Intuitive Affordance) */}
                       <div className="absolute top-2 left-2 flex items-center gap-1 z-10 pointer-events-none">
                         {hasVideo ? (
-                          <div className="w-6 h-6 rounded-full bg-black/60 backdrop-blur-xs text-white flex items-center justify-center shadow-xs">
-                            <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                          <div className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-xs text-white flex items-center gap-1 shadow-xs border border-white/20">
+                            <Play className="w-2.5 h-2.5 fill-white text-white" />
+                            <span className="text-[9.5px] font-extrabold tracking-wide uppercase">Vídeo</span>
                           </div>
                         ) : photoCount > 1 ? (
                           <span className="text-[10px] font-bold bg-black/60 backdrop-blur-xs text-white px-2 py-0.5 rounded-md shadow-xs">
@@ -458,7 +459,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                   prod.name.toLowerCase().includes('boubou')
                 );
                 const mediaAspectClass = (hasVideo || isFashionModel)
-                  ? 'aspect-[9/14]' 
+                  ? 'aspect-[3/4]' 
                   : prod.category === 'casamento' || prod.category === 'noivado'
                     ? 'aspect-[4/5]' 
                     : 'aspect-square';
@@ -480,7 +481,7 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                           loop
                           muted
                           playsInline
-                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
                         <img
@@ -494,8 +495,9 @@ export const LoveShopTab: React.FC<LoveShopTabProps> = ({
                       {/* Top Left: Media Count / Video Indicator (Intuitive Affordance) */}
                       <div className="absolute top-2 left-2 flex items-center gap-1 z-10 pointer-events-none">
                         {hasVideo ? (
-                          <div className="w-6 h-6 rounded-full bg-black/60 backdrop-blur-xs text-white flex items-center justify-center shadow-xs">
-                            <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+                          <div className="px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-xs text-white flex items-center gap-1 shadow-xs border border-white/20">
+                            <Play className="w-2.5 h-2.5 fill-white text-white" />
+                            <span className="text-[9.5px] font-extrabold tracking-wide uppercase">Vídeo</span>
                           </div>
                         ) : photoCount > 1 ? (
                           <span className="text-[10px] font-bold bg-black/60 backdrop-blur-xs text-white px-2 py-0.5 rounded-md shadow-xs">

@@ -17,10 +17,9 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
   onReviewSubmitted,
 }) => {
   const [productQuality, setProductQuality] = useState<number>(5);
-  const [deliverySpeed, setDeliverySpeed] = useState<number>(5);
   const [customerService, setCustomerService] = useState<number>(5);
+  const [deliverySpeed, setDeliverySpeed] = useState<number>(5);
   const [recommendation, setRecommendation] = useState<number>(5);
-  const [overallSatisfaction, setOverallSatisfaction] = useState<number>(5);
   const [comment, setComment] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [userCity, setUserCity] = useState<string>('Maputo');
@@ -32,10 +31,9 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
     e.preventDefault();
     const ratings: DetailedReviewRating = {
       productQuality,
-      deliverySpeed,
       customerService,
+      deliverySpeed,
       recommendation,
-      overallSatisfaction,
     };
 
     const review = loveShopOrderService.submitReview(
@@ -160,56 +158,71 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
                 </div>
               </div>
 
-              {/* 5 Rating Criteria */}
-              <div className="space-y-2.5">
-                {renderStarSelector(
-                  '1. Qualidade do Produto',
-                  'Acabamento, tecido/material e conformidade com o anúncio',
-                  productQuality,
-                  setProductQuality
-                )}
+              {/* 4 Rating Criteria (Exatamente 4 Critérios) */}
+              <div className="space-y-3">
+                {/* Seção A: Avaliação do Produto */}
+                <div className="p-3 bg-rose-50/80 rounded-2xl border border-rose-200/80 space-y-2">
+                  <div className="text-[11px] font-black uppercase tracking-wider text-rose-700 flex items-center justify-between">
+                    <span>A. Avaliação Exclusiva do Produto</span>
+                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-rose-200 text-rose-800">
+                      Afeta apenas a nota do Artigo
+                    </span>
+                  </div>
+                  {renderStarSelector(
+                    '1. Qualidade do Produto',
+                    'Acabamento, tecido/material e conformidade com o anúncio',
+                    productQuality,
+                    setProductQuality
+                  )}
+                </div>
 
-                {renderStarSelector(
-                  '2. Tempo de Entrega',
-                  'Rapidez e pontualidade na entrega ou disponibilidade do artigo',
-                  deliverySpeed,
-                  setDeliverySpeed
-                )}
+                {/* Seção B: Avaliação do Vendedor (3 Critérios que calculam a nota da Loja) */}
+                <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200/80 space-y-2">
+                  <div className="text-[11px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+                    <span>B. Avaliação do Vendedor / Loja</span>
+                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-800">
+                      Calcula a Nota da Loja (3 Critérios)
+                    </span>
+                  </div>
 
-                {renderStarSelector(
-                  '3. Atendimento & Cordialidade',
-                  'Atenção no WhatsApp, esclarecimento de dúvidas e educação',
-                  customerService,
-                  setCustomerService
-                )}
+                  <div className="space-y-2">
+                    {renderStarSelector(
+                      '2. Atendimento ao Cliente',
+                      'Atenção no WhatsApp, esclarecimento de dúvidas e cordialidade',
+                      customerService,
+                      setCustomerService
+                    )}
 
-                {renderStarSelector(
-                  '4. Recomendação',
-                  'Probabilidade de recomendar a amigos ou familiares',
-                  recommendation,
-                  setRecommendation
-                )}
+                    {renderStarSelector(
+                      '3. Tempo de Entrega',
+                      'Rapidez e pontualidade na entrega ou disponibilidade',
+                      deliverySpeed,
+                      setDeliverySpeed
+                    )}
 
-                {renderStarSelector(
-                  '5. Satisfação Geral',
-                  'Experiência global com esta compra',
-                  overallSatisfaction,
-                  setOverallSatisfaction
-                )}
+                    {renderStarSelector(
+                      '4. Recomendação do Vendedor',
+                      'Probabilidade de recomendar este vendedor/loja',
+                      recommendation,
+                      setRecommendation
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* User details & optional comment */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 <div>
                   <label className="text-xs font-bold text-neutral-800 block mb-1">
-                    Seu Nome (Opcional)
+                    Seu Nome <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
+                    required
                     placeholder="Ex: Dra. Elsa, João M."
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
-                    className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs focus:border-rose-600 focus:outline-none"
+                    className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs focus:border-rose-600 focus:outline-none font-medium"
                   />
                 </div>
                 <div>
@@ -220,21 +233,21 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
                     type="text"
                     value={userCity}
                     onChange={(e) => setUserCity(e.target.value)}
-                    className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs focus:border-rose-600 focus:outline-none"
+                    className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs focus:border-rose-600 focus:outline-none font-medium"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-neutral-800 block mb-1">
-                  Comentário sobre a Compra (Opcional)
+                  Qual é a sua experiência? (Comentário opcional)
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Partilhe como foi a sua experiência com o produto e o atendimento..."
+                  placeholder="Qual é a sua experiência? Escreva se desejar..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs focus:border-rose-600 focus:outline-none resize-none"
+                  className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs focus:border-rose-600 focus:outline-none resize-none font-medium"
                 />
               </div>
 
