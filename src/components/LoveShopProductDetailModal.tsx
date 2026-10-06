@@ -554,21 +554,19 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
               {(() => {
                 const storeReputation = loveShopOrderService.calculateStoreReputation(product.storeId);
-                const sellerApprovalPercent = Math.round((storeReputation.rating / 5) * 100);
+                const hasReviews = storeReputation.count > 0;
+                const sellerApprovalPercent = hasReviews ? Math.round((storeReputation.rating / 5) * 100) : 0;
 
                 return (
                   <>
-                    {/* 1. RELATÓRIO DE CLASSIFICAÇÃO GERAL */}
+                    {/* 1. CLASSIFICAÇÃO DA LOJA */}
                     <div className="p-3.5 sm:p-4 bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 space-y-3 shadow-2xs overflow-hidden">
                       {/* Header: Title */}
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <h3 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
-                            Relatório de Classificação Geral da Loja
+                            Classificação da Loja
                           </h3>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">
-                            Calculado estritamente pelos 3 critérios do Vendedor
-                          </p>
                         </div>
                       </div>
 
@@ -695,62 +693,70 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                         </form>
                       )}
 
-                      {/* Dark Metric Box (ÍNDICE GLOBAL DE APROVAMENTO) - Baseado estritamente nos 3 critérios do Vendedor */}
-                      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-emerald-500/30 shadow-lg space-y-3 overflow-hidden">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-400 block leading-tight">
-                              ÍNDICE GLOBAL DE APROVAMENTO
-                            </span>
-                            <span className="text-[10px] text-neutral-400">
-                              Overall Rating {storeReputation.rating.toFixed(1)} ⭐
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-1.5 text-right">
-                            <span className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
-                              {sellerApprovalPercent}%
-                            </span>
-                            <span className="text-[11px] text-neutral-300 font-bold">
-                              de Satisfação
-                            </span>
-                          </div>
+                      {/* Dark Metric Box (ÍNDICE GLOBAL DE APROVAMENTO) */}
+                      {!hasReviews ? (
+                        <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-neutral-800 shadow-lg text-center py-6">
+                          <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-400 block leading-tight">
+                            ÍNDICE GLOBAL DE APROVAMENTO
+                          </span>
+                          <span className="text-lg sm:text-xl font-bold text-neutral-300 block mt-1.5">
+                            Sem avaliações
+                          </span>
                         </div>
+                      ) : (
+                        <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-emerald-500/30 shadow-lg space-y-3 overflow-hidden">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-400 block leading-tight">
+                                ÍNDICE GLOBAL DE APROVAMENTO
+                              </span>
+                              <span className="text-[10px] text-neutral-400">
+                                Overall Rating {storeReputation.rating.toFixed(1)} ⭐
+                              </span>
+                            </div>
+                            <div className="flex items-baseline gap-1.5 text-right">
+                              <span className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
+                                {sellerApprovalPercent}%
+                              </span>
+                              <span className="text-[11px] text-neutral-300 font-bold">
+                                de Satisfação
+                              </span>
+                            </div>
+                          </div>
 
-                        {/* 3 Store-Level Criteria Breakdown */}
-                        <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-neutral-800 text-[10.5px]">
-                          <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
-                            <span className="text-neutral-400 block text-[9.5px]">Atendimento</span>
-                            <strong className="text-amber-400 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ★</strong>
-                          </div>
-                          <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
-                            <span className="text-neutral-400 block text-[9.5px]">Recomendação</span>
-                            <strong className="text-amber-400 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ★</strong>
-                          </div>
-                          <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
-                            <span className="text-neutral-400 block text-[9.5px]">Satisfação Geral</span>
-                            <strong className="text-amber-400 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ★</strong>
+                          {/* 3 Store-Level Criteria Breakdown */}
+                          <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-neutral-800 text-[10.5px]">
+                            <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                              <span className="text-neutral-400 block text-[9.5px]">Atendimento</span>
+                              <strong className="text-amber-400 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ★</strong>
+                            </div>
+                            <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                              <span className="text-neutral-400 block text-[9.5px]">Recomendação</span>
+                              <strong className="text-amber-400 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ★</strong>
+                            </div>
+                            <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                              <span className="text-neutral-400 block text-[9.5px]">Satisfação Geral</span>
+                              <strong className="text-amber-400 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ★</strong>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </>
                 );
               })()}
 
-              {/* 2. AVALIAÇÃO INDIVIDUAL DE COMPRADORES VERIFICADOS (LISTA + ESTRELAS) */}
+              {/* 2. AVALIAÇÕES DE CLIENTES (LISTA) */}
               <div className="p-4 bg-white rounded-2xl border border-neutral-200/90 space-y-3.5 shadow-2xs">
                 <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-neutral-100">
                   <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
-                    <span>Avaliações Individuais de Compradores</span>
-                    <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
-                      {reviews.length} Verificadas
-                    </span>
+                    <span>Avaliações de Clientes</span>
                   </h4>
                 </div>
 
                 {reviews.length === 0 ? (
                   <div className="p-6 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500 font-medium space-y-1">
-                    <p className="font-bold text-neutral-800">Ainda sem avaliações verificadas.</p>
+                    <p className="font-bold text-neutral-800">Ainda não há avaliações.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
