@@ -27,6 +27,7 @@ interface AccountTabProps {
   savedCount: number;
   totalAccommodationsCount: number;
   onClearStorage: () => void;
+  onOpenPlatformOwnerDashboard?: () => void;
 }
 
 export const AccountTab: React.FC<AccountTabProps> = ({
@@ -38,6 +39,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
   savedCount,
   totalAccommodationsCount,
   onClearStorage,
+  onOpenPlatformOwnerDashboard,
 }) => {
   const [confirmClear, setConfirmClear] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -62,7 +64,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         {/* Stats Pill Row */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-neutral-100">
           <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-150">
-            <span className="text-xs text-neutral-500 block font-semibold">Favoritos Guardados</span>
+            <span className="text-xs text-neutral-500 block font-semibold">Guardados</span>
             <span className="text-lg font-extrabold text-neutral-900 mt-0.5 block">{savedCount}</span>
           </div>
           <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-150">
@@ -257,9 +259,13 @@ export const AccountTab: React.FC<AccountTabProps> = ({
       {/* App Version Footer */}
       <div className="text-center text-xs text-neutral-400 space-y-0.5 pt-2">
         <div className="font-semibold">ONDE DORMIR MOÇAMBIQUE • Directório Nacional</div>
-        <div className="text-[10.5px] text-neutral-400 font-medium">
+        <button
+          onClick={onOpenPlatformOwnerDashboard}
+          className="text-[10.5px] text-neutral-400 hover:text-neutral-700 transition-colors font-medium cursor-pointer block mx-auto active:scale-95"
+          title="Gestão da Plataforma"
+        >
           ÁGUIA Soluções & Serviços (Conexões Rápidas)
-        </div>
+        </button>
       </div>
 
       {/* Terms Modal */}

@@ -111,7 +111,7 @@ export interface UserLocationState {
   error?: string | null;
 }
 
-export type ActiveTab = 'home' | 'explore' | 'guides' | 'rentacar' | 'heartlink' | 'loveshop' | 'map' | 'saved' | 'account';
+export type ActiveTab = 'home' | 'explore' | 'guides' | 'rentacar' | 'heartlink' | 'loveshop' | 'map' | 'saved' | 'account' | 'more';
 
 export type LoveShopCategoryId = 
   | 'todos' 

@@ -55,6 +55,13 @@ class PropertyService {
   }
 
   /**
+   * Register a new property on the backend (Owner flow)
+   */
+  public async createProperty(payload: Partial<Accommodation>): Promise<ApiResponse<Accommodation>> {
+    return apiClient.post<Accommodation>('/properties', payload);
+  }
+
+  /**
    * Submit an official complaint/report against a property or resource
    */
   public async submitReport(

@@ -14,6 +14,7 @@ import { LoveShopTab } from './components/LoveShopTab';
 import { MapView } from './components/MapView';
 import { SavedTab } from './components/SavedTab';
 import { AccountTab } from './components/AccountTab';
+import { MoreTab } from './components/MoreTab';
 import { AccommodationDetailModal } from './components/AccommodationDetailModal';
 import { LocationModal } from './components/LocationModal';
 import { PrivacyModal } from './components/PrivacyModal';
@@ -21,13 +22,26 @@ import { TermsModal } from './components/TermsModal';
 import { RegisterAccommodationModal } from './components/RegisterAccommodationModal';
 import { ContactLockedNoticeModal } from './components/ContactLockedNoticeModal';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { PlatformOwnerDashboardModal } from './components/PlatformOwnerDashboardModal';
 import { BottomNavBar } from './components/BottomNavBar';
 import { contactUnlockService } from './services/contactUnlockService';
+import { propertyService } from './services/propertyService';
 import { LockedContactTarget } from './types/contactUnlock';
 
 export default function App() {
   // State for accommodations list
   const [accommodations, setAccommodations] = useState<Accommodation[]>(INITIAL_ACCOMMODATIONS);
+
+  // Sync with backend on mount
+  React.useEffect(() => {
+    propertyService.getProperties({ limit: 100 }).then((res) => {
+      if (res.success && res.data && res.data.items && res.data.items.length > 0) {
+        setAccommodations(res.data.items);
+      }
+    }).catch(() => {
+      // Fallback already in place with INITIAL_ACCOMMODATIONS
+    });
+  }, []);
 
   // Active Bottom Tab
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -70,6 +84,18 @@ export default function App() {
   const [lockedTargetNotice, setLockedTargetNotice] = useState<LockedContactTarget | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number>(() => contactUnlockService.getUnreadCount());
+  const [isPlatformOwnerModalOpen, setIsPlatformOwnerModalOpen] = useState(false);
+
+  // Check URL query parameters for direct private access by platform owner
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const search = window.location.search.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (search.includes('platform_owner') || search.includes('owner_admin') || hash.includes('platform_owner')) {
+        setIsPlatformOwnerModalOpen(true);
+      }
+    }
+  }, []);
 
   // Listen for global contact-locked event and notification count changes
   React.useEffect(() => {
@@ -503,6 +529,21 @@ export default function App() {
             savedCount={savedIds.length}
             totalAccommodationsCount={accommodations.length}
             onClearStorage={handleClearSaved}
+            onOpenPlatformOwnerDashboard={() => setIsPlatformOwnerModalOpen(true)}
+          />
+        )}
+
+        {activeTab === 'more' && (
+          <MoreTab
+            onNavigateToTab={handleNavigateToTab}
+            userLocation={userLocation}
+            onOpenLocationModal={() => setIsLocationModalOpen(true)}
+            onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+            onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
+            onOpenTermsModal={() => setIsTermsModalOpen(true)}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
+            unreadCount={unreadCount}
+            onOpenPlatformOwnerDashboard={() => setIsPlatformOwnerModalOpen(true)}
           />
         )}
       </main>
@@ -570,6 +611,12 @@ export default function App() {
       <NotificationCenterModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
+      />
+
+      {/* Private Platform Owner Business Dashboard Modal (PLATFORM_OWNER role only) */}
+      <PlatformOwnerDashboardModal
+        isOpen={isPlatformOwnerModalOpen}
+        onClose={() => setIsPlatformOwnerModalOpen(false)}
       />
 
       {/* Floating Toast Notification */}

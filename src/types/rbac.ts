@@ -3,7 +3,7 @@
  * Powered by Águia Soluções & Serviços - Conexões Rápidas, SU, LDA
  */
 
-export type UserRole = 'USER' | 'OWNER' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole = 'USER' | 'OWNER' | 'ADMIN' | 'SUPER_ADMIN' | 'PLATFORM_OWNER';
 
 export type Permission =
   // Public & Consumer
@@ -41,7 +41,11 @@ export type Permission =
   | 'super_admin:manage_admins'
   | 'super_admin:system_config'
   | 'super_admin:export_audit_logs'
-  | 'super_admin:emergency_override';
+  | 'super_admin:emergency_override'
+  
+  // Platform Owner Private Business Governance
+  | 'platform_owner:view_business_metrics'
+  | 'platform_owner:manage_platform';
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   USER: [
@@ -84,7 +88,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'admin:view_audit_logs',
   ],
   SUPER_ADMIN: [
-    // Super admin inherits all admin permissions plus governance
     'property:search',
     'property:view',
     'property:favorite',
@@ -101,6 +104,26 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'super_admin:system_config',
     'super_admin:export_audit_logs',
     'super_admin:emergency_override',
+  ],
+  PLATFORM_OWNER: [
+    'property:search',
+    'property:view',
+    'property:favorite',
+    'property:contact',
+    'property:report',
+    'admin:moderate',
+    'admin:approve',
+    'admin:suspend',
+    'admin:verify',
+    'admin:manage_reports',
+    'admin:manage_premium',
+    'admin:view_audit_logs',
+    'super_admin:manage_admins',
+    'super_admin:system_config',
+    'super_admin:export_audit_logs',
+    'super_admin:emergency_override',
+    'platform_owner:view_business_metrics',
+    'platform_owner:manage_platform',
   ],
 };
 

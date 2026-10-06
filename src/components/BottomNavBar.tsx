@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, ShoppingBag, Heart, User } from 'lucide-react';
+import { Home, Compass, Bookmark, User, Menu } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavBarProps {
@@ -16,9 +16,9 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   const navItems = [
     { id: 'home' as ActiveTab, label: 'Início', icon: Home },
     { id: 'explore' as ActiveTab, label: 'Explorar', icon: Compass },
-    { id: 'loveshop' as ActiveTab, label: 'Love Shop', icon: ShoppingBag },
-    { id: 'saved' as ActiveTab, label: 'Favoritos', icon: Heart, badge: savedCount },
+    { id: 'saved' as ActiveTab, label: 'Guardados', icon: Bookmark, badge: savedCount },
     { id: 'account' as ActiveTab, label: 'Perfil', icon: User },
+    { id: 'more' as ActiveTab, label: 'Mais', icon: Menu },
   ];
 
   return (
@@ -30,7 +30,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
-          const isLoveShop = item.id === 'loveshop';
 
           return (
             <button
@@ -38,9 +37,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               onClick={() => onNavigateTab(item.id)}
               className={`relative flex flex-col items-center justify-center min-w-[52px] min-h-[44px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                 isActive
-                  ? isLoveShop
-                    ? 'text-rose-600 font-black'
-                    : 'text-blue-600 font-black'
+                  ? 'text-blue-600 font-black'
                   : 'text-neutral-500 hover:text-neutral-800 font-medium'
               }`}
             >
@@ -48,9 +45,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 <Icon
                   className={`w-5 h-5 transition-transform ${
                     isActive
-                      ? isLoveShop
-                        ? 'stroke-[2.5] scale-110 text-rose-600'
-                        : 'stroke-[2.5] scale-110 text-blue-600'
+                      ? 'stroke-[2.5] scale-110 text-blue-600'
                       : 'stroke-[1.8]'
                   }`}
                 />
@@ -62,7 +57,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               </div>
               <span
                 className={`text-[10px] sm:text-[11px] mt-0.5 tracking-tight whitespace-nowrap ${
-                  isActive ? 'font-bold' : 'font-medium text-neutral-500'
+                  isActive ? 'font-bold text-blue-600' : 'font-medium text-neutral-500'
                 }`}
               >
                 {item.label}

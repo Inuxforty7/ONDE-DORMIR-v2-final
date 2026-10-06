@@ -38,6 +38,7 @@ import {
   PropertyServiceId, 
   RoomFeatureId 
 } from '../types';
+import { propertyService } from '../services/propertyService';
 import { 
   PROPERTY_SERVICES_CATALOG, 
   ROOM_FEATURES_CATALOG 
@@ -426,7 +427,11 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
       },
     };
 
+    // Add to local state immediately and persist to server
     onAddAccommodation(newAccommodation);
+    propertyService.createProperty(newAccommodation).catch(() => {
+      // Graceful fallback if backend in offline mode
+    });
     setStep('success');
   };
 

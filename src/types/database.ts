@@ -45,7 +45,7 @@ export interface DbUser extends BaseEntity {
   phone_verified: boolean;
   email?: string | null;
   full_name: string;
-  role: 'USER' | 'OWNER' | 'ADMIN' | 'SUPER_ADMIN';
+  role: 'USER' | 'OWNER' | 'ADMIN' | 'SUPER_ADMIN' | 'PLATFORM_OWNER';
   is_active: boolean;
   last_login_at?: string | null;
 }
