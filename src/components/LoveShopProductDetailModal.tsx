@@ -593,101 +593,61 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                           onSubmit={handleAddReview} 
                           className="p-3.5 sm:p-4 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-3 animate-in fade-in duration-200 shadow-2xs"
                         >
-                          <div className="flex items-center justify-between border-b border-rose-200/80 pb-2">
-                            <div className="text-xs sm:text-sm font-black text-neutral-900 flex items-center gap-1.5">
+                          <div className="flex items-center justify-between border-b border-rose-200/80 pb-2.5 gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
                               <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                              <span>Avaliar Compra por Estrelas (4 Critérios)</span>
+                              <span className="text-[11px] xs:text-xs sm:text-sm font-black text-neutral-900 tracking-tight truncate leading-tight">
+                                Avaliar Compra por Estrelas (4 Critérios)
+                              </span>
                             </div>
                             <button
                               type="button"
                               onClick={() => setIsAddingReview(false)}
-                              className="text-xs font-bold text-neutral-500 hover:text-neutral-800"
+                              className="w-6 h-6 rounded-full hover:bg-rose-100 flex items-center justify-center text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 text-xs font-bold cursor-pointer"
+                              title="Fechar Formulário"
                             >
                               ✕
                             </button>
                           </div>
 
                           <div className="space-y-2.5">
-                            {/* Secção Artigo */}
-                            <div className="p-2.5 bg-rose-100/60 rounded-xl border border-rose-200/90 space-y-1.5">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-rose-800 block">
-                                ARTIGO
-                              </span>
-                              <div className="py-2 px-3 bg-white rounded-lg border border-neutral-200/90 flex items-center justify-between gap-2 shadow-2xs">
-                                <div>
-                                  <span className="text-xs font-bold text-neutral-900 block">
-                                    Qualidade do produto
-                                  </span>
-                                  <span className="text-[9.5px] text-rose-600 font-semibold">
-                                    Afeta apenas a nota do artigo
+                            {[
+                              { label: 'Qualidade do produto', value: newQuality, setValue: setNewQuality },
+                              { label: 'Atendimento', value: newCustomerService, setValue: setNewCustomerService },
+                              { label: 'Recomendação', value: newRecommendation, setValue: setNewRecommendation },
+                              { label: 'Satisfação Geral', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
+                            ].map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="p-3 bg-white rounded-xl border border-neutral-200/90 space-y-1 shadow-2xs"
+                              >
+                                <div className="min-w-0">
+                                  <span className="text-xs font-bold text-neutral-900 block leading-tight">
+                                    {item.label}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1 shrink-0">
+                                <div className="flex items-center gap-1 pt-0.5 flex-wrap">
                                   {[1, 2, 3, 4, 5].map((star) => (
                                     <button
                                       key={star}
                                       type="button"
-                                      onClick={() => setNewQuality(star)}
-                                      className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
-                                      title={`Qualidade do produto: ${star} estrelas`}
+                                      onClick={() => item.setValue(star)}
+                                      className="p-0.5 cursor-pointer transition-transform hover:scale-110 active:scale-95 shrink-0"
+                                      title={`${item.label}: ${star} estrelas`}
                                     >
                                       <Star
-                                        className={`w-4 h-4 transition-colors ${
-                                          star <= newQuality
+                                        className={`w-5 h-5 sm:w-5.5 sm:h-5.5 transition-colors ${
+                                          star <= item.value
                                             ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
                                             : 'text-neutral-300'
                                         }`}
                                       />
                                     </button>
                                   ))}
+                                  <span className="text-xs font-black text-neutral-700 ml-1.5">{item.value}.0</span>
                                 </div>
                               </div>
-                            </div>
-
-                            {/* Secção Loja */}
-                            <div className="p-2.5 bg-emerald-100/50 rounded-xl border border-emerald-200/80 space-y-1.5">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
-                                LOJA / VENDEDOR
-                              </span>
-                              {[
-                                { label: 'Atendimento', value: newCustomerService, setValue: setNewCustomerService },
-                                { label: 'Recomendação', value: newRecommendation, setValue: setNewRecommendation },
-                                { label: 'Satisfação Geral', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
-                              ].map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className="py-2 px-3 bg-white rounded-lg border border-neutral-200/90 flex items-center justify-between gap-2 shadow-2xs"
-                                >
-                                  <div>
-                                    <span className="text-xs font-bold text-neutral-900 block">
-                                      {item.label}
-                                    </span>
-                                    <span className="text-[9.5px] text-emerald-700 font-semibold">
-                                      Afeta a reputação da loja
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <button
-                                        key={star}
-                                        type="button"
-                                        onClick={() => item.setValue(star)}
-                                        className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
-                                        title={`${item.label}: ${star} estrelas`}
-                                      >
-                                        <Star
-                                          className={`w-4 h-4 transition-colors ${
-                                            star <= item.value
-                                              ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
-                                              : 'text-neutral-300'
-                                          }`}
-                                        />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                            ))}
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
