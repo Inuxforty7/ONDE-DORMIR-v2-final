@@ -236,7 +236,7 @@ export const MapView: React.FC<MapViewProps> = ({
         ? '#059669' 
         : '#475569';
 
-      const priceText = minPrice ? `${minPrice.toLocaleString('pt-MZ')} MT` : 'Sob consulta';
+      const priceText = minPrice ? `${minPrice.toLocaleString('pt-MZ')} MT` : 'Preço não publ.';
 
       const iconHtml = `
         <div style="cursor: pointer;" class="flex flex-col items-center group transition-transform ${isSelected ? 'scale-115 -translate-y-1' : 'hover:scale-105'} active:scale-95">
@@ -507,7 +507,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         <span className="text-[10px] text-neutral-400 font-normal">/noite</span>
                       </span>
                     ) : (
-                      <span className="text-neutral-600">Sob consulta</span>
+                      <span className="text-neutral-500 font-bold">Preço não publicado</span>
                     )}
                   </div>
                 </div>

@@ -28,7 +28,8 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
-  Sparkles
+  Sparkles,
+  BedDouble
 } from 'lucide-react';
 import { Accommodation, AmenityId } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
@@ -58,6 +59,7 @@ const AMENITY_ICONS: Record<AmenityId, React.ReactNode> = {
   parking: <Car className="w-5 h-5 text-emerald-600" />,
   generator: <Zap className="w-5 h-5 text-amber-500" />,
   private_bathroom: <Bath className="w-5 h-5 text-emerald-600" />,
+  double_bed: <BedDouble className="w-5 h-5 text-rose-500" />,
   breakfast: <Coffee className="w-5 h-5 text-amber-600" />,
   restaurant: <Utensils className="w-5 h-5 text-rose-500" />,
   tv: <Tv className="w-5 h-5 text-blue-500" />,
@@ -234,13 +236,20 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                   </div>
                 </div>
 
-                {minPrice && (
+                {minPrice ? (
                   <div className="text-right shrink-0">
                     <span className="text-[10px] text-neutral-400 font-medium block uppercase tracking-wider">A partir de</span>
                     <strong className="text-emerald-700 font-black text-lg sm:text-2xl block tracking-tight">
                       {minPrice.toLocaleString('pt-MZ')} MT
                     </strong>
                     <span className="text-[10px] text-neutral-400 font-medium block">/ noite</span>
+                  </div>
+                ) : (
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] text-neutral-400 font-medium block uppercase tracking-wider">Tarifa</span>
+                    <strong className="text-neutral-600 font-bold text-xs sm:text-sm block">
+                      Preço não publicado
+                    </strong>
                   </div>
                 )}
               </div>
@@ -564,64 +573,102 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 
         {/* Sticky Action Footer */}
         <div className="shrink-0 bg-white border-t border-neutral-200 px-3.5 sm:px-4 py-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] flex items-center gap-2 sm:gap-2.5 z-30 shadow-lg sm:shadow-none">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              const allowed = contactUnlockService.triggerContactAttempt(
-                {
-                  id: accommodation.id,
-                  name: accommodation.name,
-                  photo: accommodation.photos?.[0],
-                  phone: accommodation.phone,
-                  whatsapp: accommodation.whatsapp,
-                  module: 'accommodation',
-                  moduleLabel: 'Onde Dormir',
-                  unlockFee: 1000,
-                },
-                accommodation.isContactUnlocked
-              );
-              if (!allowed) {
-                e.preventDefault();
-                return;
-              }
-              analyticsService.trackWhatsAppClick(accommodation.id, accommodation.location.province);
-            }}
-            className="flex-1 h-11 sm:h-12 px-3.5 sm:px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer touch-manipulation"
-          >
-            <MessageCircle className="w-4 sm:w-5 h-4 sm:h-5 fill-white shrink-0" />
-            <span className="truncate">WhatsApp da Recepção</span>
-          </a>
+          {accommodation.whatsapp ? (
+            <>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  const allowed = contactUnlockService.triggerContactAttempt(
+                    {
+                      id: accommodation.id,
+                      name: accommodation.name,
+                      photo: accommodation.photos?.[0],
+                      phone: accommodation.phone,
+                      whatsapp: accommodation.whatsapp,
+                      module: 'accommodation',
+                      moduleLabel: 'Onde Dormir',
+                      unlockFee: 1000,
+                    },
+                    accommodation.isContactUnlocked
+                  );
+                  if (!allowed) {
+                    e.preventDefault();
+                    return;
+                  }
+                  analyticsService.trackWhatsAppClick(accommodation.id, accommodation.location.province);
+                }}
+                className="flex-1 h-11 sm:h-12 px-3.5 sm:px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer touch-manipulation"
+              >
+                <MessageCircle className="w-4 sm:w-5 h-4 sm:h-5 fill-white shrink-0" />
+                <span className="truncate">WhatsApp da Recepção</span>
+              </a>
 
-          <a
-            href={`tel:${accommodation.phone}`}
-            onClick={(e) => {
-              const allowed = contactUnlockService.triggerContactAttempt(
-                {
-                  id: accommodation.id,
-                  name: accommodation.name,
-                  photo: accommodation.photos?.[0],
-                  phone: accommodation.phone,
-                  whatsapp: accommodation.whatsapp,
-                  module: 'accommodation',
-                  moduleLabel: 'Onde Dormir',
-                  unlockFee: 1000,
-                },
-                accommodation.isContactUnlocked
-              );
-              if (!allowed) {
-                e.preventDefault();
-                return;
-              }
-              analyticsService.trackPhoneClick(accommodation.id, accommodation.location.province);
-            }}
-            className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl sm:rounded-2xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-colors cursor-pointer shrink-0 touch-manipulation"
-            title="Ligar para a receção"
-            aria-label="Ligar para a receção"
-          >
-            <Phone className="w-4 sm:w-5 h-4 sm:h-5 text-neutral-800" />
-          </a>
+              {accommodation.phone && (
+                <a
+                  href={`tel:${accommodation.phone}`}
+                  onClick={(e) => {
+                    const allowed = contactUnlockService.triggerContactAttempt(
+                      {
+                        id: accommodation.id,
+                        name: accommodation.name,
+                        photo: accommodation.photos?.[0],
+                        phone: accommodation.phone,
+                        whatsapp: accommodation.whatsapp,
+                        module: 'accommodation',
+                        moduleLabel: 'Onde Dormir',
+                        unlockFee: 1000,
+                      },
+                      accommodation.isContactUnlocked
+                    );
+                    if (!allowed) {
+                      e.preventDefault();
+                      return;
+                    }
+                    analyticsService.trackPhoneClick(accommodation.id, accommodation.location.province);
+                  }}
+                  className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl sm:rounded-2xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-colors cursor-pointer shrink-0 touch-manipulation"
+                  title="Ligar para a receção"
+                  aria-label="Ligar para a receção"
+                >
+                  <Phone className="w-4 sm:w-5 h-4 sm:h-5 text-neutral-800" />
+                </a>
+              )}
+            </>
+          ) : accommodation.phone ? (
+            <a
+              href={`tel:${accommodation.phone}`}
+              onClick={(e) => {
+                const allowed = contactUnlockService.triggerContactAttempt(
+                  {
+                    id: accommodation.id,
+                    name: accommodation.name,
+                    photo: accommodation.photos?.[0],
+                    phone: accommodation.phone,
+                    whatsapp: accommodation.whatsapp,
+                    module: 'accommodation',
+                    moduleLabel: 'Onde Dormir',
+                    unlockFee: 1000,
+                  },
+                  accommodation.isContactUnlocked
+                );
+                if (!allowed) {
+                  e.preventDefault();
+                  return;
+                }
+                analyticsService.trackPhoneClick(accommodation.id, accommodation.location.province);
+              }}
+              className="flex-1 h-11 sm:h-12 px-3.5 sm:px-4 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer touch-manipulation"
+            >
+              <Phone className="w-4 sm:w-5 h-4 sm:h-5 text-white shrink-0" />
+              <span className="truncate">Ligar para a Recepção ({accommodation.phone})</span>
+            </a>
+          ) : (
+            <div className="flex-1 h-11 sm:h-12 px-3.5 bg-neutral-100 text-neutral-400 rounded-xl sm:rounded-2xl text-xs font-medium flex items-center justify-center">
+              <span>Contacto telefónico não publicado</span>
+            </div>
+          )}
 
           <a
             href={directionsUrl}

@@ -1005,6 +1005,46 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </div>
               </div>
 
+              {/* Real Activities */}
+              {selectedPlace.activities && selectedPlace.activities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1.5">
+                    Atividades no Local
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {selectedPlace.activities.map((act, i) => (
+                      <div
+                        key={i}
+                        className="p-2 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs font-medium text-neutral-800 flex items-center gap-2"
+                      >
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{act}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Real Services & Infrastructure */}
+              {selectedPlace.services && selectedPlace.services.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1.5">
+                    Serviços & Infraestrutura
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {selectedPlace.services.map((srv, i) => (
+                      <div
+                        key={i}
+                        className="p-2 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs font-medium text-neutral-800 flex items-center gap-2"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        <span>{srv}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Best Season */}
               {selectedPlace.bestSeason && (
                 <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-xs text-amber-900 flex items-center gap-2">
@@ -1012,6 +1052,37 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   <span><strong>Melhor época para visitar:</strong> {selectedPlace.bestSeason}</span>
                 </div>
               )}
+
+              {/* Official Source & Verification Badge */}
+              <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/90 text-xs space-y-1">
+                <div className="flex items-center justify-between text-neutral-700">
+                  <span className="font-bold flex items-center gap-1 text-emerald-800">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    Fonte Oficial:
+                  </span>
+                  <span className="font-medium text-neutral-900 text-right truncate max-w-[200px]">
+                    {selectedPlace.source}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-neutral-500 text-[11px]">
+                  <span>Última verificação pública:</span>
+                  <span className="font-semibold text-neutral-700">{selectedPlace.lastVerifiedDate}</span>
+                </div>
+                {selectedPlace.officialWebsite && (
+                  <div className="pt-1 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
+                    <span className="text-neutral-500">Portal oficial:</span>
+                    <a
+                      href={selectedPlace.officialWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                    >
+                      <span>Aceder ao Portal</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+              </div>
 
               {/* Associated Guides Section */}
               <div className="pt-2 border-t border-neutral-100">
@@ -1170,6 +1241,59 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </div>
               </div>
 
+              {/* Real Activities & Services */}
+              {selectedExperience.activities && selectedExperience.activities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1.5">
+                    Atividades da Experiência
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {selectedExperience.activities.map((act, i) => (
+                      <div
+                        key={i}
+                        className="p-2 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs font-medium text-neutral-800 flex items-center gap-2"
+                      >
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{act}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Operator & Guide Info */}
+              <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/90 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-neutral-700">Operador / Guia:</span>
+                  <strong className="text-neutral-900 font-extrabold">{selectedExperience.operatorName || selectedExperience.guideName}</strong>
+                </div>
+                <div className="flex items-center justify-between text-neutral-600 text-[11px]">
+                  <span className="flex items-center gap-1 text-emerald-800 font-bold">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    Fonte Oficial:
+                  </span>
+                  <span className="font-medium text-neutral-800 truncate max-w-[200px]">{selectedExperience.source}</span>
+                </div>
+                <div className="flex items-center justify-between text-neutral-500 text-[11px]">
+                  <span>Última verificação:</span>
+                  <span className="font-semibold text-neutral-700">{selectedExperience.lastVerifiedDate}</span>
+                </div>
+                {selectedExperience.officialWebsite && (
+                  <div className="pt-1 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
+                    <span className="text-neutral-500">Website Oficial:</span>
+                    <a
+                      href={selectedExperience.officialWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                    >
+                      <span>Visitar Website</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+              </div>
+
               {selectedExperience.indicativePrice && (
                 <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-center justify-between">
                   <span>Preço Indicativo por Pessoa:</span>
@@ -1266,6 +1390,41 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   <span>{selectedGuide.rating.toFixed(1)} ({selectedGuide.reviewsCount} avaliações)</span>
                 </div>
               </div>
+
+              {/* Official Source & Credential Badge */}
+              {selectedGuide.source && (
+                <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/90 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-neutral-700 flex items-center gap-1 text-emerald-800">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      Registo & Credenciação:
+                    </span>
+                    <span className="font-medium text-neutral-900 truncate max-w-[180px]">
+                      {selectedGuide.source}
+                    </span>
+                  </div>
+                  {selectedGuide.lastVerifiedDate && (
+                    <div className="flex items-center justify-between text-neutral-500 text-[11px]">
+                      <span>Última verificação:</span>
+                      <span className="font-semibold text-neutral-700">{selectedGuide.lastVerifiedDate}</span>
+                    </div>
+                  )}
+                  {selectedGuide.officialWebsite && (
+                    <div className="pt-1 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
+                      <span className="text-neutral-500">Website Oficial:</span>
+                      <a
+                        href={selectedGuide.officialWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span>Aceder</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Accordions */}
               <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-emerald-50/50">

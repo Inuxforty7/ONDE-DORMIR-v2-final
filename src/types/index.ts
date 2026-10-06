@@ -6,6 +6,7 @@ export type AmenityId =
   | 'parking' 
   | 'generator' 
   | 'private_bathroom' 
+  | 'double_bed'
   | 'breakfast' 
   | 'restaurant' 
   | 'tv' 
@@ -268,6 +269,7 @@ export interface LoveShopProduct {
 export interface TourGuide {
   id: string;
   name: string;
+  operatorName?: string;
   age?: number;
   photo: string;
   city: string;
@@ -286,6 +288,10 @@ export interface TourGuide {
   registeredAt?: string;
   platformTenure?: string;
   isContactUnlocked?: boolean;
+  source?: string;
+  lastVerifiedDate?: string;
+  officialWebsite?: string;
+  entityType?: 'guide';
 }
 
 export type TourismPlaceCategory =
@@ -305,9 +311,12 @@ export interface TourismPlace {
   city: string;
   district?: string;
   province: string;
+  location?: string;
   shortDescription: string;
   fullDescription: string;
   highlights: string[];
+  activities?: string[];
+  services?: string[];
   bestSeason?: string;
   rating: number;
   reviewsCount: number;
@@ -315,6 +324,12 @@ export interface TourismPlace {
   featured?: boolean;
   associatedGuideIds?: string[];
   coordinates?: { lat: number; lng: number };
+  contactPhone?: string;
+  contactEmail?: string;
+  officialWebsite?: string;
+  source: string;
+  lastVerifiedDate: string;
+  entityType?: 'place';
 }
 
 export type TourismExperienceCategory =
@@ -333,12 +348,16 @@ export interface TourismExperience {
   photos?: string[];
   placeName: string;
   city: string;
+  district?: string;
   province: string;
+  location?: string;
   duration: string;
   difficulty?: 'Fácil' | 'Moderado' | 'Aventureiro';
   shortDescription: string;
   fullDescription: string;
   includedItems: string[];
+  activities?: string[];
+  services?: string[];
   indicativePrice?: number;
   rating: number;
   reviewsCount: number;
@@ -347,6 +366,13 @@ export interface TourismExperience {
   guideId?: string;
   guideName?: string;
   guideWhatsapp?: string;
+  operatorName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  officialWebsite?: string;
+  source: string;
+  lastVerifiedDate: string;
+  entityType?: 'experience';
 }
 
 export interface CarRental {

@@ -167,7 +167,7 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
                 A partir de <strong className="text-emerald-700 text-sm font-black">{minPrice.toLocaleString('pt-MZ')} MT</strong><span className="text-[11px] text-neutral-400">/noite</span>
               </span>
             ) : (
-              <span className="font-bold text-neutral-700">Sob consulta</span>
+              <span className="font-bold text-neutral-500">Preço não publicado</span>
             )}
           </div>
 
@@ -179,37 +179,74 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           )}
         </div>
 
-        {/* 7. WhatsApp (Ação Principal Direta) */}
+        {/* 7. WhatsApp / Contacto (Ação Principal Direta) */}
         <div className="pt-2 mt-auto border-t border-neutral-100">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.stopPropagation();
-              const allowed = contactUnlockService.triggerContactAttempt(
-                {
-                  id: accommodation.id,
-                  name: accommodation.name,
-                  photo: accommodation.photos?.[0],
-                  phone: accommodation.phone,
-                  whatsapp: accommodation.whatsapp,
-                  module: 'accommodation',
-                  moduleLabel: 'Onde Dormir',
-                  unlockFee: 1000,
-                },
-                accommodation.isContactUnlocked
-              );
-              if (!allowed) {
-                e.preventDefault();
-              }
-            }}
-            className="w-full h-11 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer touch-manipulation"
-            title="Contactar directamente via WhatsApp"
-          >
-            <MessageCircle className="w-4 h-4 fill-white shrink-0" />
-            <span>WhatsApp</span>
-          </a>
+          {accommodation.whatsapp ? (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+                const allowed = contactUnlockService.triggerContactAttempt(
+                  {
+                    id: accommodation.id,
+                    name: accommodation.name,
+                    photo: accommodation.photos?.[0],
+                    phone: accommodation.phone,
+                    whatsapp: accommodation.whatsapp,
+                    module: 'accommodation',
+                    moduleLabel: 'Onde Dormir',
+                    unlockFee: 1000,
+                  },
+                  accommodation.isContactUnlocked
+                );
+                if (!allowed) {
+                  e.preventDefault();
+                }
+              }}
+              className="w-full h-11 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer touch-manipulation"
+              title="Contactar directamente via WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+              <span>WhatsApp</span>
+            </a>
+          ) : accommodation.phone ? (
+            <a
+              href={`tel:${accommodation.phone}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                const allowed = contactUnlockService.triggerContactAttempt(
+                  {
+                    id: accommodation.id,
+                    name: accommodation.name,
+                    photo: accommodation.photos?.[0],
+                    phone: accommodation.phone,
+                    whatsapp: accommodation.whatsapp,
+                    module: 'accommodation',
+                    moduleLabel: 'Onde Dormir',
+                    unlockFee: 1000,
+                  },
+                  accommodation.isContactUnlocked
+                );
+                if (!allowed) {
+                  e.preventDefault();
+                }
+              }}
+              className="w-full h-11 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-900 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer touch-manipulation"
+              title="Ligar para a receção"
+            >
+              <MessageCircle className="w-4 h-4 fill-white shrink-0" />
+              <span>Ligar (Telefone)</span>
+            </a>
+          ) : (
+            <button
+              disabled
+              className="w-full h-11 px-3 rounded-xl bg-neutral-100 text-neutral-400 text-xs font-medium flex items-center justify-center gap-1.5 cursor-not-allowed"
+            >
+              <span>Contacto não publicado</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

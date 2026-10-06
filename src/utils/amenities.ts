@@ -242,6 +242,12 @@ export const AMENITIES_CATALOG: Record<AmenityId, AmenityMetadata> = {
     iconName: 'Bath',
     shortDesc: 'WC privativo no quarto',
   },
+  double_bed: {
+    id: 'double_bed',
+    name: 'Cama de Casal',
+    iconName: 'BedDouble',
+    shortDesc: 'Quarto com cama de casal',
+  },
   breakfast: {
     id: 'breakfast',
     name: 'Pequeno-Almoço',
