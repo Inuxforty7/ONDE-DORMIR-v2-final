@@ -505,18 +505,24 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                         ? 'Verificado Presencialmente com BI'
                         : accommodation.verificationStatus === 'verified'
                         ? 'Alojamento Verificado'
-                        : 'Verificação em Análise'}
+                        : '⚪ Não Verificado (Registo em Análise)'}
                     </span>
-                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                      Auditoria Concluída
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                      accommodation.verificationStatus === 'verified_in_person' || accommodation.verificationStatus === 'verified'
+                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                        : 'text-neutral-600 bg-neutral-100 border-neutral-200'
+                    }`}>
+                      {accommodation.verificationStatus === 'verified_in_person' || accommodation.verificationStatus === 'verified'
+                        ? 'Auditoria Concluída'
+                        : 'Aguardando Auditoria'}
                     </span>
                   </div>
                   <p className="text-xs text-neutral-600 leading-relaxed">
                     {accommodation.verificationStatus === 'verified_in_person'
-                      ? 'A nossa equipa visitou o local e validou as condições de conforto, higiene e segurança.'
+                      ? 'A nossa equipa visitou o local e validou presencialmente as condições de conforto, higiene e segurança.'
                       : accommodation.verificationStatus === 'verified'
                       ? 'Documentação comercial, alvará e contacto de atendimento validados pela plataforma.'
-                      : 'Documentação do proprietário em fase de análise pela equipa de auditoria.'}
+                      : 'Atenção: A localização no mapa não é automaticamente verificada por Onde Dormir. Novos registos de proprietários iniciam como Não Verificados até à auditoria presencial da nossa equipa.'}
                   </p>
                 </div>
               )}

@@ -1,22 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { 
   X, 
   Building2, 
   CheckCircle2, 
   ShieldCheck, 
-  Plus, 
   ArrowRight, 
   ArrowLeft, 
-  FileText, 
   Upload, 
   Trash2, 
   Sparkles, 
   AlertCircle,
   Clock,
-  Camera
+  MapPin,
+  Image as ImageIcon,
+  DollarSign,
+  MessageCircle,
+  Phone,
+  BedDouble,
+  Bath,
+  Wind,
+  Wifi,
+  Car,
+  Zap,
+  Wine,
+  Utensils,
+  Waves,
+  Camera,
+  Navigation2,
+  Navigation,
+  AlertTriangle
 } from 'lucide-react';
-import { Accommodation, AccommodationType, AmenityId } from '../types';
-import { AMENITIES_CATALOG } from '../utils/amenities';
+import { 
+  Accommodation, 
+  AccommodationType, 
+  AmenityId, 
+  PropertyServiceId, 
+  RoomFeatureId 
+} from '../types';
+import { 
+  PROPERTY_SERVICES_CATALOG, 
+  ROOM_FEATURES_CATALOG 
+} from '../utils/amenities';
 import { TermsModal } from './TermsModal';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 
@@ -28,6 +53,128 @@ interface RegisterAccommodationModalProps {
   userCoordsLng?: number;
 }
 
+type RegistrationStep = 
+  | 'basic_info' 
+  | 'location_map' 
+  | 'photos' 
+  | 'rooms_prices' 
+  | 'amenities' 
+  | 'contact_submit' 
+  | 'success';
+
+const PROVINCES_LIST = [
+  'Maputo Cidade',
+  'Maputo Província',
+  'Inhambane',
+  'Gaza',
+  'Sofala',
+  'Nampula',
+  'Cabo Delgado',
+  'Manica',
+  'Tete',
+  'Zambézia',
+  'Niassa'
+];
+
+interface MapPinPickerProps {
+  lat: number;
+  lng: number;
+  onChange: (lat: number, lng: number) => void;
+}
+
+const MapPinPicker: React.FC<MapPinPickerProps> = ({ lat, lng, onChange }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    if (!mapRef.current) {
+      const map = L.map(containerRef.current, {
+        center: [lat, lng],
+        zoom: 14,
+        zoomControl: false,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(map);
+
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      const pinHtml = `
+        <div style="cursor: grab;" class="flex flex-col items-center">
+          <div class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-extrabold text-[11px] shadow-lg border border-white flex items-center gap-1">
+            <span>📍 Pin do Alojamento</span>
+          </div>
+          <div class="w-0 h-0 border-x-5 border-x-transparent border-t-6 border-t-emerald-600 -mt-px"></div>
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        className: 'owner-picker-pin',
+        html: pinHtml,
+        iconSize: [140, 32],
+        iconAnchor: [70, 32],
+      });
+
+      const marker = L.marker([lat, lng], {
+        icon: customIcon,
+        draggable: true,
+      }).addTo(map);
+
+      marker.on('dragend', (e) => {
+        const newPos = e.target.getLatLng();
+        onChange(newPos.lat, newPos.lng);
+      });
+
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        onChange(e.latlng.lat, e.latlng.lng);
+      });
+
+      mapRef.current = map;
+      markerRef.current = marker;
+
+      const timer = setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+
+      return () => {
+        clearTimeout(timer);
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+        }
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (markerRef.current && mapRef.current) {
+      markerRef.current.setLatLng([lat, lng]);
+      mapRef.current.panTo([lat, lng], { animate: true });
+    }
+  }, [lat, lng]);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[11px] text-neutral-600 font-medium">
+        <span>Toque no mapa ou arraste o pin para posicionar:</span>
+        <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+          {lat.toFixed(4)}, {lng.toFixed(4)}
+        </span>
+      </div>
+      <div 
+        ref={containerRef} 
+        className="w-full h-48 rounded-2xl overflow-hidden border border-neutral-300 shadow-inner z-0" 
+      />
+    </div>
+  );
+};
+
 export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProps> = ({
   isOpen,
   onClose,
@@ -35,127 +182,248 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
   userCoordsLat = -25.9692,
   userCoordsLng = 32.5732,
 }) => {
-  const [step, setStep] = useState<'form' | 'identity_verification' | 'terms' | 'success'>('form');
+  const [step, setStep] = useState<RegistrationStep>('basic_info');
 
-  // Form Fields
+  // Step 1: Basic Info (Pensão & Guest House)
   const [name, setName] = useState('');
   const [type, setType] = useState<AccommodationType>('pensao');
+  const [province, setProvince] = useState('Maputo Cidade');
   const [city, setCity] = useState('Maputo');
   const [neighborhood, setNeighborhood] = useState('');
-  const [address, setAddress] = useState('');
-  const [landmark, setLandmark] = useState('');
-  const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
-  const [approxPrice, setApproxPrice] = useState('');
+
+  // Step 2: Location Map & Coordinates
+  const [address, setAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [district, setDistrict] = useState('');
+  const [lat, setLat] = useState<number>(userCoordsLat);
+  const [lng, setLng] = useState<number>(userCoordsLng);
+  const [isLocatingOwner, setIsLocatingOwner] = useState(false);
+  const [gpsAccuracyNotice, setGpsAccuracyNotice] = useState<string | null>(null);
+
+  // Step 3: Photos
+  const [photos, setPhotos] = useState<string[]>([
+    'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
+    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80'
+  ]);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+
+  // Step 4: Rooms & Prices
+  const [approxPrice, setApproxPrice] = useState('1800');
+  const [maxPrice, setMaxPrice] = useState('2800');
+  const [hasDoubleBed, setHasDoubleBed] = useState(true);
+  const [hasPrivateBathroom, setHasPrivateBathroom] = useState(true);
   const [isOpen24h, setIsOpen24h] = useState(true);
-  const [selectedAmenities, setSelectedAmenities] = useState<AmenityId[]>([
-    'ac',
-    'private_bathroom',
-    'hot_water',
+
+  // Step 5: Real Amenities & Services
+  const [selectedPropertyServices, setSelectedPropertyServices] = useState<PropertyServiceId[]>([
     'generator',
+    'security',
+    'parking'
+  ]);
+  const [selectedRoomFeatures, setSelectedRoomFeatures] = useState<RoomFeatureId[]>([
+    'ac',
+    'double_bed',
+    'private_bathroom',
+    'hot_water'
   ]);
 
-  // Mandatory Owner Identity & Anti-Fraud Verification
+  // Step 6: Owner Contacts & Anti-Fraud Identification
   const [ownerName, setOwnerName] = useState('');
-  const [ownerPhone, setOwnerPhone] = useState('');
+  const [phone, setPhone] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [docType, setDocType] = useState<'bi' | 'passport' | 'dire'>('bi');
   const [docNumber, setDocNumber] = useState('');
   const [biFrontPhoto, setBiFrontPhoto] = useState('');
-  const [biBackPhoto, setBiBackPhoto] = useState('');
   const [facialSelfiePhoto, setFacialSelfiePhoto] = useState('');
   const [isFacialVerified, setIsFacialVerified] = useState(false);
-  const [isCapturingSelfie, setIsCapturingSelfie] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Onboard terms acceptance
-  const [agreedToTerms, setAgreedToTerms] = useState<boolean>(true);
+  // Modals
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
-  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
-  const toggleAmenity = (id: AmenityId) => {
-    setSelectedAmenities((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+  const togglePropertyService = (serviceId: PropertyServiceId) => {
+    setSelectedPropertyServices((prev) =>
+      prev.includes(serviceId) ? prev.filter((s) => s !== serviceId) : [...prev, serviceId]
     );
   };
 
-  const handleProceedToIdentity = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !neighborhood || !phone) return;
-    if (!ownerName) setOwnerName(name);
-    if (!ownerPhone) setOwnerPhone(phone);
-    setStep('identity_verification');
+  const toggleRoomFeature = (featureId: RoomFeatureId) => {
+    setSelectedRoomFeatures((prev) =>
+      prev.includes(featureId) ? prev.filter((r) => r !== featureId) : [...prev, featureId]
+    );
   };
 
-  const handleProceedToTerms = () => {
-    if (!docNumber.trim()) {
-      setVerificationError('Por favor insira o número do seu BI ou Passaporte.');
+  const handleAddPhoto = () => {
+    if (newPhotoUrl.trim()) {
+      setPhotos((prev) => [...prev, newPhotoUrl.trim()]);
+      setNewPhotoUrl('');
+    }
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Get Owner Current GPS Location
+  const handleUseCurrentGps = () => {
+    if (!navigator.geolocation) {
+      setGpsAccuracyNotice('Geolocalização não suportada. Ajuste as coordenadas no mapa.');
       return;
     }
-    if (!biFrontPhoto) {
-      setVerificationError('Por favor carregue a fotografia da frente do seu documento.');
+
+    setIsLocatingOwner(true);
+    setGpsAccuracyNotice(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocatingOwner(false);
+        const { latitude, longitude, accuracy } = pos.coords;
+        setLat(latitude);
+        setLng(longitude);
+        if (accuracy > 500) {
+          setGpsAccuracyNotice(`⚠️ Precisão GPS aproximada (~${Math.round(accuracy)}m). Pode ajustar o pin arrastando no mapa.`);
+        } else {
+          setGpsAccuracyNotice(`✓ Localização GPS capturada com alta precisão (~${Math.round(accuracy)}m).`);
+        }
+      },
+      (err) => {
+        setIsLocatingOwner(false);
+        console.warn('GPS error in owner registration:', err.message);
+        setGpsAccuracyNotice('Não foi possível obter GPS. Por favor posicione o pin manualmente no mapa.');
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  };
+
+  // Step Handlers
+  const handleNextFromBasicInfo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !neighborhood.trim()) {
+      setErrorMessage('Por favor preencha o nome do alojamento e o bairro.');
       return;
     }
-    if (!facialSelfiePhoto && !isFacialVerified) {
-      setVerificationError('Por favor realize a validação facial selfie do proprietário.');
+    setErrorMessage(null);
+    setStep('location_map');
+  };
+
+  const handleNextFromLocation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!address.trim()) {
+      setErrorMessage('Por favor informe o endereço ou rua do alojamento.');
       return;
     }
-    setVerificationError(null);
-    setStep('terms');
+    setErrorMessage(null);
+    setStep('photos');
+  };
+
+  const handleNextFromPhotos = () => {
+    if (photos.length === 0) {
+      setErrorMessage('Adicione pelo menos 1 fotografia do estabelecimento.');
+      return;
+    }
+    setErrorMessage(null);
+    setStep('rooms_prices');
+  };
+
+  const handleNextFromRooms = () => {
+    if (!approxPrice || parseInt(approxPrice, 10) <= 0) {
+      setErrorMessage('Informe o valor indicativo por noite.');
+      return;
+    }
+    setErrorMessage(null);
+    setStep('amenities');
+  };
+
+  const handleNextFromAmenities = () => {
+    setErrorMessage(null);
+    setStep('contact_submit');
   };
 
   const handleFinalSubmit = () => {
-    if (!agreedToTerms) return;
+    if (!phone.trim()) {
+      setErrorMessage('Por favor insira um número de telefone para chamadas.');
+      return;
+    }
+    if (!whatsapp.trim()) {
+      setErrorMessage('Por favor insira o número de WhatsApp para reservas diretas.');
+      return;
+    }
+    if (!ownerName.trim()) {
+      setErrorMessage('Por favor insira o nome do proprietário ou gerente.');
+      return;
+    }
+
+    // Consolidated amenities list
+    const consolidatedAmenities: AmenityId[] = [];
+    if (selectedRoomFeatures.includes('ac')) consolidatedAmenities.push('ac');
+    if (selectedRoomFeatures.includes('private_bathroom') || hasPrivateBathroom) consolidatedAmenities.push('private_bathroom');
+    if (selectedRoomFeatures.includes('hot_water')) consolidatedAmenities.push('hot_water');
+    if (selectedRoomFeatures.includes('tv')) consolidatedAmenities.push('tv');
+    if (selectedPropertyServices.includes('generator') || isOpen24h) consolidatedAmenities.push('generator');
+    if (selectedPropertyServices.includes('wifi')) consolidatedAmenities.push('wifi');
+    if (selectedPropertyServices.includes('parking')) consolidatedAmenities.push('parking');
+    if (selectedPropertyServices.includes('pool')) consolidatedAmenities.push('pool');
+    if (selectedPropertyServices.includes('bar')) consolidatedAmenities.push('bar');
+    if (selectedPropertyServices.includes('restaurant')) consolidatedAmenities.push('restaurant');
+    if (selectedPropertyServices.includes('breakfast')) consolidatedAmenities.push('breakfast');
+    if (selectedPropertyServices.includes('security')) consolidatedAmenities.push('security');
+
+    const roomFeaturesFinal = [...selectedRoomFeatures];
+    if (hasDoubleBed && !roomFeaturesFinal.includes('double_bed')) roomFeaturesFinal.push('double_bed');
+    if (hasPrivateBathroom && !roomFeaturesFinal.includes('private_bathroom')) roomFeaturesFinal.push('private_bathroom');
+
+    const cleanPhone = phone.startsWith('+') ? phone : `+258${phone.replace(/[^0-9]/g, '')}`;
+    const cleanWhatsapp = (whatsapp || phone).replace(/[^0-9]/g, '');
 
     const newAccommodation: Accommodation = {
-      id: `custom-${Date.now()}`,
-      name,
+      id: `custom-owner-${Date.now()}`,
+      name: name.trim(),
       type,
-      tagline: tagline || 'Alojamento acolhedor e seguro',
-      description:
-        description ||
-        `Hospedagem localizada no bairro ${neighborhood} em ${city}. Ambiente tranquilo, discreto e de fácil acesso.`,
+      tagline: tagline.trim() || `${type === 'pensao' ? 'Pensão' : type === 'guest_house' ? 'Guest House' : 'Residencial'} acolhedora e segura em ${neighborhood}`,
+      description: description.trim() || `Alojamento localizado no bairro ${neighborhood} em ${city} (${province}). Quartos confortáveis com ambiente tranquilo, discreto e seguro.`,
       location: {
-        lat: userCoordsLat + (Math.random() * 0.01 - 0.005),
-        lng: userCoordsLng + (Math.random() * 0.01 - 0.005),
-        address: address || `Bairro ${neighborhood}, ${city}`,
-        neighborhood,
-        city,
-        province: city === 'Maputo' ? 'Maputo Cidade' : 'Moçambique',
-        landmark,
+        lat: lat || userCoordsLat,
+        lng: lng || userCoordsLng,
+        address: address.trim(),
+        neighborhood: neighborhood.trim(),
+        city: city.trim(),
+        district: district.trim() || undefined,
+        province,
+        landmark: landmark.trim() || undefined,
       },
-      phone: phone.startsWith('+') ? phone : `+258${phone.replace(/[^0-9]/g, '')}`,
-      whatsapp: (whatsapp || phone).replace(/[^0-9]/g, ''),
-      amenities: selectedAmenities,
-      photos: [
-        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80',
+      phone: cleanPhone,
+      whatsapp: cleanWhatsapp,
+      amenities: Array.from(new Set(consolidatedAmenities)),
+      propertyServices: selectedPropertyServices,
+      roomFeatures: roomFeaturesFinal,
+      photos: photos.length > 0 ? photos : [
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80'
       ],
-      // Integration of Mandatory Pending Verification state before public feed approval
-      verificationStatus: 'pending',
+      // Important requirement: A map location is NOT automatically verified by Onde Dormir.
+      // New owner listings start as: ⚪ Not Verified
+      verificationStatus: 'unverified',
       isPendingVerification: true,
-      ownerName: ownerName || name,
-      ownerPhone: ownerPhone || phone,
+      ownerName: ownerName.trim(),
+      ownerPhone: cleanPhone,
       docType,
-      docNumber,
-      biFrontPhoto,
-      biBackPhoto,
-      facialSelfiePhoto,
-      isFacialVerified: true,
+      docNumber: docNumber.trim() || undefined,
+      biFrontPhoto: biFrontPhoto || undefined,
+      facialSelfiePhoto: facialSelfiePhoto || undefined,
+      isFacialVerified: Boolean(facialSelfiePhoto || isFacialVerified),
       registeredAt: new Date().toISOString().split('T')[0],
-      platformTenure: 'Submetido hoje (Em Análise)',
+      platformTenure: 'Submetido hoje (Não Verificado)',
       isOpen24h,
-      priceEstimate: approxPrice
-        ? {
-            approxMin: parseInt(approxPrice, 10),
-            approxMax: Math.round(parseInt(approxPrice, 10) * 1.4),
-            currency: 'MZN',
-            labelNote: 'Valor indicativo com a receção.',
-          }
-        : undefined,
+      priceEstimate: {
+        approxMin: parseInt(approxPrice, 10) || 1800,
+        approxMax: parseInt(maxPrice, 10) || Math.round((parseInt(approxPrice, 10) || 1800) * 1.5),
+        currency: 'MZN',
+        labelNote: `A partir de ${(parseInt(approxPrice, 10) || 1800).toLocaleString('pt-MZ')} MT/noite.`,
+      },
     };
 
     onAddAccommodation(newAccommodation);
@@ -164,27 +432,30 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
         <div 
           className="bg-white w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
           role="dialog"
           aria-modal="true"
         >
           {/* Header */}
-          <div className="px-4 sm:px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/80 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+          <div className="px-4 sm:px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between bg-neutral-50 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-extrabold text-neutral-900">
-                  Registar Hospedagem
+                <h2 className="text-base sm:text-lg font-black text-neutral-900 leading-tight">
+                  Registo de Proprietário
                 </h2>
-                <p className="text-xs text-neutral-500 font-medium">
-                  {step === 'form' && 'Passo 1 de 3: Dados do Alojamento'}
-                  {step === 'identity_verification' && 'Passo 2 de 3: Verificação de Identidade & Selfie'}
-                  {step === 'terms' && 'Passo 3 de 3: Onboarding & Termos'}
-                  {step === 'success' && 'Submissão Concluída (Verificação Pendente)'}
+                <p className="text-[11px] text-neutral-500 font-medium">
+                  {step === 'basic_info' && '1/6: Dados da Pensão / Guest House'}
+                  {step === 'location_map' && '2/6: Localização Exata no Mapa'}
+                  {step === 'photos' && '3/6: Fotografias do Estabelecimento'}
+                  {step === 'rooms_prices' && '4/6: Quartos e Preços'}
+                  {step === 'amenities' && '5/6: Serviços e Comodidades'}
+                  {step === 'contact_submit' && '6/6: Contactos & Submissão'}
+                  {step === 'success' && 'Registo Concluído com Sucesso'}
                 </p>
               </div>
             </div>
@@ -196,97 +467,600 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
             </button>
           </div>
 
-          {/* Stepper Navigation Indicator - Sleek, Responsive, Zero-Scrollbar */}
-          <div className="px-5 py-3 bg-neutral-50/90 border-b border-neutral-200/80 shrink-0 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-neutral-900">
-                {step === 'form' && '1. Dados do Alojamento'}
-                {step === 'identity_verification' && '2. Verificação de Identidade (BI + Selfie)'}
-                {step === 'terms' && '3. Termos & Submissão'}
-                {step === 'success' && 'Submissão Concluída'}
-              </span>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70">
-                {step === 'form' ? 'Passo 1/3' : step === 'identity_verification' ? 'Passo 2/3' : step === 'terms' ? 'Passo 3/3' : 'Concluído'}
-              </span>
+          {/* Stepper Indicator */}
+          {step !== 'success' && (
+            <div className="px-4 sm:px-5 py-2 bg-neutral-50/90 border-b border-neutral-200/80 shrink-0 space-y-1">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-bold text-neutral-800">
+                  {step === 'basic_info' && '1. Registo Inicial'}
+                  {step === 'location_map' && '2. Mapa & Pin GPS'}
+                  {step === 'photos' && '3. Fotos'}
+                  {step === 'rooms_prices' && '4. Quartos/Preços'}
+                  {step === 'amenities' && '5. Comodidades'}
+                  {step === 'contact_submit' && '6. WhatsApp & Submissão'}
+                </span>
+                <span className="font-extrabold text-emerald-700 bg-emerald-100/70 px-2 py-0.2 rounded-md">
+                  {step === 'basic_info' ? '1/6' : step === 'location_map' ? '2/6' : step === 'photos' ? '3/6' : step === 'rooms_prices' ? '4/6' : step === 'amenities' ? '5/6' : '6/6'}
+                </span>
+              </div>
+              <div className="grid grid-cols-6 gap-1 h-1.5 w-full">
+                <div className={`rounded-full transition-all duration-300 ${['basic_info', 'location_map', 'photos', 'rooms_prices', 'amenities', 'contact_submit'].includes(step) ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+                <div className={`rounded-full transition-all duration-300 ${['location_map', 'photos', 'rooms_prices', 'amenities', 'contact_submit'].includes(step) ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+                <div className={`rounded-full transition-all duration-300 ${['photos', 'rooms_prices', 'amenities', 'contact_submit'].includes(step) ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+                <div className={`rounded-full transition-all duration-300 ${['rooms_prices', 'amenities', 'contact_submit'].includes(step) ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+                <div className={`rounded-full transition-all duration-300 ${['amenities', 'contact_submit'].includes(step) ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+                <div className={`rounded-full transition-all duration-300 ${['contact_submit'].includes(step) ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
+              </div>
             </div>
-            {/* Segmented Progress Track */}
-            <div className="grid grid-cols-3 gap-1.5 h-1.5 w-full">
-              <div className={`rounded-full transition-all duration-300 ${step === 'form' || step === 'identity_verification' || step === 'terms' || step === 'success' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
-              <div className={`rounded-full transition-all duration-300 ${step === 'identity_verification' || step === 'terms' || step === 'success' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
-              <div className={`rounded-full transition-all duration-300 ${step === 'terms' || step === 'success' ? 'bg-emerald-600' : 'bg-neutral-200'}`} />
-            </div>
-          </div>
+          )}
 
           {/* Body Content */}
           <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
-            {step === 'success' ? (
-              /* Success Screen with Pending Verification Notice */
-              <div className="py-6 text-center space-y-4 animate-in fade-in duration-200">
-                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <Clock className="w-9 h-9" />
-                </div>
-                <div className="space-y-2">
-                  <span className="inline-block px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black rounded-full uppercase tracking-wider">
-                    ⏳ Estado: Verificação Pendente
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* STEP 1: Basic Info */}
+            {step === 'basic_info' && (
+              <form onSubmit={handleNextFromBasicInfo} className="space-y-3.5 animate-in fade-in duration-150">
+                <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80 text-xs text-emerald-950">
+                  <span className="font-bold block">🏠 Registo Exclusivo de Pensões & Guest Houses</span>
+                  <span className="text-[11px] text-emerald-800 mt-0.5 block">
+                    Adicione o seu estabelecimento para ser descoberto por clientes que procuram pernoita rápida, privada e confortável.
                   </span>
-                  <h3 className="text-lg font-extrabold text-neutral-900">
-                    Alojamento Submetido com Sucesso!
-                  </h3>
-                  <p className="text-xs sm:text-sm text-neutral-600 max-w-sm mx-auto leading-relaxed">
-                    O documento de identificação (BI/Passaporte) e a validação facial selfie do proprietário foram recebidos com segurança. A nossa equipa de auditoria está a analisar os dados para emissão do selo oficial antes da exibição ativa no feed público.
-                  </p>
                 </div>
 
-                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-left space-y-1 text-xs text-emerald-950">
-                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Garantia de Autenticidade & Anti-Fraude</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Nome do Estabelecimento *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Pensão Baía de Maxixe, Guest House Polana"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
                   </div>
-                  <p className="text-[11px] leading-relaxed text-emerald-800">
-                    Proprietário: <strong>{ownerName || name}</strong> ({docType.toUpperCase()}: {docNumber}). O alojamento aparecerá como Verificado assim que o dossiê for aprovado.
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Tipo de Alojamento *
+                    </label>
+                    <select
+                      value={type}
+                      onChange={(e) => setType(e.target.value as AccommodationType)}
+                      className="w-full h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="pensao">🏠 Pensão</option>
+                      <option value="guest_house">🏡 Guest House</option>
+                      <option value="residencial">🏘️ Residencial</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Província *
+                    </label>
+                    <select
+                      value={province}
+                      onChange={(e) => setProvince(e.target.value)}
+                      className="w-full h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      {PROVINCES_LIST.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Cidade *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Maputo, Maxixe, Beira..."
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Bairro *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Baixa, Polana, Centro..."
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-neutral-800 block mb-1">
+                    Frase de Destaque (Tagline)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Quartos climatizados com WC privativo e ambiente calmo"
+                    value={tagline}
+                    onChange={(e) => setTagline(e.target.value)}
+                    className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
+                  >
+                    <span>Avançar para Localização no Mapa</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 2: Exact Location on Map with Interactive Pin Picker & GPS */}
+            {step === 'location_map' && (
+              <form onSubmit={handleNextFromLocation} className="space-y-3.5 animate-in fade-in duration-150">
+                <div className="p-3.5 bg-sky-50 rounded-2xl border border-sky-200 text-xs text-sky-950 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-sky-900">
+                    <MapPin className="w-4 h-4 text-sky-600" />
+                    <span>2. Localização Exata no Mapa & Pin GPS</span>
+                  </div>
+                  <p className="text-[11px] text-sky-800">
+                    Obtenha a sua posição por GPS ou posicione o pin arrastando no mapa interativo.
                   </p>
                 </div>
 
-                <div className="pt-2 flex flex-col gap-2">
+                {/* GPS Capture Button */}
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsBillingModalOpen(true)}
-                    className="w-full h-11 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                    onClick={handleUseCurrentGps}
+                    disabled={isLocatingOwner}
+                    className="flex-1 h-11 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer touch-manipulation"
                   >
-                    <FileText className="w-4 h-4 text-neutral-800" />
-                    <span>Ver Fatura Proforma de Ativação (Bill)</span>
-                  </button>
-
-                  <button
-                    onClick={onClose}
-                    className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer touch-manipulation"
-                  >
-                    Concluir e Voltar
+                    <Navigation className={`w-4 h-4 ${isLocatingOwner ? 'animate-spin' : ''}`} />
+                    <span>{isLocatingOwner ? 'A obter GPS real...' : 'Usar Minha Localização GPS Atual'}</span>
                   </button>
                 </div>
-              </div>
-            ) : step === 'identity_verification' ? (
-              /* STEP 2: Mandatory Owner Identity Verification & Live Selfie */
-              <div className="space-y-4 animate-in fade-in duration-200">
-                {/* Anti-Fraud Banner */}
-                <div className="p-4 bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 rounded-2xl border border-emerald-200/90 shadow-xs space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-950 font-black text-sm">
-                    <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0" />
-                    <span>Verificação de Identidade Obrigatória do Proprietário</span>
-                  </div>
-                  <p className="text-xs text-emerald-900 leading-relaxed font-medium">
-                    <strong>Prevenção Anti-Fraude e Burlas:</strong> Para combater falsos estabelecimentos e proteger os hóspedes, os proprietários têm de submeter documento válido (BI ou Passaporte) e realizar a validação facial (selfie) antes da aprovação no directório público.
-                  </p>
-                </div>
 
-                {verificationError && (
-                  <div className="p-3 bg-red-100 border border-red-300 text-red-800 text-xs font-bold rounded-xl flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{verificationError}</span>
+                {gpsAccuracyNotice && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>{gpsAccuracyNotice}</span>
                   </div>
                 )}
 
-                {/* Owner Name & Document Type */}
+                {/* Interactive Leaflet Pin Picker */}
+                <MapPinPicker 
+                  lat={lat} 
+                  lng={lng} 
+                  onChange={(newLat, newLng) => {
+                    setLat(newLat);
+                    setLng(newLng);
+                  }} 
+                />
+
+                <div>
+                  <label className="text-xs font-bold text-neutral-800 block mb-1">
+                    Endereço / Rua do Estabelecimento *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Rua Consiglieri Pedroso, nº 142 ou Av. da Independência"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Ponto de Referência
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: A 100m do Mercado Municipal ou Próximo à bomba Galp"
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Distrito Municipal (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: KaMpfumo, KaMavota..."
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep('basic_info')}
+                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold transition-all"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                  >
+                    <span>Avançar para Fotos</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 3: Photos */}
+            {step === 'photos' && (
+              <div className="space-y-3.5 animate-in fade-in duration-150">
+                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                    <ImageIcon className="w-4 h-4 text-amber-600" />
+                    <span>3. Fotografias do Estabelecimento</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800">
+                    Adicione fotos reais e nítidas da fachada, entrada e quartos para transmitir confiança aos clientes.
+                  </p>
+                </div>
+
+                {/* Photos Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {photos.map((url, idx) => (
+                    <div key={idx} className="relative aspect-4/3 rounded-xl overflow-hidden border border-neutral-200 group bg-neutral-100">
+                      <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center transition-colors cursor-pointer"
+                        title="Remover foto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      {idx === 0 && (
+                        <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
+                          Foto Principal
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Photo Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Colar URL de fotografia (https://...)"
+                    value={newPhotoUrl}
+                    onChange={(e) => setNewPhotoUrl(e.target.value)}
+                    className="flex-1 h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPhoto}
+                    className="h-11 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep('location_map')}
+                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold transition-all"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextFromPhotos}
+                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                  >
+                    <span>Avançar para Quartos & Preços</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: Rooms & Prices */}
+            {step === 'rooms_prices' && (
+              <div className="space-y-3.5 animate-in fade-in duration-150">
+                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                    <span>4. Quartos e Preço por Noite</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800">
+                    Defina a tarifa indicativa em Meticais (MT) e as condições principais dos quartos disponíveis.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Preço Mínimo / Noite (MT) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="Ex: 1800"
+                      value={approxPrice}
+                      onChange={(e) => setApproxPrice(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Preço Máximo / Noite (MT)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 2800"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Room Key Conditions Checklist */}
+                <div className="space-y-2 pt-1">
+                  <label className="text-xs font-bold text-neutral-800 block">
+                    Condições dos Quartos
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setHasDoubleBed(!hasDoubleBed)}
+                      className={`h-11 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                        hasDoubleBed
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs'
+                          : 'bg-neutral-50 border-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <BedDouble className="w-4 h-4 text-emerald-600" />
+                        <span>Quartos para Casal (Cama Dupla)</span>
+                      </div>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${hasDoubleBed ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>✓</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setHasPrivateBathroom(!hasPrivateBathroom)}
+                      className={`h-11 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                        hasPrivateBathroom
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs'
+                          : 'bg-neutral-50 border-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Bath className="w-4 h-4 text-emerald-600" />
+                        <span>Casa de Banho Privativa (WC)</span>
+                      </div>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${hasPrivateBathroom ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>✓</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsOpen24h(!isOpen24h)}
+                      className={`h-11 px-3 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                        isOpen24h
+                          ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-2xs'
+                          : 'bg-neutral-50 border-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                        <span>Recepção Aberta 24 Horas</span>
+                      </div>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${isOpen24h ? 'bg-amber-600 text-white' : 'bg-neutral-200'}`}>✓</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep('photos')}
+                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold transition-all"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextFromRooms}
+                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                  >
+                    <span>Avançar para Comodidades & Serviços</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5: Real Amenities & Property Services */}
+            {step === 'amenities' && (
+              <div className="space-y-3.5 animate-in fade-in duration-150">
+                <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-800 space-y-1">
+                  <span className="font-bold block text-neutral-900">5. Serviços Reais do Estabelecimento & Quarto</span>
+                  <span className="text-[11px] text-neutral-600 block">
+                    Marque apenas os serviços que o seu estabelecimento efetivamente dispõe (sem falsas comodidades).
+                  </span>
+                </div>
+
+                {/* 1. Serviços do Estabelecimento */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-800 block">
+                    🏢 Serviços do Estabelecimento (Propriedade)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'generator' as PropertyServiceId, name: '⚡ Gerador / Energia 24h' },
+                      { id: 'parking' as PropertyServiceId, name: '🅿️ Estacionamento Seguro' },
+                      { id: 'wifi' as PropertyServiceId, name: '📶 Wi-Fi Grátis' },
+                      { id: 'bar' as PropertyServiceId, name: '🍸 Bar / Bebidas' },
+                      { id: 'restaurant' as PropertyServiceId, name: '🍽️ Restaurante / Refeições' },
+                      { id: 'pool' as PropertyServiceId, name: '🏊 Piscina' },
+                      { id: 'breakfast' as PropertyServiceId, name: '☕ Pequeno-Almoço' },
+                      { id: 'security' as PropertyServiceId, name: '🛡️ Segurança / Portaria 24h' },
+                    ].map((serv) => {
+                      const isSelected = selectedPropertyServices.includes(serv.id);
+                      return (
+                        <button
+                          key={serv.id}
+                          type="button"
+                          onClick={() => togglePropertyService(serv.id)}
+                          className={`h-10 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold'
+                              : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+                          }`}
+                        >
+                          <span className="truncate">{serv.name}</span>
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${isSelected ? 'bg-emerald-600 text-white' : 'bg-neutral-200'}`}>✓</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Comodidades do Quarto */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-xs font-bold text-neutral-800 block">
+                    🛏️ Comodidades do Quarto
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'ac' as RoomFeatureId, name: '❄️ Ar Condicionado' },
+                      { id: 'private_bathroom' as RoomFeatureId, name: '🚿 WC Privativo' },
+                      { id: 'hot_water' as RoomFeatureId, name: '🔥 Água Quente' },
+                      { id: 'tv' as RoomFeatureId, name: '📺 Televisão / DStv' },
+                      { id: 'balcony' as RoomFeatureId, name: '🌅 Varanda Privada' },
+                      { id: 'fan' as RoomFeatureId, name: '🌀 Ventilador' },
+                    ].map((room) => {
+                      const isSelected = selectedRoomFeatures.includes(room.id);
+                      return (
+                        <button
+                          key={room.id}
+                          type="button"
+                          onClick={() => toggleRoomFeature(room.id)}
+                          className={`h-10 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-indigo-50 border-indigo-500 text-indigo-900 font-bold'
+                              : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+                          }`}
+                        >
+                          <span className="truncate">{room.name}</span>
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${isSelected ? 'bg-indigo-600 text-white' : 'bg-neutral-200'}`}>✓</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep('rooms_prices')}
+                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold transition-all"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextFromAmenities}
+                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                  >
+                    <span>Avançar para Contactos & Submissão</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 6: WhatsApp / Phone & Anti-Fraud Security */}
+            {step === 'contact_submit' && (
+              <div className="space-y-3.5 animate-in fade-in duration-150">
+                {/* Important Notice regarding map location and unverified initial state */}
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-300 text-xs text-amber-950 space-y-1">
+                  <div className="flex items-center gap-1.5 font-black text-amber-900">
+                    <ShieldCheck className="w-4 h-4 text-amber-700" />
+                    <span>Aviso Importante de Verificação</span>
+                  </div>
+                  <p className="text-[11.5px] leading-relaxed text-amber-900">
+                    <strong>A localização no mapa não constitui verificação automática por Onde Dormir.</strong> O seu registo iniciará como <strong>⚪ Não Verificado</strong> até à visita presencial de auditoria da nossa equipa.
+                  </p>
+                </div>
+
+                {/* Contacts */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      WhatsApp para Reservas *
+                    </label>
+                    <div className="relative">
+                      <MessageCircle className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="84 / 85 / 86 / 87..."
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        className="w-full h-11 pl-9 pr-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-800 block mb-1">
+                      Telefone para Chamadas *
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="84 / 82 / 85..."
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full h-11 pl-9 pr-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Owner Identity */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-neutral-800 block mb-1">
@@ -298,476 +1072,77 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                       placeholder="Nome completo do titular"
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600"
+                      className="w-full h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
 
                   <div>
                     <label className="text-xs font-bold text-neutral-800 block mb-1">
-                      Tipo de Documento Oficial *
+                      Documento Oficial (BI / Passaporte)
                     </label>
-                    <select
-                      value={docType}
-                      onChange={(e) => setDocType(e.target.value as any)}
-                      className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600 font-medium"
-                    >
-                      <option value="bi">Bilhete de Identidade (BI Moçambicano)</option>
-                      <option value="passport">Passaporte Nacional</option>
-                      <option value="dire">DIRE (Residente Estrangeiro)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Document Number */}
-                <div>
-                  <label className="text-xs font-bold text-neutral-800 block mb-1">
-                    Número do Documento ({docType === 'bi' ? 'BI' : 'Passaporte'}) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={docType === 'bi' ? 'Ex: 110100234567M' : 'Ex: AB123456'}
-                    value={docNumber}
-                    onChange={(e) => setDocNumber(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600"
-                  />
-                </div>
-
-                {/* Document Photos (Frente & Verso) */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-neutral-800 block">
-                    Fotografias Nítidas do Documento (Frente e Verso) *
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Front Photo */}
-                    <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-center flex flex-col items-center justify-center min-h-[130px]">
-                      {biFrontPhoto ? (
-                        <div className="relative w-full h-28 rounded-xl overflow-hidden group">
-                          <img src={biFrontPhoto} alt="Frente Documento" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setBiFrontPhoto('')}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="absolute bottom-1 left-2 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">Frente Anexada</span>
-                        </div>
-                      ) : (
-                        <label className="cursor-pointer flex flex-col items-center gap-1.5 p-2 w-full">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                            <Upload className="w-4 h-4" />
-                          </div>
-                          <span className="text-xs font-bold text-neutral-800">Foto Frente ({docType.toUpperCase()})</span>
-                          <span className="text-[10px] text-neutral-500">Carregar imagem nítida</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) {
-                                const r = new FileReader();
-                                r.onload = (ev) => setBiFrontPhoto(ev.target?.result as string);
-                                r.readAsDataURL(f);
-                              }
-                            }}
-                          />
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Back Photo */}
-                    <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-center flex flex-col items-center justify-center min-h-[130px]">
-                      {biBackPhoto ? (
-                        <div className="relative w-full h-28 rounded-xl overflow-hidden group">
-                          <img src={biBackPhoto} alt="Verso Documento" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setBiBackPhoto('')}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="absolute bottom-1 left-2 text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded">Verso Anexado</span>
-                        </div>
-                      ) : (
-                        <label className="cursor-pointer flex flex-col items-center gap-1.5 p-2 w-full">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                            <Upload className="w-4 h-4" />
-                          </div>
-                          <span className="text-xs font-bold text-neutral-800">Foto Verso ({docType.toUpperCase()})</span>
-                          <span className="text-[10px] text-neutral-500">Carregar imagem do verso</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) {
-                                const r = new FileReader();
-                                r.onload = (ev) => setBiBackPhoto(ev.target?.result as string);
-                                r.readAsDataURL(f);
-                              }
-                            }}
-                          />
-                        </label>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Facial Selfie Biometric Validation */}
-                <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-black text-emerald-950">Validação Facial do Proprietário (Selfie) *</h4>
-                      <p className="text-[11px] text-emerald-800">Tire uma selfie nítida do seu rosto para confirmação biométrica.</p>
-                    </div>
-                    {isFacialVerified && (
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Validado
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-3">
-                    {facialSelfiePhoto ? (
-                      <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md shrink-0">
-                        <img src={facialSelfiePhoto} alt="Selfie do Proprietário" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-emerald-950/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-8 h-8 text-white drop-shadow-md" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-emerald-300 bg-white flex flex-col items-center justify-center text-emerald-600 shrink-0">
-                        <Camera className="w-6 h-6 mb-1 text-emerald-400" />
-                        <span className="text-[9px] font-bold text-center">Aguardando Selfie</span>
-                      </div>
-                    )}
-
-                    <div className="flex-1 w-full space-y-2">
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsCapturingSelfie(true);
-                            setTimeout(() => {
-                              setFacialSelfiePhoto('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80');
-                              setIsFacialVerified(true);
-                              setIsCapturingSelfie(false);
-                            }, 1000);
-                          }}
-                          disabled={isCapturingSelfie}
-                          className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                        >
-                          <Sparkles className="w-4 h-4" />
-                          <span>{isCapturingSelfie ? 'A validar biometria...' : 'Realizar Validação Facial'}</span>
-                        </button>
-
-                        <label className="h-10 px-3 bg-white border border-emerald-300 hover:bg-emerald-50 active:scale-95 text-emerald-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1 cursor-pointer transition-colors">
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Carregar</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) {
-                                const r = new FileReader();
-                                r.onload = (ev) => {
-                                  setFacialSelfiePhoto(ev.target?.result as string);
-                                  setIsFacialVerified(true);
-                                };
-                                r.readAsDataURL(f);
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                      <p className="text-[10px] text-neutral-500">
-                        Os dados do documento e a fotografia facial são encriptados e processados exclusivamente para fins de segurança da plataforma.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step Navigation Buttons */}
-                <div className="flex gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setStep('form')}
-                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Voltar</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleProceedToTerms}
-                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
-                  >
-                    <span>Avançar para Termos de Registo</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ) : step === 'terms' ? (
-              /* Step 3: Onboarding & Terms */
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-200 space-y-2.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block">
-                    Resumo do Registo & Identificação
-                  </span>
-                  <div className="text-xs sm:text-sm space-y-1.5 text-neutral-700">
-                    <div><strong>Estabelecimento:</strong> {name} ({type})</div>
-                    <div><strong>Localização:</strong> {neighborhood}, {city}</div>
-                    <div><strong>Contacto:</strong> {phone}</div>
-                    <div><strong>Proprietário:</strong> {ownerName || name}</div>
-                    <div><strong>Documento Validado:</strong> {docType.toUpperCase()} {docNumber}</div>
-                  </div>
-                </div>
-
-                <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs sm:text-sm">
-                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-700 shrink-0" />
-                    <span>Directrizes de Publicação e Segurança</span>
-                  </div>
-                  <ul className="text-xs text-emerald-800 space-y-1.5 pl-4 list-disc leading-relaxed">
-                    <li>Garantir que os números de telefone e WhatsApp estão sempre operacionais.</li>
-                    <li>Fornecer informações rigorosas sobre comodidades (gerador, AC, banho).</li>
-                    <li>O registo entrará em <strong>Verificação Pendente</strong> até validação dos comprovativos.</li>
-                  </ul>
-                </div>
-
-                {/* Terms Acceptance Checkbox */}
-                <div className="pt-1">
-                  <label className="flex items-start gap-3 cursor-pointer p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 hover:bg-neutral-50 transition-colors">
                     <input
-                      type="checkbox"
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 w-5 h-5 accent-emerald-600 shrink-0"
+                      type="text"
+                      placeholder="Ex: 110100234567M"
+                      value={docNumber}
+                      onChange={(e) => setDocNumber(e.target.value)}
+                      className="w-full h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
-                    <div className="text-xs sm:text-sm text-neutral-700 leading-normal">
-                      <span>Declaro que li e aceito os </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setIsTermsModalOpen(true);
-                        }}
-                        className="text-emerald-700 font-bold underline hover:text-emerald-800 cursor-pointer"
-                      >
-                        Termos e Condições Gerais
-                      </button>{' '}
-                      <span>do directório Onde Dormir Moçambique (ÁGUIA Soluções & Serviços - Conexões Rápidas).</span>
-                    </div>
-                  </label>
+                  </div>
                 </div>
 
-                <div className="flex gap-2.5 pt-2">
+                <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setStep('identity_verification')}
-                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    onClick={() => setStep('amenities')}
+                    className="h-12 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-2xl text-xs font-bold transition-all"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Voltar</span>
+                    Voltar
                   </button>
-
                   <button
                     type="button"
-                    disabled={!agreedToTerms}
                     onClick={handleFinalSubmit}
-                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 disabled:opacity-50 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
+                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
                   >
-                    <span>Submeter Alojamento para Verificação</span>
+                    <span>Submeter Pensão / Guest House</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            ) : (
-              /* Step 1: Form */
-              <form onSubmit={handleProceedToIdentity} className="space-y-3.5">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Nome do Estabelecimento *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Pensão Miramar, Residencial Central"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
+            )}
 
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Tipo *
-                    </label>
-                    <select
-                      value={type}
-                      onChange={(e) => setType(e.target.value as AccommodationType)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-semibold"
-                    >
-                      <option value="pensao">Pensão</option>
-                      <option value="residencial">Residencial</option>
-                      <option value="guest_house">Guest House</option>
-                      <option value="lodge">Lodge</option>
-                      <option value="hotel">Hotel</option>
-                    </select>
-                  </div>
+            {/* SUCCESS SCREEN */}
+            {step === 'success' && (
+              <div className="py-5 text-center space-y-4 animate-in fade-in duration-200">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 className="w-9 h-9" />
                 </div>
 
-                {/* Localização */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Cidade *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Maputo, Matola, Beira..."
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Bairro *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Baixa, Polana, Sommerschield..."
-                      value={neighborhood}
-                      onChange={(e) => setNeighborhood(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <span className="inline-block px-3 py-1 bg-neutral-100 text-neutral-800 border border-neutral-300 text-xs font-black rounded-full uppercase tracking-wider">
+                    ⚪ Estado Inicial: Não Verificado
+                  </span>
+                  <h3 className="text-lg font-extrabold text-neutral-900">
+                    Alojamento Registado com Sucesso!
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-600 max-w-sm mx-auto leading-relaxed">
+                    A sua Pensão / Guest House está disponível no mapa e pesquisa. Os clientes já podem ver a localização exata, preço e contactá-lo diretamente via WhatsApp.
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Telefone para Chamadas *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="84 / 82 / 85..."
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      WhatsApp para Reservas
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="84 / 85 / 86..."
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
+                <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 text-left space-y-1 text-xs text-neutral-700">
+                  <span className="font-bold text-neutral-900 block">Auditoria Presencial:</span>
+                  <p className="text-[11px] leading-relaxed text-neutral-600">
+                    Para obter o selo oficial <strong>🟢 Verificado Presencialmente</strong>, a nossa equipa agendará uma visita de conformidade física ao seu estabelecimento.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-1">
-                    Frase de Destaque (Tagline)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Quartos climatizados e ambiente tranquilo"
-                    value={tagline}
-                    onChange={(e) => setTagline(e.target.value)}
-                    className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 block mb-1">
-                      Valor Médio / Noite (MT)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 1500"
-                      value={approxPrice}
-                      onChange={(e) => setApproxPrice(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm text-neutral-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                    />
-                  </div>
-
-                  <div className="flex items-center pt-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isOpen24h}
-                        onChange={(e) => setIsOpen24h(e.target.checked)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 w-5 h-5 accent-emerald-600"
-                      />
-                      <span className="text-xs sm:text-sm font-semibold text-neutral-800">
-                        Atendimento 24 Horas
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Amenities Selection */}
-                <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-2">
-                    Comodidades Disponíveis
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(Object.keys(AMENITIES_CATALOG) as AmenityId[]).slice(0, 8).map((amenityId) => {
-                      const item = AMENITIES_CATALOG[amenityId];
-                      const isSelected = selectedAmenities.includes(amenityId);
-                      return (
-                        <button
-                          type="button"
-                          key={amenityId}
-                          onClick={() => toggleAmenity(amenityId)}
-                          className={`h-11 px-3 rounded-xl text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs'
-                              : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-                          }`}
-                        >
-                          <span className="truncate">{item.name}</span>
-                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
-                            isSelected ? 'bg-emerald-600 text-white' : 'bg-neutral-200 text-transparent'
-                          }`}>✓</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-600/20 touch-manipulation"
-                  >
-                    <span>Avançar para Identificação do Proprietário (BI & Selfie)</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </form>
+                <button
+                  onClick={onClose}
+                  className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer touch-manipulation shadow-md"
+                >
+                  Concluir e Ver no Onde Dormir
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -779,40 +1154,6 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
         onAccept={() => {
           setAgreedToTerms(true);
           setIsTermsModalOpen(false);
-        }}
-        contextText="Ao registar um alojamento no Onde Dormir Moçambique, confirme a leitura e aceitação dos Termos Gerais."
-      />
-
-      {/* Fatura Oficial de Ativação do Alojamento (Bill) */}
-      <BillingInvoiceModal
-        isOpen={isBillingModalOpen}
-        onClose={() => setIsBillingModalOpen(false)}
-        invoiceData={{
-          moduleType: 'lodge',
-          serviceTitle: `Pacote de Ativação de Alojamento (${name || 'Novo Estabelecimento'})`,
-          serviceDescription: 'Ativação e registo no directório Onde Dormir Moçambique com geolocalização e verificação de identidade.',
-          clientName: ownerName || name || 'Proprietário de Alojamento',
-          clientPhone: phone || '+258 84 000 0000',
-          clientCity: city || 'Maputo',
-          clientProvince: city === 'Maputo' ? 'Maputo Cidade' : 'Moçambique',
-          itemDetails: [
-            {
-              description: `Ativação e Publicação no Directório - ${name || 'Alojamento'} (${type})`,
-              quantity: 1,
-              unitPriceMzn: 1500,
-              totalMzn: 1500
-            },
-            {
-              description: 'Validação de Identidade (BI/Passaporte) e Dossiê Anti-Fraude',
-              quantity: 1,
-              unitPriceMzn: 300,
-              totalMzn: 300
-            }
-          ],
-          subtotalMzn: 1800,
-          ivaRate: 0.16,
-          ivaAmountMzn: 288,
-          totalMzn: 2088
         }}
       />
     </>

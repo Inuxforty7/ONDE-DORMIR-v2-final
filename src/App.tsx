@@ -422,6 +422,7 @@ export default function App() {
             onOpenLocationModal={() => setIsLocationModalOpen(true)}
             onSelectProvince={handleSelectProvince}
             onSelectAllMozambique={handleSelectAllMozambique}
+            onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
           />
         )}
 

@@ -137,7 +137,12 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span>Verificado</span>
             </div>
-          ) : null}
+          ) : (
+            <div className="flex items-center gap-1 text-xs font-semibold text-neutral-500">
+              <span className="w-2 h-2 rounded-full bg-neutral-300 border border-neutral-400 shrink-0"></span>
+              <span>Não Verificado</span>
+            </div>
+          )}
 
           {/* 4. Distância e Localização */}
           <div className="flex items-center gap-1.5 text-xs text-neutral-600 truncate font-medium">

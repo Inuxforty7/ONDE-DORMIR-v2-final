@@ -49,6 +49,7 @@ interface ExploreTabProps {
   onOpenLocationModal: () => void;
   onSelectProvince?: (prov: string) => void;
   onSelectAllMozambique?: () => void;
+  onOpenRegisterModal?: () => void;
 }
 
 export const MOZ_PROVINCES_LIST = [
@@ -78,6 +79,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   onOpenLocationModal,
   onSelectProvince,
   onSelectAllMozambique,
+  onOpenRegisterModal,
 }) => {
   // 1. Province Filter
   const [selectedProvince, setSelectedProvince] = useState<string>(() => {
@@ -417,7 +419,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   return (
     <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-3.5">
-      {/* Top Brand Banner with Flow Principle: LOCALIZAR → FILTRAR → COMPARAR → VERIFICAR → CONTACTAR */}
+      {/* Top Brand Banner */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-sky-950 text-white p-3.5 sm:p-4 rounded-3xl border border-sky-400/20 shadow-md flex items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -1022,19 +1024,46 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
       {/* Accommodations Grid (COMPARAR & CONTACTAR) */}
       {filteredList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
-          {filteredList.map((item) => (
-            <AccommodationCard
-              key={item.id}
-              accommodation={item}
-              onSelect={onSelectAccommodation}
-              isSaved={isSaved(item.id)}
-              onToggleSave={onToggleSave}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
+            {filteredList.map((item) => (
+              <AccommodationCard
+                key={item.id}
+                accommodation={item}
+                onSelect={onSelectAccommodation}
+                isSaved={isSaved(item.id)}
+                onToggleSave={onToggleSave}
+              />
+            ))}
+          </div>
+
+          {/* Owner Acquisition Helper Strip */}
+          {onOpenRegisterModal && (
+            <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Building className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-neutral-900 leading-tight">
+                    É proprietário de uma Pensão ou Guest House?
+                  </h4>
+                  <p className="text-[11px] text-neutral-600 truncate mt-0.5">
+                    Adicione a sua localização no mapa e comece a receber reservas diretas via WhatsApp.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onOpenRegisterModal}
+                className="h-8.5 px-3.5 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white text-xs font-bold rounded-xl shrink-0 transition-all cursor-pointer shadow-xs self-start sm:self-auto"
+              >
+                Registar Pensão / Guest House
+              </button>
+            </div>
+          )}
+        </>
       ) : (
-        <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-neutral-200/90 shadow-2xs">
+        <div className="bg-white rounded-3xl p-8 text-center space-y-3.5 border border-neutral-200/90 shadow-2xs">
           <Building className="w-12 h-12 text-neutral-300 mx-auto" />
           <h3 className="font-extrabold text-base text-neutral-800">
             Nenhuma hospedagem encontrada com estes filtros
@@ -1042,12 +1071,22 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <p className="text-xs text-neutral-500 max-w-sm mx-auto">
             Tente alterar os termos da pesquisa, limpar comodidades selecionadas ou escolher outra província.
           </p>
-          <button
-            onClick={resetFilters}
-            className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer"
-          >
-            Limpar Filtros de Pesquisa
-          </button>
+          <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+            <button
+              onClick={resetFilters}
+              className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+            >
+              Limpar Filtros de Pesquisa
+            </button>
+            {onOpenRegisterModal && (
+              <button
+                onClick={onOpenRegisterModal}
+                className="h-10 px-4 bg-amber-400 hover:bg-amber-300 text-zinc-950 rounded-xl text-xs font-black cursor-pointer shadow-xs"
+              >
+                É o proprietário? Registe a sua Pensão
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
