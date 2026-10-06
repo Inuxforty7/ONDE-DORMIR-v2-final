@@ -134,7 +134,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           </button>
 
-          {/* 2. GUIA TURÍSTICO (Green) */}
+          {/* 2. TURISMO (Green) */}
           <button
             onClick={() => onNavigateToTab('guides')}
             className="w-full group bg-gradient-to-r from-[#009E4F] to-[#007A3D] hover:from-[#00B359] hover:to-[#008F47] active:scale-[0.98] text-white rounded-[22px] p-3 sm:p-3.5 border-2 border-white/90 shadow-xl transition-all flex items-center justify-between cursor-pointer touch-manipulation"
@@ -159,10 +159,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               </div>
               <div className="min-w-0">
                 <div className="font-black text-base sm:text-lg tracking-wide uppercase leading-tight drop-shadow-xs truncate">
-                  GUIA TURÍSTICO
+                  TURISMO
                 </div>
                 <div className="text-xs sm:text-sm text-white/90 font-medium mt-0.5 truncate">
-                  Guias locais e passeios
+                  Guias & Praias
                 </div>
               </div>
             </div>
@@ -328,7 +328,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               "Conectando negócios e necessidades à solução, com agilidade – confiança – acessibilidade"
             </p>
             <p className="text-[9.5px] sm:text-[10px] text-white/70 font-medium drop-shadow-sm pt-0.5">
-              Onde Dormir • Guia Turístico • Rent-a-Car • HeartLink • Love Shop
+              Onde Dormir • Turismo • Rent-a-Car • HeartLink • Love Shop
             </p>
           </div>
         </div>
