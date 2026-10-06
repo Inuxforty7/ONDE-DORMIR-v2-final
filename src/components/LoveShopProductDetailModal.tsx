@@ -650,10 +650,10 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
 
                     <div className="space-y-2">
                       {[
-                        { label: 'Qualidade do produto (Apenas Artigo)', value: newQuality, setValue: setNewQuality },
-                        { label: 'Bom atendimento (Loja)', value: newCustomerService, setValue: setNewCustomerService },
-                        { label: 'Entrega rápida (Loja)', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
-                        { label: 'Recomendação (Loja)', value: newRecommendation, setValue: setNewRecommendation },
+                        { label: 'Qualidade do produto', value: newQuality, setValue: setNewQuality },
+                        { label: 'Bom atendimento', value: newCustomerService, setValue: setNewCustomerService },
+                        { label: 'Entrega rápida', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
+                        { label: 'Recomendação', value: newRecommendation, setValue: setNewRecommendation },
                       ].map((item, idx) => (
                         <div
                           key={idx}
@@ -821,113 +821,6 @@ export const LoveShopProductDetailModal: React.FC<LoveShopProductDetailModalProp
                       </div>
                     </div>
                   ))}
-
-                  {/* Form de Nova Avaliação Individual (Associada a Compras Verificadas) */}
-                  {isAddingReview && (
-                        <form 
-                          onSubmit={handleAddReview} 
-                          className="pt-2 space-y-3 animate-in fade-in duration-150 border-t border-neutral-100"
-                        >
-                          <div className="space-y-2">
-                            <div className="text-xs font-bold text-neutral-800">
-                              Selecione as estrelas para os 4 critérios da sua compra:
-                            </div>
-                            {[
-                              {
-                                label: 'Qualidade do produto (Afeta Apenas o Artigo)',
-                                value: newQuality,
-                                setValue: setNewQuality,
-                              },
-                              {
-                                label: 'Bom atendimento (Calcula Reputação da Loja)',
-                                value: newCustomerService,
-                                setValue: setNewCustomerService,
-                              },
-                              {
-                                label: 'Entrega rápida (Calcula Reputação da Loja)',
-                                value: newDeliverySpeed,
-                                setValue: setNewDeliverySpeed,
-                              },
-                              {
-                                label: 'Recomendação do vendedor (Calcula Reputação da Loja)',
-                                value: newRecommendation,
-                                setValue: setNewRecommendation,
-                              },
-                            ].map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="py-2.5 px-3.5 bg-neutral-50 rounded-xl border border-neutral-200/90 flex items-center justify-between gap-3 shadow-2xs"
-                              >
-                                <span className="text-xs font-bold text-neutral-900 whitespace-normal">
-                                  {item.label}
-                                </span>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
-                                      key={star}
-                                      type="button"
-                                      onClick={() => item.setValue(star)}
-                                      className="p-0.5 cursor-pointer hover:scale-125 active:scale-90 transition-transform"
-                                      title={`${item.label}: ${star} estrelas`}
-                                    >
-                                      <Star
-                                        className={`w-4 h-4 transition-colors ${
-                                          star <= item.value
-                                            ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
-                                            : 'text-neutral-300'
-                                        }`}
-                                      />
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <input
-                              type="text"
-                              required
-                              placeholder="Seu nome (ex: Artur M.)"
-                              value={newReviewName}
-                              onChange={(e) => setNewReviewName(e.target.value)}
-                              className="h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500/30 font-medium"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Sua cidade (ex: Matola, Maputo)"
-                              value={newReviewCity}
-                              onChange={(e) => setNewReviewCity(e.target.value)}
-                              className="h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500/30 font-medium"
-                            />
-                          </div>
-
-                          <textarea
-                            rows={2}
-                            placeholder="Qual é a sua experiência? (Comentário opcional...)"
-                            value={newReviewComment}
-                            onChange={(e) => setNewReviewComment(e.target.value)}
-                            className="w-full p-3 bg-neutral-50 rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500/30 resize-none font-medium"
-                          />
-
-                          <div className="flex items-center gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => setIsAddingReview(false)}
-                              className="h-10 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              type="submit"
-                              className="flex-1 h-10 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/30"
-                            >
-                              <Star className="w-4 h-4 fill-white" />
-                              <span>Submeter Avaliação Individual</span>
-                            </button>
-                          </div>
-                        </form>
-                      )}
                 </div>
               </div>
             </div>
