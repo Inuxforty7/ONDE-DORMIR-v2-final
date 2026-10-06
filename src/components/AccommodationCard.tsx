@@ -106,9 +106,13 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
         {/* Bottom image overlay: Status & Distance */}
         <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white pointer-events-none">
           <div className="flex items-center gap-1.5">
-            {accommodation.verificationStatus === 'verified_in_person' || accommodation.verificationStatus === 'verified' ? (
+            {accommodation.verificationStatus === 'verified_in_person' ? (
               <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs">
-                <ShieldCheck className="w-3 h-3" /> Verificado
+                <ShieldCheck className="w-3 h-3" /> Verificado Presencialmente
+              </span>
+            ) : accommodation.verificationStatus === 'verified' ? (
+              <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs">
+                <ShieldCheck className="w-3 h-3" /> Verificado Oficial
               </span>
             ) : accommodation.verificationStatus === 'pending' || accommodation.isPendingVerification ? (
               <span className="flex items-center gap-1 text-[11px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-md shadow-xs">
@@ -143,16 +147,28 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
             {accommodation.name}
           </h3>
 
-          {/* 2. Localização & Antiguidade na Plataforma (Sem duplicação de categoria) */}
+          {/* 2. Localização & Distância */}
           <div className="flex items-center gap-1.5 text-xs text-neutral-600 truncate">
             <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span className="font-semibold text-neutral-800 truncate">
-              {accommodation.location.neighborhood || accommodation.location.city}, {accommodation.location.city}
+              {accommodation.location.neighborhood || accommodation.location.district || accommodation.location.city}, {accommodation.location.city}
             </span>
-            <span aria-hidden="true" className="text-neutral-300">·</span>
-            <span className="text-neutral-500 text-[11px] shrink-0 truncate">
-              {getPlatformTenureText(accommodation.registeredAt, accommodation.platformTenure, accommodation.id)}
-            </span>
+            {accommodation.distanceKm !== undefined ? (
+              <>
+                <span aria-hidden="true" className="text-neutral-300">·</span>
+                <span className="text-emerald-700 font-bold text-[11px] shrink-0 truncate flex items-center gap-0.5">
+                  <Navigation2 className="w-3 h-3 text-emerald-600 inline" />
+                  {formatDistance(accommodation.distanceKm)}
+                </span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden="true" className="text-neutral-300">·</span>
+                <span className="text-neutral-500 text-[11px] shrink-0 truncate">
+                  {getPlatformTenureText(accommodation.registeredAt, accommodation.platformTenure, accommodation.id)}
+                </span>
+              </>
+            )}
           </div>
 
           {/* 3. Ponto de Referência (Se existir) */}
@@ -163,7 +179,41 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
             </div>
           )}
 
-          {/* 4. Preço & Avaliação */}
+          {/* 4. Condições & Comodidades Principais (COMPARAR) */}
+          <div className="flex flex-wrap gap-1 pt-1">
+            {accommodation.amenities?.includes('ac') && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
+                ❄️ AC
+              </span>
+            )}
+            {accommodation.amenities?.includes('wifi') && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
+                📶 Wi-Fi
+              </span>
+            )}
+            {accommodation.amenities?.includes('generator') && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80">
+                ⚡ Gerador 24h
+              </span>
+            )}
+            {accommodation.amenities?.includes('parking') && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
+                🅿️ Parque
+              </span>
+            )}
+            {accommodation.amenities?.includes('private_bathroom') && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
+                🚿 Banho Privativo
+              </span>
+            )}
+            {accommodation.isOpen24h && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                🕒 24 Horas
+              </span>
+            )}
+          </div>
+
+          {/* 5. Preço & Avaliação */}
           <div className="flex items-center justify-between pt-1">
             {minPrice ? (
               <div className="text-xs text-neutral-600">

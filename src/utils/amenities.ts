@@ -84,28 +84,18 @@ export const AMENITIES_CATALOG: Record<AmenityId, AmenityMetadata> = {
 
 export const ACCOMMODATION_TYPE_LABELS: Record<string, { label: string; badgeColor: string; description: string }> = {
   pensao: {
-    label: 'Pensão / Guest House',
-    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-    description: 'Hospedagem local acolhedora, prática e acessível para pernoita',
+    label: 'Pensão',
+    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    description: 'Hospedagem local acolhedora, quartos práticos e preço acessível para pernoita',
   },
   guest_house: {
-    label: 'Pensão / Guest House',
-    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-    description: 'Hospedagem local acolhedora, prática e acessível para pernoita',
-  },
-  hotel: {
-    label: 'Hotel',
-    badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
-    description: 'Estrutura hoteleira com recepção permanente e serviços completos',
-  },
-  lodge: {
-    label: 'Lodge & Praia',
+    label: 'Guest House',
     badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
-    description: 'Alojamento em ambiente costeiro, natureza ou bungalows',
+    description: 'Acolhimento familiar com conforto, quartos privativos e ambiente tranquilo',
   },
   residencial: {
-    label: 'Pensão / Residencial',
+    label: 'Residencial',
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-    description: 'Hospedagem local prática com quartos mobilados para pernoita',
+    description: 'Alojamento local prático com quartos mobilados para pernoita segura',
   },
 };

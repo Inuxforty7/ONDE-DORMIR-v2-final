@@ -70,7 +70,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return [...parsed, ...INITIAL_HEARTLINK_PROFILES];
+        const cleanCustom = parsed.filter((p: HeartLinkProfile) => !p.id.startsWith('hl-'));
+        return [...cleanCustom, ...INITIAL_HEARTLINK_PROFILES];
       } catch (e) {
         return INITIAL_HEARTLINK_PROFILES;
       }
@@ -869,12 +870,12 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
                       {/* Top Badges */}
                       <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none">
-                        {profile.verified && (
+                        {profile.verified && !profile.id.startsWith('hl-') && (
                           <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Verificado
                           </span>
                         )}
-                        {profile.visibilityBadge && (
+                        {profile.visibilityBadge && !profile.id.startsWith('hl-') && (
                           <span className="text-[9px] font-black bg-gradient-to-r from-amber-500 to-rose-500 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
                             <Sparkles className="w-2.5 h-2.5 text-amber-200" /> {profile.visibilityBadge}
                           </span>
@@ -963,7 +964,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   <h2 className="text-lg sm:text-xl font-black">
                     {selectedProfile.name}, {selectedProfile.age}
                   </h2>
-                  {selectedProfile.verified && (
+                  {selectedProfile.verified && !selectedProfile.id.startsWith('hl-') && (
                     <span className="flex items-center gap-1 text-[10.5px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md">
                       <CheckCircle2 className="w-3 h-3" /> Verificado
                     </span>

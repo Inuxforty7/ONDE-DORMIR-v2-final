@@ -27,6 +27,8 @@ export interface AccommodationLocation {
   address: string;
   neighborhood: string; // ex: Sommerschield, Baixa, Polana, Zimpeto
   city: string; // ex: Maputo, Matola, Beira, Nampula, Vilankulo
+  district?: string; // ex: KaMpfumo, KaMavota, Matola, Vilankulo
+  postalCode?: string; // Código postal / PIN postal ex: 1100, 1101
   province: string; // ex: Maputo Cidade, Maputo Província, Sofala, Nampula, Inhambane
   landmark?: string; // ex: "A 100m do Hospital Central", "Perto da paragem do Xipamanine"
 }
@@ -261,6 +263,67 @@ export interface TourGuide {
   registeredAt?: string;
   platformTenure?: string;
   isContactUnlocked?: boolean;
+}
+
+export type TourismPlaceCategory =
+  | 'praias_ilhas'
+  | 'parques_natureza'
+  | 'patrimonio_historico'
+  | 'cultura_museus'
+  | 'atracoes_naturais';
+
+export interface TourismPlace {
+  id: string;
+  name: string;
+  category: TourismPlaceCategory;
+  categoryLabel: string;
+  photo: string;
+  photos?: string[];
+  city: string;
+  district?: string;
+  province: string;
+  shortDescription: string;
+  fullDescription: string;
+  highlights: string[];
+  bestSeason?: string;
+  rating: number;
+  reviewsCount: number;
+  verified: boolean;
+  featured?: boolean;
+  associatedGuideIds?: string[];
+  coordinates?: { lat: number; lng: number };
+}
+
+export type TourismExperienceCategory =
+  | 'marinha_mergulho'
+  | 'safari_fauna'
+  | 'cultural_historica'
+  | 'aventura_trilha'
+  | 'gastronomia_local';
+
+export interface TourismExperience {
+  id: string;
+  title: string;
+  category: TourismExperienceCategory;
+  categoryLabel: string;
+  photo: string;
+  photos?: string[];
+  placeName: string;
+  city: string;
+  province: string;
+  duration: string;
+  difficulty?: 'Fácil' | 'Moderado' | 'Aventureiro';
+  shortDescription: string;
+  fullDescription: string;
+  includedItems: string[];
+  indicativePrice?: number;
+  rating: number;
+  reviewsCount: number;
+  verified: boolean;
+  featured?: boolean;
+  guideId?: string;
+  guideName?: string;
+  guideWhatsapp?: string;
 }
 
 export interface CarRental {

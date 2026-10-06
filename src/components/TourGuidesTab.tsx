@@ -7,30 +7,33 @@ import {
   Phone, 
   MessageCircle, 
   Search, 
-  Filter, 
+  SlidersHorizontal, 
   X, 
   Languages, 
-  Award, 
-  Calendar, 
-  Plus, 
-  Share2, 
   ChevronDown, 
-  ChevronUp,
-  ArrowLeft, 
+  ChevronUp, 
   ShieldCheck, 
-  Camera, 
-  FileCheck,
-  Clock,
-  Home
+  Clock, 
+  Navigation2, 
+  Check, 
+  ExternalLink, 
+  Eye, 
+  Sparkles, 
+  Waves, 
+  Palmtree, 
+  Calendar,
+  DollarSign
 } from 'lucide-react';
-import { TourGuide, UserLocationState } from '../types';
+import { TourGuide, TourismPlace, TourismExperience, UserLocationState } from '../types';
 import { INITIAL_TOUR_GUIDES } from '../data/tourGuides';
+import { INITIAL_TOURISM_PLACES, INITIAL_TOURISM_EXPERIENCES } from '../data/tourismData';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { TermsModal } from './TermsModal';
 import { getPlatformTenureText } from '../utils/tenure';
 import { contactUnlockService } from '../services/contactUnlockService';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
+import { getDirectionsUrl } from '../utils/geo';
 
 interface TourGuidesTabProps {
   onBackToHome?: () => void;
@@ -47,6 +50,10 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   onSelectProvince,
   onSelectAllMozambique,
 }) => {
+  // Navigation Sections: Lugares | Experiências | Guias
+  const [activeSection, setActiveSection] = useState<'lugares' | 'experiencias' | 'guias'>('lugares');
+
+  // Guides State with Local Storage support
   const [guides, setGuides] = useState<TourGuide[]>(() => {
     const saved = localStorage.getItem('onde_dormir_custom_guides');
     if (saved) {
@@ -60,6 +67,10 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     return INITIAL_TOUR_GUIDES;
   });
 
+  const places = INITIAL_TOURISM_PLACES;
+  const experiences = INITIAL_TOURISM_EXPERIENCES;
+
+  // Search & Filter States
   const [selectedProvince, setSelectedProvince] = useState<string>(() => {
     if (!userLocation || userLocation.isAllMozambique) return 'all';
     return userLocation.province || 'Inhambane';
@@ -76,11 +87,18 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   }, [userLocation?.province, userLocation?.isAllMozambique]);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState<string>('all');
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
+  const [selectedPlaceCategory, setSelectedPlaceCategory] = useState<string>('all');
+  const [selectedExpCategory, setSelectedExpCategory] = useState<string>('all');
+  const [selectedGuideSpecialty, setSelectedGuideSpecialty] = useState<string>('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [highRatingOnly, setHighRatingOnly] = useState(false);
+
+  // Detail Modal States
+  const [selectedPlace, setSelectedPlace] = useState<TourismPlace | null>(null);
+  const [selectedExperience, setSelectedExperience] = useState<TourismExperience | null>(null);
   const [selectedGuide, setSelectedGuide] = useState<TourGuide | null>(null);
   
-  // Verification & Registration Modals
+  // Registration Modals (Preserved)
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
@@ -108,40 +126,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     setIsVerificationOpen(true);
   };
 
-  // Available specialties
-  const specialtiesList = [
-    'City Tour Histórico',
-    'Safari Vida Selvagem',
-    'Dhow Safari',
-    'Património Mundial UNESCO',
-    'Snorkeling com Tubarão-Baleia',
-    'Arquipélago de Bazaruto',
-    'Mafalala Cultural',
-    'Trilhos no Monte Gorongosa'
-  ];
-
-  const citiesList = useMemo(() => {
-    let list = guides;
-    if (selectedProvince !== 'all') {
-      const selProv = selectedProvince.toLowerCase();
-      list = list.filter((g: TourGuide) => {
-        const guideProv = (g.province || '').toLowerCase();
-        if (selProv === 'maputo cidade' || selProv === 'maputo província') {
-          return guideProv === selProv || guideProv === 'maputo';
-        }
-        return guideProv.includes(selProv) || selProv.includes(guideProv);
-      });
-    }
-    return Array.from(new Set(list.map((g: TourGuide) => g.city))).filter((c): c is string => Boolean(c));
-  }, [guides, selectedProvince]);
-
-  // Reset selectedCity if not in citiesList
-  React.useEffect(() => {
-    if (selectedCity !== 'all' && !citiesList.includes(selectedCity)) {
-      setSelectedCity('all');
-    }
-  }, [citiesList, selectedCity]);
-
   const handleProvinceClick = (prov: string) => {
     setSelectedProvince(prov);
     if (prov === 'all') {
@@ -151,10 +135,109 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     }
   };
 
-  // Filtered guides
+  const resetFilters = () => {
+    setSelectedProvince('all');
+    if (onSelectAllMozambique) onSelectAllMozambique();
+    setSearchQuery('');
+    setSelectedPlaceCategory('all');
+    setSelectedExpCategory('all');
+    setSelectedGuideSpecialty('all');
+    setVerifiedOnly(false);
+    setHighRatingOnly(false);
+  };
+
+  // 1. Filtered Places
+  const filteredPlaces = useMemo(() => {
+    return places.filter((p) => {
+      // Province filter
+      if (selectedProvince !== 'all') {
+        const placeProv = (p.province || '').toLowerCase();
+        const selProv = selectedProvince.toLowerCase();
+        if (selProv === 'maputo cidade' || selProv === 'maputo província') {
+          if (placeProv !== selProv && placeProv !== 'maputo') return false;
+        } else if (!placeProv.includes(selProv) && !selProv.includes(placeProv)) {
+          return false;
+        }
+      }
+
+      // Search
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchName = p.name.toLowerCase().includes(q);
+        const matchCity = p.city.toLowerCase().includes(q);
+        const matchDesc = p.shortDescription.toLowerCase().includes(q) || p.fullDescription.toLowerCase().includes(q);
+        const matchHighlights = p.highlights.some((h) => h.toLowerCase().includes(q));
+        const matchCat = p.categoryLabel.toLowerCase().includes(q);
+        if (!matchName && !matchCity && !matchDesc && !matchHighlights && !matchCat) return false;
+      }
+
+      // Category
+      if (selectedPlaceCategory !== 'all' && p.category !== selectedPlaceCategory) {
+        return false;
+      }
+
+      // Verified
+      if (verifiedOnly && !p.verified) {
+        return false;
+      }
+
+      // High Rating
+      if (highRatingOnly && p.rating < 4.8) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [places, selectedProvince, searchQuery, selectedPlaceCategory, verifiedOnly, highRatingOnly]);
+
+  // 2. Filtered Experiences
+  const filteredExperiences = useMemo(() => {
+    return experiences.filter((exp) => {
+      // Province filter
+      if (selectedProvince !== 'all') {
+        const expProv = (exp.province || '').toLowerCase();
+        const selProv = selectedProvince.toLowerCase();
+        if (selProv === 'maputo cidade' || selProv === 'maputo província') {
+          if (expProv !== selProv && expProv !== 'maputo') return false;
+        } else if (!expProv.includes(selProv) && !selProv.includes(expProv)) {
+          return false;
+        }
+      }
+
+      // Search
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchTitle = exp.title.toLowerCase().includes(q);
+        const matchPlace = exp.placeName.toLowerCase().includes(q);
+        const matchCity = exp.city.toLowerCase().includes(q);
+        const matchDesc = exp.shortDescription.toLowerCase().includes(q);
+        const matchGuide = exp.guideName ? exp.guideName.toLowerCase().includes(q) : false;
+        if (!matchTitle && !matchPlace && !matchCity && !matchDesc && !matchGuide) return false;
+      }
+
+      // Category
+      if (selectedExpCategory !== 'all' && exp.category !== selectedExpCategory) {
+        return false;
+      }
+
+      // Verified
+      if (verifiedOnly && !exp.verified) {
+        return false;
+      }
+
+      // High Rating
+      if (highRatingOnly && exp.rating < 4.8) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [experiences, selectedProvince, searchQuery, selectedExpCategory, verifiedOnly, highRatingOnly]);
+
+  // 3. Filtered Guides
   const filteredGuides = useMemo(() => {
     return guides.filter((g) => {
-      // Province filter - strict isolation
+      // Province filter
       if (selectedProvince !== 'all') {
         const guideProv = (g.province || '').toLowerCase();
         const selProv = selectedProvince.toLowerCase();
@@ -165,6 +248,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         }
       }
 
+      // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchName = g.name.toLowerCase().includes(q);
@@ -174,17 +258,24 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         if (!matchName && !matchCity && !matchBio && !matchSpec) return false;
       }
 
-      if (selectedCity !== 'all' && g.city !== selectedCity) {
+      // Specialty
+      if (selectedGuideSpecialty !== 'all' && !g.specialties.some(s => s.toLowerCase().includes(selectedGuideSpecialty.toLowerCase()))) {
         return false;
       }
 
-      if (selectedSpecialty !== 'all' && !g.specialties.includes(selectedSpecialty)) {
+      // Verified
+      if (verifiedOnly && !g.verified) {
+        return false;
+      }
+
+      // High Rating
+      if (highRatingOnly && g.rating < 4.8) {
         return false;
       }
 
       return true;
     });
-  }, [guides, selectedProvince, searchQuery, selectedCity, selectedSpecialty]);
+  }, [guides, selectedProvince, searchQuery, selectedGuideSpecialty, verifiedOnly, highRatingOnly]);
 
   const handleVerificationComplete = (dossier: VerificationDossier) => {
     setVerifiedDossier(dossier);
@@ -250,26 +341,37 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
   return (
     <div className="pb-16 sm:pb-20 pt-2 sm:pt-4 max-w-5xl mx-auto px-3 sm:px-4 space-y-3.5">
-      {/* Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden">
+      {/* Top Banner: TURISMO MOÇAMBIQUE */}
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-cyan-950 text-white p-4 sm:p-5 rounded-3xl shadow-lg relative overflow-hidden border border-emerald-500/20">
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
-              <Compass className="w-6 h-6" />
+              <Compass className="w-6 h-6 text-emerald-300" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-                  Guias Turísticos
+                  <span>TURISMO </span>
+                  <span className="text-amber-400">MOÇAMBIQUE</span>
                 </h1>
-                <span className="text-[10px] uppercase font-black tracking-wider bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                  <ShieldCheck className="w-3 h-3" />
-                  Verificados
+                <span className="text-[10px] uppercase font-black tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                  <ShieldCheck className="w-3 h-3" /> Oficial
                 </span>
               </div>
-              <p className="text-xs text-emerald-100 font-medium">
-                Explore com quem conhece o caminho.
+              <p className="text-xs text-emerald-100 font-medium mt-0.5">
+                Explore lugares, experiências e encontre quem o pode guiar.
               </p>
+              <div className="flex items-center gap-1.5 mt-2 text-[10px] text-emerald-300 font-bold uppercase tracking-wider flex-wrap">
+                <span>Descobrir</span>
+                <span className="text-emerald-500">→</span>
+                <span>Explorar</span>
+                <span className="text-emerald-500">→</span>
+                <span>Escolher Lugar</span>
+                <span className="text-emerald-500">→</span>
+                <span>Encontrar Guia</span>
+                <span className="text-emerald-500">→</span>
+                <span className="text-amber-300">Contactar</span>
+              </div>
             </div>
           </div>
 
@@ -278,67 +380,95 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             className="w-full sm:w-auto h-10 px-4 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-            <span>Registar como Guia</span>
+            <span>+ Registar como Guia</span>
           </button>
         </div>
       </div>
 
-      {/* Security Status Line */}
-      <div className="p-2.5 sm:p-3 rounded-2xl bg-emerald-50 border border-emerald-200/90 flex items-center gap-2 text-xs text-emerald-950">
-        <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-        <span className="leading-tight">
-          Guias locais credenciados e experientes para passeios seguros.
-        </span>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-2.5">
-        <div className="flex flex-col sm:flex-row gap-2">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Pesquisar guia por nome, safari, cidade..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 sm:h-11 pl-9 pr-8 bg-neutral-50 rounded-xl text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-neutral-200"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 flex items-center justify-center cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* City */}
-          <div className="relative w-full sm:w-44 shrink-0">
-            <MapPin className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 pointer-events-none" />
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full h-10 sm:h-11 pl-8 pr-7 bg-neutral-50 rounded-xl text-xs sm:text-sm font-semibold text-neutral-800 border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer"
+      {/* Main Search Bar & Quick Filters */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-neutral-200/90 shadow-2xs space-y-3">
+        {/* Search input */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Pesquisar lugar, praia, ilha, experiência ou guia..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-11 pl-9 pr-8 bg-neutral-50 rounded-xl text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-neutral-200"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 flex items-center justify-center cursor-pointer"
             >
-              <option value="all">Todas as Cidades</option>
-              {citiesList.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-          </div>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Clean Responsive 2-Selector Row (Zero-Cutoff & Direct) */}
+        {/* 3 Main Segment Tabs: Lugares | Experiências | Guias */}
+        <div className="grid grid-cols-3 gap-1.5 p-1 bg-neutral-100 rounded-2xl">
+          <button
+            type="button"
+            onClick={() => setActiveSection('lugares')}
+            className={`h-10 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation ${
+              activeSection === 'lugares'
+                ? 'bg-white text-emerald-900 shadow-sm border border-neutral-200/80 scale-[1.01]'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <span>🏖️ Lugares</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeSection === 'lugares' ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-200 text-neutral-600'
+            }`}>
+              {filteredPlaces.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('experiencias')}
+            className={`h-10 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation ${
+              activeSection === 'experiencias'
+                ? 'bg-white text-emerald-900 shadow-sm border border-neutral-200/80 scale-[1.01]'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <span>🏄 Experiências</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeSection === 'experiencias' ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-200 text-neutral-600'
+            }`}>
+              {filteredExperiences.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('guias')}
+            className={`h-10 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation ${
+              activeSection === 'guias'
+                ? 'bg-white text-emerald-900 shadow-sm border border-neutral-200/80 scale-[1.01]'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <span>🧭 Guias</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeSection === 'guias' ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-200 text-neutral-600'
+            }`}>
+              {filteredGuides.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Dynamic Filters Row: Província + Categoria Específica */}
         <div className="grid grid-cols-2 gap-2 pt-0.5">
-          {/* Quick Province Dropdown Selector */}
+          {/* Province Selector */}
           <div className="relative">
             <select
               value={selectedProvince}
               onChange={(e) => handleProvinceClick(e.target.value)}
-              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
+              className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
             >
               <option value="all">📍 Moçambique (Todas)</option>
               {MOZ_PROVINCES_LIST.map((p) => (
@@ -348,153 +478,793 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Quick Specialty Selector */}
+          {/* Contextual Category Selector according to Active Section */}
           <div className="relative">
-            <select
-              value={selectedSpecialty}
-              onChange={(e) => setSelectedSpecialty(e.target.value)}
-              className="w-full h-9 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
-            >
-              <option value="all">🧭 Todas as Especialidades</option>
-              {specialtiesList.map((spec) => (
-                <option key={spec} value={spec}>{spec}</option>
-              ))}
-            </select>
+            {activeSection === 'lugares' ? (
+              <select
+                value={selectedPlaceCategory}
+                onChange={(e) => setSelectedPlaceCategory(e.target.value)}
+                className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
+              >
+                <option value="all">🌴 Todas as Atrações</option>
+                <option value="praias_ilhas">🏖️ Praias & Ilhas</option>
+                <option value="parques_natureza">🦁 Parques & Safáris</option>
+                <option value="patrimonio_historico">🏰 Património Histórico</option>
+                <option value="cultura_museus">🎨 Cultura & Museus</option>
+                <option value="atracoes_naturais">🌊 Atrações Naturais</option>
+              </select>
+            ) : activeSection === 'experiencias' ? (
+              <select
+                value={selectedExpCategory}
+                onChange={(e) => setSelectedExpCategory(e.target.value)}
+                className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
+              >
+                <option value="all">⚡ Todos os Tipos</option>
+                <option value="marinha_mergulho">🤿 Vida Marinha & Dhow</option>
+                <option value="safari_fauna">🚙 Safári 4x4 Fauna</option>
+                <option value="cultural_historica">🏛️ Rota Histórica & Cultural</option>
+              </select>
+            ) : (
+              <select
+                value={selectedGuideSpecialty}
+                onChange={(e) => setSelectedGuideSpecialty(e.target.value)}
+                className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
+              >
+                <option value="all">🧭 Todas as Especialidades</option>
+                <option value="Dhow">⛵ Dhow Safari & Ilhas</option>
+                <option value="Tubarão">🦈 Tubarão-Baleia & Mergulho</option>
+                <option value="Gorongosa">🦁 Gorongosa & Fauna</option>
+                <option value="Golfinhos">🐬 Golfinhos</option>
+                <option value="UNESCO">🏰 Património UNESCO</option>
+                <option value="Mafalala">🏙️ City Tour Histórico</option>
+              </select>
+            )}
             <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
-      </div>
 
-      {/* Guides List Header */}
-      <div className="text-xs text-neutral-600 px-1">
-        <strong className="text-neutral-900 font-bold">{filteredGuides.length}</strong> guias credenciados
-      </div>
-
-      {/* Guides Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 items-stretch">
-        {filteredGuides.map((guide) => (
-          <div
-            key={guide.id}
-            onClick={() => setSelectedGuide(guide)}
-            className="bg-white rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full space-y-3 group active:scale-[0.99] touch-manipulation"
+        {/* Quick Horizontal Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+          <button
+            onClick={() => setVerifiedOnly(!verifiedOnly)}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              verifiedOnly
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
           >
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-3">
-                <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-100 shadow-2xs">
-                  <img
-                    src={guide.photo}
-                    alt={guide.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+            <ShieldCheck className="w-3 h-3" />
+            <span>Apenas Verificados</span>
+          </button>
+
+          <button
+            onClick={() => setHighRatingOnly(!highRatingOnly)}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              highRatingOnly
+                ? 'bg-amber-600 text-white border-amber-600'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <Star className="w-3 h-3 fill-amber-300" />
+            <span>Avaliação 4.8+</span>
+          </button>
+
+          {(selectedProvince !== 'all' || searchQuery || verifiedOnly || highRatingOnly) && (
+            <button
+              onClick={resetFilters}
+              className="text-[11px] text-neutral-500 font-bold underline hover:text-neutral-800 ml-auto shrink-0 cursor-pointer"
+            >
+              Limpar Filtros
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 1: LUGARES */}
+      {activeSection === 'lugares' && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between px-1 text-xs text-neutral-600">
+            <div>
+              <strong className="text-neutral-900 font-bold">{filteredPlaces.length}</strong> lugares turísticos encontrados
+            </div>
+            <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              Praias · Parques · Património
+            </span>
+          </div>
+
+          {filteredPlaces.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
+              {filteredPlaces.map((place) => (
+                <div
+                  key={place.id}
+                  className="bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                >
+                  {/* Top Image */}
+                  <div
+                    onClick={() => setSelectedPlace(place)}
+                    className="relative aspect-16/10 bg-neutral-100 overflow-hidden cursor-pointer shrink-0"
+                  >
+                    <img
+                      src={place.photo}
+                      alt={place.name}
+                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25 pointer-events-none" />
+
+                    <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-white">
+                        {place.categoryLabel}
+                      </span>
+                      {place.verified && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                          <ShieldCheck className="w-3 h-3" /> Verificado
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white pointer-events-none">
+                      <div className="flex items-center gap-1 text-xs font-semibold drop-shadow-xs">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span className="truncate">{place.city}, {place.province}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs font-bold bg-black/60 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>{place.rating.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
+                    <div onClick={() => setSelectedPlace(place)} className="cursor-pointer space-y-1">
+                      <h3 className="font-extrabold text-neutral-900 text-base leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
+                        {place.name}
+                      </h3>
+                      <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
+                        {place.shortDescription}
+                      </p>
+
+                      {/* Highlights */}
+                      <div className="flex flex-wrap gap-1 pt-1.5">
+                        {place.highlights.slice(0, 3).map((hl, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60 truncate"
+                          >
+                            ✨ {hl}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-2 mt-auto border-t border-neutral-100 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlace(place)}
+                        className="flex-1 h-10 px-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Explorar Lugar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('guias');
+                          setSearchQuery(place.city);
+                        }}
+                        className="h-10 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+                        title="Ver guias credenciados para este local"
+                      >
+                        <Compass className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Ver Guias</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <h3 className="font-bold text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors">
-                      {guide.name}{guide.age ? `, ${guide.age}` : ''}
-                    </h3>
-                    <span className="text-[10.5px] font-bold text-emerald-700 flex items-center gap-1 shrink-0">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verificado
-                    </span>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-neutral-200/90 shadow-2xs">
+              <Palmtree className="w-12 h-12 text-neutral-300 mx-auto" />
+              <h3 className="font-extrabold text-base text-neutral-800">
+                Nenhum lugar turístico encontrado
+              </h3>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                Tente alterar a província selecionada ou limpar os termos de pesquisa.
+              </p>
+              <button
+                onClick={resetFilters}
+                className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SECTION 2: EXPERIÊNCIAS */}
+      {activeSection === 'experiencias' && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between px-1 text-xs text-neutral-600">
+            <div>
+              <strong className="text-neutral-900 font-bold">{filteredExperiences.length}</strong> experiências e passeios guiados
+            </div>
+            <span className="text-[11px] text-cyan-800 font-semibold bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-200">
+              Mergulho · Safári · Roteiros
+            </span>
+          </div>
+
+          {filteredExperiences.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
+              {filteredExperiences.map((exp) => (
+                <div
+                  key={exp.id}
+                  className="bg-white rounded-3xl border border-neutral-200/90 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                >
+                  {/* Top Image */}
+                  <div
+                    onClick={() => setSelectedExperience(exp)}
+                    className="relative aspect-16/10 bg-neutral-100 overflow-hidden cursor-pointer shrink-0"
+                  >
+                    <img
+                      src={exp.photo}
+                      alt={exp.title}
+                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/25 pointer-events-none" />
+
+                    <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-white">
+                        {exp.categoryLabel}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                        <Clock className="w-3 h-3" /> {exp.duration}
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white pointer-events-none">
+                      <div className="flex items-center gap-1 text-xs font-semibold drop-shadow-xs">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span className="truncate">{exp.placeName}, {exp.province}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs font-bold bg-black/60 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>{exp.rating.toFixed(1)}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-neutral-600 mt-0.5 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>{guide.city}, {guide.province}</span>
-                    </span>
-                    <span aria-hidden="true" className="text-neutral-300">·</span>
-                    <span>{guide.experienceYears} anos exp.</span>
-                    <span aria-hidden="true" className="text-neutral-300">·</span>
-                    <span className="flex items-center gap-0.5 font-semibold text-neutral-800">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
-                      <span>{guide.rating.toFixed(1)}</span>
-                    </span>
+                  {/* Body */}
+                  <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
+                    <div onClick={() => setSelectedExperience(exp)} className="cursor-pointer space-y-1">
+                      <h3 className="font-extrabold text-neutral-900 text-base leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
+                        {exp.title}
+                      </h3>
+                      <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
+                        {exp.shortDescription}
+                      </p>
+
+                      {/* Inclusions */}
+                      <div className="flex flex-wrap gap-1 pt-1.5">
+                        {exp.includedItems.slice(0, 3).map((item, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60 truncate"
+                          >
+                            ✓ {item}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Price indicator */}
+                      <div className="pt-1 text-xs text-neutral-600">
+                        {exp.indicativePrice ? (
+                          <span>
+                            A partir de <strong className="text-emerald-700 font-black text-sm">{exp.indicativePrice.toLocaleString('pt-MZ')} MT</strong> / pessoa
+                          </span>
+                        ) : (
+                          <span>Sob consulta com o guia</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-2 mt-auto border-t border-neutral-100 flex items-center gap-2">
+                      <a
+                        href={exp.guideWhatsapp ? `https://wa.me/${exp.guideWhatsapp}?text=${encodeURIComponent(
+                          `Olá ${exp.guideName || 'Guia'}! Encontrei a experiência *${exp.title}* no Turismo Moçambique e gostaria de agendar informações.`
+                        )}` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (exp.guideId) {
+                            contactUnlockService.triggerContactAttempt(
+                              {
+                                id: exp.guideId,
+                                name: exp.guideName || exp.title,
+                                photo: exp.photo,
+                                phone: '',
+                                whatsapp: exp.guideWhatsapp,
+                                module: 'guide',
+                                moduleLabel: 'Turismo - Experiência',
+                                unlockFee: 1000,
+                              },
+                              false
+                            );
+                          }
+                        }}
+                        className="flex-1 h-10 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                        <span>WhatsApp do Guia</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedExperience(exp)}
+                        className="h-10 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Detalhes</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-neutral-200/90 shadow-2xs">
+              <Waves className="w-12 h-12 text-neutral-300 mx-auto" />
+              <h3 className="font-extrabold text-base text-neutral-800">
+                Nenhuma experiência turística encontrada
+              </h3>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                Tente alterar a província ou a categoria selecionada.
+              </p>
+              <button
+                onClick={resetFilters}
+                className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SECTION 3: GUIAS */}
+      {activeSection === 'guias' && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between px-1 text-xs text-neutral-600">
+            <div>
+              <strong className="text-neutral-900 font-bold">{filteredGuides.length}</strong> guias turísticos credenciados
+            </div>
+            <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              Profissionais Locais com BI
+            </span>
+          </div>
+
+          {filteredGuides.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 items-stretch">
+              {filteredGuides.map((guide) => (
+                <div
+                  key={guide.id}
+                  onClick={() => setSelectedGuide(guide)}
+                  className="bg-white rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-full space-y-3 group active:scale-[0.99] touch-manipulation"
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-start gap-3">
+                      <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-100 shadow-2xs">
+                        <img
+                          src={guide.photo}
+                          alt={guide.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h3 className="font-bold text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors">
+                            {guide.name}{guide.age ? `, ${guide.age}` : ''}
+                          </h3>
+                          <span className="text-[10.5px] font-bold text-emerald-700 flex items-center gap-1 shrink-0">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verificado
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-600 mt-0.5 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{guide.city}, {guide.province}</span>
+                          </span>
+                          <span aria-hidden="true" className="text-neutral-300">·</span>
+                          <span>{guide.experienceYears} anos exp.</span>
+                          <span aria-hidden="true" className="text-neutral-300">·</span>
+                          <span className="flex items-center gap-0.5 font-semibold text-neutral-800">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                            <span>{guide.rating.toFixed(1)}</span>
+                          </span>
+                        </div>
+
+                        <div className="text-[11.5px] text-neutral-500 mt-1 truncate">
+                          <span className="text-neutral-400 font-medium">Especialista em:</span> {guide.specialties.slice(0, 2).join(' · ')}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
+                      {guide.bio}
+                    </p>
                   </div>
 
-                  <div className="text-[11.5px] text-neutral-500 mt-1 truncate">
-                    <span className="text-neutral-400 font-medium">Especialista em:</span> {guide.specialties.slice(0, 2).join(' · ')}
+                  {/* Bottom Actions */}
+                  <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center justify-between gap-2">
+                    <div>
+                      <span className="font-black text-sm text-neutral-900">
+                        {guide.ratePerDay?.toLocaleString('pt-MZ')} MT<span className="text-[11px] text-neutral-400 font-normal">/dia</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={`https://wa.me/${guide.whatsapp}?text=${encodeURIComponent(
+                          `Olá ${guide.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de agendar uma excursão em ${guide.city}.`
+                        )}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const allowed = contactUnlockService.triggerContactAttempt(
+                            {
+                              id: guide.id,
+                              name: guide.name,
+                              photo: guide.photo,
+                              phone: guide.phone,
+                              whatsapp: guide.whatsapp,
+                              module: 'guide',
+                              moduleLabel: 'Guia Turístico',
+                              unlockFee: 1000,
+                            },
+                            guide.isContactUnlocked
+                          );
+                          if (!allowed) {
+                            e.preventDefault();
+                          }
+                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-10 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                        <span>WhatsApp</span>
+                      </a>
+                      <a
+                        href={`tel:${guide.phone}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const allowed = contactUnlockService.triggerContactAttempt(
+                            {
+                              id: guide.id,
+                              name: guide.name,
+                              photo: guide.photo,
+                              phone: guide.phone,
+                              whatsapp: guide.whatsapp,
+                              module: 'guide',
+                              moduleLabel: 'Guia Turístico',
+                              unlockFee: 1000,
+                            },
+                            guide.isContactUnlocked
+                          );
+                          if (!allowed) {
+                            e.preventDefault();
+                          }
+                        }}
+                        className="h-10 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors touch-manipulation cursor-pointer"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Ligar</span>
+                      </a>
+                    </div>
                   </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 text-center space-y-3 border border-neutral-200/90 shadow-2xs">
+              <Compass className="w-12 h-12 text-neutral-300 mx-auto" />
+              <h3 className="font-extrabold text-base text-neutral-800">
+                Nenhum guia credenciado encontrado
+              </h3>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                Tente selecionar outra província ou pesquisar por outra especialidade.
+              </p>
+              <button
+                onClick={resetFilters}
+                className="h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL 1: DETALHES DO LUGAR TURÍSTICO */}
+      {selectedPlace && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            {/* Header Image */}
+            <div className="relative aspect-16/10 w-full bg-neutral-900 shrink-0">
+              <img
+                src={selectedPlace.photo}
+                alt={selectedPlace.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+              <button
+                onClick={() => setSelectedPlace(null)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="absolute bottom-3 left-3 right-3 text-white space-y-0.5">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-600 text-white inline-block mb-1">
+                  {selectedPlace.categoryLabel}
+                </span>
+                <h2 className="text-lg sm:text-xl font-black">
+                  {selectedPlace.name}
+                </h2>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-300">
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>{selectedPlace.city}, {selectedPlace.province}</span>
                 </div>
               </div>
-
-              <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
-                {guide.bio}
-              </p>
             </div>
 
-            {/* Bottom Actions - Aligned with mt-auto */}
-            <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center justify-between gap-2">
+            {/* Scrollable Content */}
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
               <div>
-                <span className="font-black text-sm text-neutral-900">
-                  {guide.ratePerDay?.toLocaleString('pt-MZ')} MT<span className="text-[11px] text-neutral-400 font-normal">/dia</span>
-                </span>
+                <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1">
+                  Sobre esta Atração
+                </h4>
+                <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
+                  {selectedPlace.fullDescription}
+                </p>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              {/* Highlights */}
+              <div>
+                <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1.5">
+                  Destaques & Roteiros
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedPlace.highlights.map((hl, i) => (
+                    <span
+                      key={i}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200"
+                    >
+                      ✨ {hl}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Best Season */}
+              {selectedPlace.bestSeason && (
+                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-xs text-amber-900 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span><strong>Melhor época para visitar:</strong> {selectedPlace.bestSeason}</span>
+                </div>
+              )}
+
+              {/* Associated Guides Section */}
+              <div className="pt-2 border-t border-neutral-100">
+                <h4 className="text-xs font-black uppercase text-neutral-800 tracking-wider mb-2 flex items-center justify-between">
+                  <span>Guias Recomendados para este Lugar</span>
+                  <span className="text-[10px] text-emerald-700 font-bold">Credenciados</span>
+                </h4>
+
+                <div className="space-y-2">
+                  {guides
+                    .filter((g) => g.province.toLowerCase().includes(selectedPlace.province.toLowerCase()) || (selectedPlace.associatedGuideIds && selectedPlace.associatedGuideIds.includes(g.id)))
+                    .slice(0, 2)
+                    .map((g) => (
+                      <div
+                        key={g.id}
+                        className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200/80 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={g.photo}
+                            alt={g.name}
+                            className="w-10 h-10 rounded-xl object-cover shrink-0 border border-neutral-200"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-neutral-900 truncate">{g.name}</div>
+                            <div className="text-[11px] text-neutral-500 truncate">{g.city} · ★ {g.rating.toFixed(1)}</div>
+                          </div>
+                        </div>
+
+                        <a
+                          href={`https://wa.me/${g.whatsapp}?text=${encodeURIComponent(
+                            `Olá ${g.name}! Gostaria de agendar uma visita guiada para *${selectedPlace.name}* (${selectedPlace.city}).`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            contactUnlockService.triggerContactAttempt(
+                              {
+                                id: g.id,
+                                name: g.name,
+                                photo: g.photo,
+                                phone: g.phone,
+                                whatsapp: g.whatsapp,
+                                module: 'guide',
+                                moduleLabel: 'Turismo - Lugar',
+                                unlockFee: 1000,
+                              },
+                              g.isContactUnlocked
+                            );
+                          }}
+                          className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between gap-2 shrink-0">
+              {selectedPlace.coordinates && (
                 <a
-                  href={`https://wa.me/${guide.whatsapp}?text=${encodeURIComponent(
-                    `Olá ${guide.name}! Encontrei o seu perfil no Onde Dormir Moçambique e gostaria de agendar uma excursão em ${guide.city}.`
-                  )}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const allowed = contactUnlockService.triggerContactAttempt(
-                      {
-                        id: guide.id,
-                        name: guide.name,
-                        photo: guide.photo,
-                        phone: guide.phone,
-                        whatsapp: guide.whatsapp,
-                        module: 'guide',
-                        moduleLabel: 'Guia Turístico',
-                        unlockFee: 1000,
-                      },
-                      guide.isContactUnlocked
-                    );
-                    if (!allowed) {
-                      e.preventDefault();
-                    }
-                  }}
+                  href={getDirectionsUrl(selectedPlace.coordinates.lat, selectedPlace.coordinates.lng, selectedPlace.name)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-10 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs touch-manipulation cursor-pointer"
+                  className="h-10 px-3.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
+                  <Navigation2 className="w-3.5 h-3.5 text-neutral-700" />
+                  <span>Ver no Mapa</span>
                 </a>
-                <a
-                  href={`tel:${guide.phone}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const allowed = contactUnlockService.triggerContactAttempt(
-                      {
-                        id: guide.id,
-                        name: guide.name,
-                        photo: guide.photo,
-                        phone: guide.phone,
-                        whatsapp: guide.whatsapp,
-                        module: 'guide',
-                        moduleLabel: 'Guia Turístico',
-                        unlockFee: 1000,
-                      },
-                      guide.isContactUnlocked
-                    );
-                    if (!allowed) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="h-10 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl font-bold text-xs flex items-center gap-1 transition-colors touch-manipulation cursor-pointer"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Ligar</span>
-                </a>
-              </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const placeCity = selectedPlace.city;
+                  setSelectedPlace(null);
+                  setActiveSection('guias');
+                  setSearchQuery(placeCity);
+                }}
+                className="flex-1 h-10 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              >
+                <Compass className="w-4 h-4" />
+                <span>Ver Todos os Guias Deste Destino</span>
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {/* Guide Detail Modal */}
+      {/* MODAL 2: DETALHES DA EXPERIÊNCIA */}
+      {selectedExperience && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div className="relative aspect-16/10 w-full bg-neutral-900 shrink-0">
+              <img
+                src={selectedExperience.photo}
+                alt={selectedExperience.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+              <button
+                onClick={() => setSelectedExperience(null)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="absolute bottom-3 left-3 right-3 text-white space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
+                    {selectedExperience.categoryLabel}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 text-white">
+                    ⏱️ {selectedExperience.duration}
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-black">
+                  {selectedExperience.title}
+                </h2>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-300">
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>{selectedExperience.placeName}, {selectedExperience.province}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+              <div>
+                <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1">
+                  Descrição do Passeio
+                </h4>
+                <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
+                  {selectedExperience.fullDescription}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1.5">
+                  O que está Incluído
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedExperience.includedItems.map((item, i) => (
+                    <div
+                      key={i}
+                      className="p-2 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs font-medium text-neutral-800 flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedExperience.indicativePrice && (
+                <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-center justify-between">
+                  <span>Preço Indicativo por Pessoa:</span>
+                  <strong className="text-emerald-800 text-base font-black">
+                    {selectedExperience.indicativePrice.toLocaleString('pt-MZ')} MT
+                  </strong>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between gap-2 shrink-0">
+              <a
+                href={selectedExperience.guideWhatsapp ? `https://wa.me/${selectedExperience.guideWhatsapp}?text=${encodeURIComponent(
+                  `Olá ${selectedExperience.guideName || 'Guia'}! Gostaria de agendar a experiência *${selectedExperience.title}* no Turismo Moçambique.`
+                )}` : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (selectedExperience.guideId) {
+                    contactUnlockService.triggerContactAttempt(
+                      {
+                        id: selectedExperience.guideId,
+                        name: selectedExperience.guideName || selectedExperience.title,
+                        photo: selectedExperience.photo,
+                        phone: '',
+                        whatsapp: selectedExperience.guideWhatsapp,
+                        module: 'guide',
+                        moduleLabel: 'Turismo - Experiência',
+                        unlockFee: 1000,
+                      },
+                      false
+                    );
+                  }
+                }}
+                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all shadow-md"
+              >
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>Contactar Guia no WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: DETALHES DO GUIA (Preservado) */}
       {selectedGuide && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in fade-in zoom-in-95 duration-150 my-auto">
@@ -530,7 +1300,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             </div>
 
             <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
-              {/* Quick stats pills including Age */}
               <div className="flex items-center gap-2 flex-wrap text-xs">
                 {selectedGuide.age && (
                   <div className="font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
@@ -548,7 +1317,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </div>
               </div>
 
-              {/* 1. Identidade & Verificação (Accordion) */}
+              {/* Accordions */}
               <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-emerald-50/50">
                 <button
                   type="button"
@@ -572,7 +1341,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 )}
               </div>
 
-              {/* 2. Sobre o Guia (Accordion) */}
               <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
                 <button
                   type="button"
@@ -595,7 +1363,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 )}
               </div>
 
-              {/* 3. Especialidades (Accordion) */}
               <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
                 <button
                   type="button"
@@ -655,7 +1422,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
               <a
                 href={`https://wa.me/${selectedGuide.whatsapp}?text=${encodeURIComponent(
-                  `Olá ${selectedGuide.name}! Encontrei o seu perfil no Onde Dormir Moçambique e gostaria de agendar uma excursão em ${selectedGuide.city}.`
+                  `Olá ${selectedGuide.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de agendar uma excursão em ${selectedGuide.city}.`
                 )}`}
                 onClick={(e) => {
                   const allowed = contactUnlockService.triggerContactAttempt(
@@ -679,7 +1446,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 rel="noopener noreferrer"
                 className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4 fill-white" />
                 <span>Contactar no WhatsApp</span>
               </a>
             </div>
@@ -687,7 +1454,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         </div>
       )}
 
-      {/* Biometric KYC Modal */}
+      {/* KYC & Billing Modals (Preserved) */}
       <BiometricVerificationModal
         isOpen={isVerificationOpen}
         onClose={() => setIsVerificationOpen(false)}
@@ -695,7 +1462,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         onVerificationComplete={handleVerificationComplete}
       />
 
-      {/* Official Terms and Conditions Modal */}
       <TermsModal
         isOpen={isTermsModalOpen}
         onClose={() => setIsTermsModalOpen(false)}
@@ -703,10 +1469,9 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           setIsTermsModalOpen(false);
           setIsVerificationOpen(true);
         }}
-        contextText="Ao registar-se como Guia Turístico no Onde Dormir Moçambique, confirme a leitura e aceitação dos Termos Gerais."
+        contextText="Ao registar-se como Guia Turístico no Turismo Moçambique, confirme a leitura e aceitação dos Termos Gerais."
       />
 
-      {/* Official Billing & Activation Invoice Modal (Bill) */}
       {generatedInvoice && (
         <BillingInvoiceModal
           isOpen={isInvoiceOpen}

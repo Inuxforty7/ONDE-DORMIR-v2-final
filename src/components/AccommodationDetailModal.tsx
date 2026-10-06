@@ -221,7 +221,7 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                   <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-600">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span className="truncate">
-                      {accommodation.location.neighborhood}, {accommodation.location.city}
+                      {accommodation.location.neighborhood || accommodation.location.district || accommodation.location.city}, {accommodation.location.city} · {accommodation.location.province}
                     </span>
                   </div>
                 </div>
