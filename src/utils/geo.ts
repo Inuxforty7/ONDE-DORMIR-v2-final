@@ -72,7 +72,11 @@ export function getDirectionsUrl(lat: number, lng: number, placeName?: string): 
 /**
  * Generates direct WhatsApp click-to-chat URL with inquiry message.
  */
-export function getWhatsAppInquiryUrl(phoneClean: string | undefined, accommodationName: string): string {
+export function getWhatsAppInquiryUrl(
+  phoneClean: string | undefined, 
+  accommodationName: string,
+  customMessage?: string
+): string {
   if (!phoneClean) return '#';
   // Clean phone number (remove +, spaces, dashes)
   let cleanNumber = phoneClean.replace(/[^0-9]/g, '');
@@ -80,7 +84,7 @@ export function getWhatsAppInquiryUrl(phoneClean: string | undefined, accommodat
   if (cleanNumber.length === 9 && cleanNumber.startsWith('8')) {
     cleanNumber = `258${cleanNumber}`;
   }
-  const message = `Olá! Encontrei o estabelecimento *${accommodationName}* no aplicativo *Onde Dormir*. Gostaria de saber a disponibilidade atual de quartos e os preços das diárias. Obrigado!`;
+  const message = customMessage || `Olá! Encontrei a *${accommodationName}* no aplicativo *Onde Dormir*. Gostaria de confirmar disponibilidade e preços para quarto privado/casal. Obrigado!`;
   return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 }
 

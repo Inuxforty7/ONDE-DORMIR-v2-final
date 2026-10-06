@@ -14,6 +14,27 @@ export type AmenityId =
   | 'hot_water' 
   | 'security';
 
+export type PropertyServiceId = 
+  | 'bar' 
+  | 'restaurant' 
+  | 'pool' 
+  | 'parking' 
+  | 'wifi' 
+  | 'generator' 
+  | 'reception_24h' 
+  | 'security' 
+  | 'breakfast';
+
+export type RoomFeatureId = 
+  | 'ac' 
+  | 'double_bed' 
+  | 'private_bathroom' 
+  | 'tv' 
+  | 'hot_water' 
+  | 'balcony' 
+  | 'fan' 
+  | 'desk';
+
 export type VerificationStatus = 'verified_in_person' | 'verified' | 'unverified' | 'pending';
 
 export interface LocationCoordinates {
@@ -50,6 +71,8 @@ export interface Accommodation {
   phone: string;
   whatsapp?: string;
   amenities: AmenityId[];
+  propertyServices?: PropertyServiceId[];
+  roomFeatures?: RoomFeatureId[];
   photos: string[];
   verificationStatus: VerificationStatus;
   verifiedAt?: string;

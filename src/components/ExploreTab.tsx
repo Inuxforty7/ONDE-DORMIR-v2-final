@@ -107,6 +107,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   // 5. Verification & Service Filters
   const [verificationLevel, setVerificationLevel] = useState<'all' | 'verified_in_person' | 'verified'>('all');
   const [only24h, setOnly24h] = useState(false);
+  const [onlyCoupleRooms, setOnlyCoupleRooms] = useState(false);
 
   // 6. Amenities Filter
   const [selectedAmenities, setSelectedAmenities] = useState<AmenityId[]>([]);
@@ -220,6 +221,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     setSelectedDistrict('all');
     setVerificationLevel('all');
     setOnly24h(false);
+    setOnlyCoupleRooms(false);
     setSelectedAmenities([]);
     setPriceFilter('all');
     setSortBy('distance');
@@ -320,6 +322,17 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       result = result.filter((item) => item.isOpen24h);
     }
 
+    // 7.1. Couple / Private Room Filter
+    if (onlyCoupleRooms) {
+      result = result.filter(
+        (item) =>
+          item.amenities.includes('private_bathroom') ||
+          item.description.toLowerCase().includes('casal') ||
+          item.description.toLowerCase().includes('suíte') ||
+          item.description.toLowerCase().includes('privativo')
+      );
+    }
+
     // 8. Amenities filter
     if (selectedAmenities.length > 0) {
       result = result.filter((item) =>
@@ -397,6 +410,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     (selectedType !== 'all' ? 1 : 0) +
     (verificationLevel !== 'all' ? 1 : 0) +
     (only24h ? 1 : 0) +
+    (onlyCoupleRooms ? 1 : 0) +
     (priceFilter !== 'all' ? 1 : 0) +
     (isNearMeActive ? 1 : 0) +
     selectedAmenities.length;
@@ -416,17 +430,6 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <p className="text-[11px] sm:text-xs text-sky-100 font-medium mt-1 leading-snug">
             Pensões, Guest Houses e Residenciais verificadas · Alojamento seguro perto de si.
           </p>
-          <div className="flex items-center gap-1.5 mt-2 text-[10px] text-sky-300/90 font-bold uppercase tracking-wider flex-wrap">
-            <span>Localizar</span>
-            <span className="text-sky-500">→</span>
-            <span>Filtrar</span>
-            <span className="text-sky-500">→</span>
-            <span>Comparar</span>
-            <span className="text-sky-500">→</span>
-            <span>Verificar</span>
-            <span className="text-sky-500">→</span>
-            <span className="text-amber-300">Contactar</span>
-          </div>
         </div>
       </div>
 
@@ -524,32 +527,54 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           </div>
         </div>
 
-        {/* Quick Horizontal Filter Pills */}
+        {/* Quick Horizontal Filter Pills: Prioritizing Pensões, Guest Houses, Quarto Casal, Preço, AC, WC, Wi-Fi, Parque, Piscina, Bar, 24h */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar text-xs">
-          {/* Quick Verificados */}
+          {/* Quick Pensões */}
           <button
-            onClick={() => setVerificationLevel(verificationLevel === 'all' ? 'verified_in_person' : 'all')}
+            onClick={() => setSelectedType(selectedType === 'pensao' ? 'all' : 'pensao')}
             className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
-              verificationLevel !== 'all'
-                ? 'bg-emerald-600 text-white border-emerald-600'
+              selectedType === 'pensao'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                 : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            <ShieldCheck className="w-3 h-3" />
-            <span>Verificados Presencialmente</span>
+            <span>🏠 Pensões</span>
           </button>
 
-          {/* Quick 24h */}
+          {/* Quick Guest Houses */}
           <button
-            onClick={() => setOnly24h(!only24h)}
+            onClick={() => setSelectedType(selectedType === 'guest_house' ? 'all' : 'guest_house')}
             className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
-              only24h
-                ? 'bg-amber-600 text-white border-amber-600'
+              selectedType === 'guest_house'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                 : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            <Clock className="w-3 h-3" />
-            <span>24 Horas</span>
+            <span>🏡 Guest Houses</span>
+          </button>
+
+          {/* Quick Quarto Casal / Privativo */}
+          <button
+            onClick={() => setOnlyCoupleRooms(!onlyCoupleRooms)}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              onlyCoupleRooms
+                ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <span>🛏️ Quarto Casal</span>
+          </button>
+
+          {/* Quick Mais Baratos */}
+          <button
+            onClick={() => setSortBy(sortBy === 'price_asc' ? 'distance' : 'price_asc')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              sortBy === 'price_asc'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <span>💰 Mais Baratos</span>
           </button>
 
           {/* Quick AC */}
@@ -557,35 +582,11 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             onClick={() => toggleAmenity('ac')}
             className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
               selectedAmenities.includes('ac')
-                ? 'bg-emerald-600 text-white border-emerald-600'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                 : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
             }`}
           >
             <span>❄️ AC</span>
-          </button>
-
-          {/* Quick Wi-Fi */}
-          <button
-            onClick={() => toggleAmenity('wifi')}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
-              selectedAmenities.includes('wifi')
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            <span>📶 Wi-Fi</span>
-          </button>
-
-          {/* Quick Gerador */}
-          <button
-            onClick={() => toggleAmenity('generator')}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
-              selectedAmenities.includes('generator')
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            <span>⚡ Gerador</span>
           </button>
 
           {/* Quick Banho Privativo */}
@@ -593,11 +594,85 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             onClick={() => toggleAmenity('private_bathroom')}
             className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
               selectedAmenities.includes('private_bathroom')
-                ? 'bg-emerald-600 text-white border-emerald-600'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                 : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            <span>🚿 Banho Privativo</span>
+            <span>🚿 WC Privativo</span>
+          </button>
+
+          {/* Quick Wi-Fi */}
+          <button
+            onClick={() => toggleAmenity('wifi')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              selectedAmenities.includes('wifi')
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <span>📶 Wi-Fi</span>
+          </button>
+
+          {/* Quick Parque / Estacionamento */}
+          <button
+            onClick={() => toggleAmenity('parking')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              selectedAmenities.includes('parking')
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <span>🅿️ Estacionamento</span>
+          </button>
+
+          {/* Quick Piscina */}
+          <button
+            onClick={() => toggleAmenity('pool')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              selectedAmenities.includes('pool')
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <span>🏊 Piscina</span>
+          </button>
+
+          {/* Quick Bar */}
+          <button
+            onClick={() => toggleAmenity('bar')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              selectedAmenities.includes('bar')
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <span>🍸 Bar</span>
+          </button>
+
+          {/* Quick 24h */}
+          <button
+            onClick={() => setOnly24h(!only24h)}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              only24h
+                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <Clock className="w-3 h-3" />
+            <span>24 Horas</span>
+          </button>
+
+          {/* Quick Verificados */}
+          <button
+            onClick={() => setVerificationLevel(verificationLevel === 'all' ? 'verified_in_person' : 'all')}
+            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
+              verificationLevel !== 'all'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3" />
+            <span>Verificados</span>
           </button>
         </div>
 

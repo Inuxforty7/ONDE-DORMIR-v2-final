@@ -4,18 +4,15 @@ import {
   Heart, 
   ShieldCheck, 
   MessageCircle, 
-  Navigation2, 
-  Phone,
-  Clock,
-  Star,
-  Award,
   Crown
 } from 'lucide-react';
 import { Accommodation } from '../types';
-import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
-import { ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
-import { getPlatformTenureText } from '../utils/tenure';
+import { formatDistanceShort, getWhatsAppInquiryUrl } from '../utils/geo';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { 
+  getPropertyServicesForAccommodation, 
+  getRoomFeaturesForAccommodation 
+} from '../utils/amenities';
 
 interface AccommodationCardProps {
   accommodation: Accommodation;
@@ -25,38 +22,62 @@ interface AccommodationCardProps {
   layout?: 'compact' | 'detailed';
 }
 
+// Key conditions prioritized: Quarto Casal, AC, WC Privativo, Wi-Fi, Estacionamento, Piscina, Bar, Restaurante, 24h
+const getKeyConditions = (acc: Accommodation): string[] => {
+  const conditions: string[] = [];
+  const propertyServices = getPropertyServicesForAccommodation(acc);
+  const roomFeatures = getRoomFeaturesForAccommodation(acc);
+
+  const hasDoubleBed = roomFeatures.some((r) => r.id === 'double_bed');
+  const hasPrivateBathroom = roomFeatures.some((r) => r.id === 'private_bathroom');
+  const hasAC = roomFeatures.some((r) => r.id === 'ac');
+  const hasWifi = propertyServices.some((s) => s.id === 'wifi');
+  const hasBar = propertyServices.some((s) => s.id === 'bar');
+  const hasRestaurant = propertyServices.some((s) => s.id === 'restaurant');
+  const hasPool = propertyServices.some((s) => s.id === 'pool');
+  const hasParking = propertyServices.some((s) => s.id === 'parking');
+  const hasGenerator = propertyServices.some((s) => s.id === 'generator') || acc.isOpen24h;
+
+  // Prioritize room comfort first
+  if (hasDoubleBed) conditions.push('Quarto Casal');
+  if (hasPrivateBathroom) conditions.push('WC Privativo');
+  if (hasAC) conditions.push('AC');
+  if (hasWifi) conditions.push('Wi-Fi');
+
+  // Then real property services (Bar, Restaurante, Piscina, Parque, 24h)
+  if (hasBar) conditions.push('Bar');
+  if (hasRestaurant) conditions.push('Restaurante');
+  if (hasPool) conditions.push('Piscina');
+  if (hasParking) conditions.push('Estacionamento');
+  if (hasGenerator) conditions.push('24h');
+
+  return conditions.slice(0, 4);
+};
+
 export const AccommodationCard: React.FC<AccommodationCardProps> = ({
   accommodation,
   onSelect,
   isSaved,
   onToggleSave,
 }) => {
-  const typeMeta = ACCOMMODATION_TYPE_LABELS[accommodation.type] || {
-    label: accommodation.type,
-    badgeColor: 'bg-neutral-900/80 text-white',
-  };
-
-  const whatsappUrl = getWhatsAppInquiryUrl(accommodation.whatsapp, accommodation.name);
-  const directionsUrl = getDirectionsUrl(
-    accommodation.location.lat,
-    accommodation.location.lng,
-    accommodation.name
+  const whatsappUrl = getWhatsAppInquiryUrl(
+    accommodation.whatsapp,
+    accommodation.name,
+    `Olá! Vi a ${accommodation.name} no Onde Dormir e gostaria de confirmar disponibilidade de quarto casal/privativo.`
   );
-
   const minPrice = accommodation.priceEstimate?.approxMin;
-  const rating = accommodation.rating || 4.5;
-  const reviewsCount = accommodation.reviewsCount || 20;
+  const keyConditions = getKeyConditions(accommodation);
 
   return (
-    <div className={`bg-white rounded-3xl border transition-all overflow-hidden flex flex-col h-full group ${
+    <div className={`bg-white rounded-3xl border transition-all overflow-hidden flex flex-col h-full group active:scale-[0.99] touch-manipulation ${
       accommodation.isPremium 
-        ? 'border-amber-300 ring-2 ring-amber-400/20 shadow-sm' 
+        ? 'border-amber-300 ring-2 ring-amber-400/20 shadow-xs' 
         : 'border-neutral-200/90 hover:border-emerald-300 shadow-2xs hover:shadow-md'
     }`}>
-      {/* Top Image area */}
+      {/* 1. Foto Principal */}
       <div 
         onClick={() => onSelect(accommodation)}
-        className="relative aspect-[16/10] sm:aspect-[16/9] bg-neutral-100 overflow-hidden cursor-pointer shrink-0"
+        className="relative aspect-[16/9] bg-neutral-100 overflow-hidden cursor-pointer shrink-0"
       >
         <img
           src={accommodation.photos[0]}
@@ -64,176 +85,97 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/30 pointer-events-none" />
 
-        {/* Top badges */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-black/65 backdrop-blur-md text-white">
-              {typeMeta.label}
+        {/* Premium Badge (se aplicável) */}
+        {accommodation.isPremium && (
+          <div className="absolute top-2.5 left-2.5 pointer-events-none">
+            <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-md shadow-xs">
+              <Crown className="w-3 h-3 fill-zinc-950" /> PREMIUM
             </span>
-
-            {accommodation.photos && accommodation.photos.length > 1 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-md text-white">
-                {accommodation.photos.length} fotos
-              </span>
-            )}
-
-            {accommodation.isPremium && (
-              <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-lg shadow-xs">
-                <Crown className="w-3 h-3 fill-zinc-950" /> PREMIUM
-              </span>
-            )}
           </div>
+        )}
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSave(accommodation.id);
-            }}
-            className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all active:scale-90 flex items-center justify-center cursor-pointer pointer-events-auto shrink-0"
-            title={isSaved ? 'Remover dos guardados' : 'Guardar hospedagem'}
-            aria-label={isSaved ? 'Remover dos guardados' : 'Guardar hospedagem'}
-          >
-            <Heart
-              className={`w-4.5 h-4.5 transition-colors ${
-                isSaved ? 'fill-rose-500 text-rose-500' : 'text-white'
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Bottom image overlay: Status & Distance */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white pointer-events-none">
-          <div className="flex items-center gap-1.5">
-            {accommodation.verificationStatus === 'verified_in_person' ? (
-              <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs">
-                <ShieldCheck className="w-3 h-3" /> Verificado Presencialmente
-              </span>
-            ) : accommodation.verificationStatus === 'verified' ? (
-              <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs">
-                <ShieldCheck className="w-3 h-3" /> Verificado Oficial
-              </span>
-            ) : accommodation.verificationStatus === 'pending' || accommodation.isPendingVerification ? (
-              <span className="flex items-center gap-1 text-[11px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-md shadow-xs">
-                <Clock className="w-3 h-3" /> Verificação Pendente
-              </span>
-            ) : null}
-
-            {accommodation.isOpen24h && (
-              <span className="flex items-center gap-1 text-[11px] font-bold bg-black/60 text-white px-2 py-0.5 rounded-md backdrop-blur-xs">
-                <Clock className="w-3 h-3 text-amber-300" /> 24h
-              </span>
-            )}
-          </div>
-
-          {accommodation.distanceKm !== undefined && (
-            <span className="bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 text-[11px] font-black px-2.5 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1 shadow-sm">
-              <Navigation2 className="w-3 h-3 text-emerald-300" />
-              <span>{formatDistance(accommodation.distanceKm)}</span>
-            </span>
-          )}
-        </div>
+        {/* Botão Favorito */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSave(accommodation.id);
+          }}
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-xs text-white hover:bg-black/60 active:scale-90 flex items-center justify-center transition-all cursor-pointer"
+          title={isSaved ? 'Remover dos guardados' : 'Guardar alojamento'}
+          aria-label={isSaved ? 'Remover dos guardados' : 'Guardar alojamento'}
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${
+              isSaved ? 'fill-rose-500 text-rose-500' : 'text-white'
+            }`}
+          />
+        </button>
       </div>
 
-      {/* Card Body */}
-      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
+      {/* Card Body: Nome, Verificação, Distância, Preço, Condições, WhatsApp */}
+      <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between space-y-2.5">
         <div 
           onClick={() => onSelect(accommodation)}
-          className="cursor-pointer space-y-1"
+          className="cursor-pointer space-y-1.5"
         >
-          {/* 1. Nome do Alojamento */}
+          {/* 2. Nome */}
           <h3 className="font-extrabold text-neutral-900 text-base leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
             {accommodation.name}
           </h3>
 
-          {/* 2. Localização & Distância */}
-          <div className="flex items-center gap-1.5 text-xs text-neutral-600 truncate">
+          {/* 6. Verificação */}
+          {accommodation.verificationStatus === 'verified_in_person' ? (
+            <div className="flex items-center gap-1 text-xs font-bold text-emerald-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Verificado Presencialmente</span>
+            </div>
+          ) : accommodation.verificationStatus === 'verified' ? (
+            <div className="flex items-center gap-1 text-xs font-bold text-emerald-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Verificado</span>
+            </div>
+          ) : null}
+
+          {/* 4. Distância e Localização */}
+          <div className="flex items-center gap-1.5 text-xs text-neutral-600 truncate font-medium">
             <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span className="font-semibold text-neutral-800 truncate">
-              {accommodation.location.neighborhood || accommodation.location.district || accommodation.location.city}, {accommodation.location.city}
+            <span className="truncate">
+              {accommodation.location.neighborhood || accommodation.location.district || accommodation.location.city}
             </span>
-            {accommodation.distanceKm !== undefined ? (
+            {accommodation.distanceKm !== undefined && (
               <>
                 <span aria-hidden="true" className="text-neutral-300">·</span>
-                <span className="text-emerald-700 font-bold text-[11px] shrink-0 truncate flex items-center gap-0.5">
-                  <Navigation2 className="w-3 h-3 text-emerald-600 inline" />
-                  {formatDistance(accommodation.distanceKm)}
-                </span>
-              </>
-            ) : (
-              <>
-                <span aria-hidden="true" className="text-neutral-300">·</span>
-                <span className="text-neutral-500 text-[11px] shrink-0 truncate">
-                  {getPlatformTenureText(accommodation.registeredAt, accommodation.platformTenure, accommodation.id)}
+                <span className="text-emerald-700 font-bold shrink-0">
+                  {formatDistanceShort(accommodation.distanceKm).replace('.', ',')}
                 </span>
               </>
             )}
           </div>
 
-          {/* 3. Ponto de Referência (Se existir) */}
-          {accommodation.location.landmark && (
-            <div className="text-[11px] text-neutral-500 line-clamp-1 flex items-center gap-1 pt-0.5">
-              <span className="text-neutral-400 font-bold">Ref:</span>
-              <span className="truncate">{accommodation.location.landmark}</span>
+          {/* 3. Preço */}
+          <div className="text-xs text-neutral-600 pt-0.5">
+            {minPrice ? (
+              <span>
+                A partir de <strong className="text-emerald-700 text-sm font-black">{minPrice.toLocaleString('pt-MZ')} MT</strong><span className="text-[11px] text-neutral-400">/noite</span>
+              </span>
+            ) : (
+              <span className="font-bold text-neutral-700">Sob consulta</span>
+            )}
+          </div>
+
+          {/* 5. Condições Principais */}
+          {keyConditions.length > 0 && (
+            <div className="text-[11.5px] text-neutral-500 font-medium truncate pt-0.5">
+              {keyConditions.join(' · ')}
             </div>
           )}
-
-          {/* 4. Condições & Comodidades Principais (COMPARAR) */}
-          <div className="flex flex-wrap gap-1 pt-1">
-            {accommodation.amenities?.includes('ac') && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-                ❄️ AC
-              </span>
-            )}
-            {accommodation.amenities?.includes('wifi') && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-                📶 Wi-Fi
-              </span>
-            )}
-            {accommodation.amenities?.includes('generator') && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80">
-                ⚡ Gerador 24h
-              </span>
-            )}
-            {accommodation.amenities?.includes('parking') && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-                🅿️ Parque
-              </span>
-            )}
-            {accommodation.amenities?.includes('private_bathroom') && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200/60">
-                🚿 Banho Privativo
-              </span>
-            )}
-            {accommodation.isOpen24h && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                🕒 24 Horas
-              </span>
-            )}
-          </div>
-
-          {/* 5. Preço & Avaliação */}
-          <div className="flex items-center justify-between pt-1">
-            {minPrice ? (
-              <div className="text-xs text-neutral-600">
-                A partir de <strong className="text-emerald-700 text-sm sm:text-base font-black">{minPrice.toLocaleString('pt-MZ')} MT</strong><span className="text-[11px] text-neutral-400">/noite</span>
-              </div>
-            ) : (
-              <div className="text-xs font-bold text-neutral-700">Consulte diárias</div>
-            )}
-
-            <div className="flex items-center gap-1 text-xs font-bold text-neutral-800">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-              <span>{rating.toFixed(1)}</span>
-              <span className="text-neutral-400 font-normal text-[11px]">({reviewsCount})</span>
-            </div>
-          </div>
         </div>
 
-        {/* Action Row - Clear distinction between WhatsApp (chat), Ligar (voice call), and Rota (maps) */}
-        <div className="pt-2 mt-auto border-t border-neutral-100 flex items-center gap-2">
-          {/* 1. WhatsApp Mensagem */}
+        {/* 7. WhatsApp (Ação Principal Direta) */}
+        <div className="pt-2 mt-auto border-t border-neutral-100">
           <a
             href={whatsappUrl}
             target="_blank"
@@ -257,54 +199,11 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
                 e.preventDefault();
               }
             }}
-            className="flex-1 h-11 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation min-h-[44px]"
-            title="Enviar mensagem no WhatsApp"
+            className="w-full h-11 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer touch-manipulation"
+            title="Contactar directamente via WhatsApp"
           >
             <MessageCircle className="w-4 h-4 fill-white shrink-0" />
             <span>WhatsApp</span>
-          </a>
-
-          {/* 2. Chamada Telefónica Direta */}
-          <a
-            href={`tel:${accommodation.phone.replace(/\s+/g, '')}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              const allowed = contactUnlockService.triggerContactAttempt(
-                {
-                  id: accommodation.id,
-                  name: accommodation.name,
-                  photo: accommodation.photos?.[0],
-                  phone: accommodation.phone,
-                  whatsapp: accommodation.whatsapp,
-                  module: 'accommodation',
-                  moduleLabel: 'Onde Dormir',
-                  unlockFee: 1000,
-                },
-                accommodation.isContactUnlocked
-              );
-              if (!allowed) {
-                e.preventDefault();
-              }
-            }}
-            className="h-11 px-3.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 active:scale-95 text-neutral-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 touch-manipulation min-h-[44px]"
-            title="Fazer chamada telefónica de voz"
-            aria-label="Fazer chamada telefónica"
-          >
-            <Phone className="w-3.5 h-3.5 text-neutral-700 shrink-0" />
-            <span>Ligar</span>
-          </a>
-
-          {/* 3. Abrir Rota GPS */}
-          <a
-            href={directionsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="w-11 h-11 rounded-xl bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center transition-all cursor-pointer shrink-0 touch-manipulation min-h-[44px] min-w-[44px]"
-            title="Abrir rota no Google Maps"
-            aria-label="Abrir rota no Google Maps"
-          >
-            <Navigation2 className="w-4 h-4 text-emerald-700" />
           </a>
         </div>
       </div>

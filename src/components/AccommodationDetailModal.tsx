@@ -33,7 +33,12 @@ import {
 import { Accommodation, AmenityId } from '../types';
 import { formatDistance, getDirectionsUrl, getWhatsAppInquiryUrl } from '../utils/geo';
 import { getPlatformTenureText } from '../utils/tenure';
-import { AMENITIES_CATALOG, ACCOMMODATION_TYPE_LABELS } from '../utils/amenities';
+import { 
+  AMENITIES_CATALOG, 
+  ACCOMMODATION_TYPE_LABELS,
+  getPropertyServicesForAccommodation,
+  getRoomFeaturesForAccommodation
+} from '../utils/amenities';
 import { analyticsService } from '../services/analyticsService';
 import { propertyService } from '../services/propertyService';
 import { contactUnlockService } from '../services/contactUnlockService';
@@ -102,6 +107,9 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
     setReportState('sent');
     setTimeout(() => setReportState('idle'), 4000);
   };
+
+  const propertyServices = getPropertyServicesForAccommodation(accommodation);
+  const roomFeatures = getRoomFeaturesForAccommodation(accommodation);
 
   const whatsappUrl = getWhatsAppInquiryUrl(accommodation.whatsapp, accommodation.name);
   const directionsUrl = getDirectionsUrl(
@@ -317,34 +325,71 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                 </div>
               </button>
               {expandedSections.amenities && (
-                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
-                    {accommodation.amenities.map((amenityId) => {
-                      const item = AMENITIES_CATALOG[amenityId];
-                      if (!item) return null;
-                      return (
-                        <div
-                          key={amenityId}
-                          className="flex items-center gap-2 p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80"
-                        >
-                          <div className="shrink-0">{AMENITY_ICONS[amenityId]}</div>
-                          <div className="truncate">
-                            <span className="text-xs font-bold text-neutral-800 block truncate">
-                              {item.name}
-                            </span>
-                            <span className="text-[10px] text-neutral-500 truncate block">
-                              {item.shortDesc}
-                            </span>
+                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-3.5">
+                  {/* Serviços do Estabelecimento (Property Services) */}
+                  {propertyServices.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-1.5 text-xs font-black uppercase text-neutral-500 tracking-wider">
+                        <span>🏢 Serviços do Estabelecimento</span>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md font-bold">
+                          {propertyServices.length}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {propertyServices.map((service) => (
+                          <div
+                            key={service.id}
+                            className="flex items-center gap-2 p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                            <div className="truncate">
+                              <span className="text-xs font-bold text-neutral-800 block truncate">
+                                {service.name}
+                              </span>
+                              <span className="text-[10px] text-neutral-500 truncate block">
+                                {service.shortDesc}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comodidades do Quarto (Room Features) */}
+                  {roomFeatures.length > 0 && (
+                    <div className="space-y-1.5 pt-1 border-t border-neutral-100">
+                      <div className="flex items-center gap-1.5 text-xs font-black uppercase text-neutral-500 tracking-wider">
+                        <span>🛏️ Comodidades do Quarto</span>
+                        <span className="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded-md font-bold">
+                          {roomFeatures.length}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {roomFeatures.map((room) => (
+                          <div
+                            key={room.id}
+                            className="flex items-center gap-2 p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+                            <div className="truncate">
+                              <span className="text-xs font-bold text-neutral-800 block truncate">
+                                {room.name}
+                              </span>
+                              <span className="text-[10px] text-neutral-500 truncate block">
+                                {room.shortDesc}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* 3. Localização & Ponto de Referência (Card Interativo com Toque Intuitivo) */}
+            {/* 3. Localização & Ponto de Referência (Hierarquia Completa) */}
             <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 overflow-hidden transition-all">
               <button
                 type="button"
@@ -360,7 +405,7 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                       Localização & Ponto de Referência
                     </h3>
                     <p className="text-[11px] text-neutral-500 truncate mt-0.5">
-                      {accommodation.location.neighborhood}, {accommodation.location.city}
+                      {accommodation.location.neighborhood}, {accommodation.location.city} · {accommodation.location.province}
                     </p>
                   </div>
                 </div>
@@ -370,24 +415,59 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
               </button>
               
               {expandedSections.location && (
-                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-2">
-                  <div className="flex items-start gap-2 pt-2">
+                <div className="px-4 pb-4 pt-2 border-t border-neutral-200/60 bg-white animate-in fade-in duration-150 space-y-3">
+                  {/* Location Breadcrumb Hierarchy */}
+                  <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-700 flex items-center gap-1 flex-wrap">
+                    <span className="text-neutral-400">Moçambique</span>
+                    <span className="text-neutral-300">›</span>
+                    <span className="text-neutral-800">{accommodation.location.province}</span>
+                    <span className="text-neutral-300">›</span>
+                    <span className="text-neutral-800">{accommodation.location.city}</span>
+                    {accommodation.location.district && (
+                      <>
+                        <span className="text-neutral-300">›</span>
+                        <span className="text-neutral-800">{accommodation.location.district}</span>
+                      </>
+                    )}
+                    <span className="text-neutral-300">›</span>
+                    <span className="text-emerald-700 font-bold">{accommodation.location.neighborhood}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2 pt-1">
                     <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div className="leading-snug">
                       <span className="font-bold text-neutral-900 block text-xs sm:text-sm">
-                        {accommodation.location.neighborhood}, {accommodation.location.city}
+                        {accommodation.location.address}
                       </span>
                       <span className="text-neutral-500 block text-[11px] mt-0.5">
-                        {accommodation.location.address} · {accommodation.location.province}
+                        Bairro {accommodation.location.neighborhood}, {accommodation.location.city}
                       </span>
                     </div>
                   </div>
 
                   {accommodation.location.landmark && (
-                    <div className="pl-6 text-xs text-neutral-600 bg-neutral-50 p-2.5 rounded-xl border border-neutral-200/70">
-                      <strong className="text-neutral-900 font-semibold">Ponto de referência:</strong> {accommodation.location.landmark}
+                    <div className="text-xs text-neutral-700 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/70">
+                      <strong className="text-amber-950 font-bold">Ponto de referência:</strong> {accommodation.location.landmark}
                     </div>
                   )}
+
+                  {/* Exact Pin Location & Directions */}
+                  <div className="flex items-center justify-between p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-200 text-xs text-emerald-950">
+                    <div className="flex items-center gap-1.5">
+                      <Navigation2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span className="text-[11px] font-medium">
+                        Pin GPS: <strong>{accommodation.location.lat.toFixed(4)}, {accommodation.location.lng.toFixed(4)}</strong>
+                      </span>
+                    </div>
+                    <a
+                      href={directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[11px] transition-colors shrink-0"
+                    >
+                      Rota no Mapa
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
