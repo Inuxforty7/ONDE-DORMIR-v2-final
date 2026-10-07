@@ -20,6 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
+import { P2PGreenHeartIcon, P2PBlueDiamondIcon, P2PGoldenCrownIcon } from './HeartLinkP2PIcons';
 import { TermsModal } from './TermsModal';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 
@@ -239,7 +240,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 <div className="flex items-center gap-2.5">
                   <MessageSquare className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
                   <p className="font-bold text-rose-900 leading-relaxed text-[11.5px] sm:text-xs min-w-0 flex-1">
-                    Veja perfis, conheça pessoas e converse através do Chat P2P.
+                    Acesso às salas de conversa P2P e contactos diretos.
                   </p>
                 </div>
 
@@ -255,12 +256,19 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               {/* 3 Packages Cards */}
               <div className="space-y-2">
                 <label className="text-[11px] sm:text-xs font-black text-neutral-800 uppercase tracking-wide block">
-                  ESCOLHA O SEU PLANO DE CHAT P2P:
+                  ESCOLHA O SEU PLANO:
                 </label>
 
                 <div className="grid grid-cols-1 gap-2 sm:gap-2.5">
                   {VISIBILITY_PLANS.map((plan) => {
                     const isSelected = selectedPlanId === plan.id;
+                    const IconComponent =
+                      plan.id === 'vis_24h'
+                        ? P2PGreenHeartIcon
+                        : plan.id === 'vis_7d'
+                        ? P2PBlueDiamondIcon
+                        : P2PGoldenCrownIcon;
+
                     return (
                       <div
                         key={plan.id}
@@ -271,17 +279,20 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
-                        {/* Top Header: Title & Price */}
+                        {/* Top Header: Icon, Title & Price */}
                         <div className="flex items-center justify-between gap-2 pr-6">
-                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
-                            <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight whitespace-nowrap">
-                              {plan.name}
-                            </span>
-                            {plan.popularLabel && (
-                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-400 text-amber-950 border border-amber-500/30 whitespace-nowrap">
-                                ⭐ {plan.popularLabel}
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <IconComponent className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 filter drop-shadow-xs" />
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                              <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight whitespace-nowrap">
+                                {plan.name}
                               </span>
-                            )}
+                              {plan.popularLabel && (
+                                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-400 text-amber-950 border border-amber-500/30 whitespace-nowrap">
+                                  ⭐ {plan.popularLabel}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="text-right shrink-0">
@@ -409,7 +420,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   disabled={phoneNumber.length < 8 || !agreedToTerms}
                   className="flex-1 h-11 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
-                  <span>Pagar {selectedPlan.priceMt} MT e Ativar Chat P2P</span>
+                  <span>Pagar {selectedPlan.priceMt} MT e Ativar</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

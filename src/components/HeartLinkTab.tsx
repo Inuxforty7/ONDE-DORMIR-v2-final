@@ -42,7 +42,7 @@ import { INITIAL_HEARTLINK_PROFILES } from '../data/heartLinkProfiles';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { HeartLinkTwoHeartsIcon, TwoWeddingRingsIcon, TwoFriendsEmblemIcon } from './HeartLinkLogo';
-import { WeddingConfirmedEmblemBadge, FriendshipConfirmedEmblemBadge } from './HeartLinkConfirmedEmblems';
+import { ConfirmedConnectionsCard } from './HeartLinkConfirmedEmblems';
 import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
 import { HeartLinkBubblingHearts } from './HeartLinkBubblingHearts';
 import { HeartLinkP2PCapsule } from './HeartLinkP2PCapsule';
@@ -100,7 +100,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     return saved ? JSON.parse(saved) : ['hl-1', 'hl-5'];
   });
 
-  const [activeSubTab, setActiveSubTab] = useState<'pessoas' | 'confirmados' | 'confirmadas'>('pessoas');
+  const [activeSubTab, setActiveSubTab] = useState<'pessoas' | 'amizades' | 'namoros' | 'confirmados' | 'confirmadas'>('pessoas');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Real Persistent Friendships & Marriages
@@ -741,18 +741,20 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
           </div>
         </div>
 
-        {/* Sub Navigation Badges: Confirmados & Confirmadas */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 mt-2.5 pt-2.5 border-t border-white/20 max-w-md mx-auto w-full">
-          <WeddingConfirmedEmblemBadge
-            count={confirmedMarriagesCount}
-            isActive={activeSubTab === 'confirmados'}
-            onClick={() => setActiveSubTab(activeSubTab === 'confirmados' ? 'pessoas' : 'confirmados')}
-          />
-
-          <FriendshipConfirmedEmblemBadge
-            count={confirmedFriendshipsCount}
-            isActive={activeSubTab === 'confirmadas'}
-            onClick={() => setActiveSubTab(activeSubTab === 'confirmadas' ? 'pessoas' : 'confirmadas')}
+        {/* Sub Navigation: Conexões Confirmadas Card */}
+        <div className="mt-2.5 pt-2.5 border-t border-white/20 w-full">
+          <ConfirmedConnectionsCard
+            friendshipsCount={confirmedFriendshipsCount}
+            datingCount={56}
+            marriagesCount={confirmedMarriagesCount}
+            activeSubTab={activeSubTab}
+            onSelectSubTab={(tab) => {
+              if (activeSubTab === tab) {
+                setActiveSubTab('pessoas');
+              } else {
+                setActiveSubTab(tab as any);
+              }
+            }}
           />
         </div>
       </div>
