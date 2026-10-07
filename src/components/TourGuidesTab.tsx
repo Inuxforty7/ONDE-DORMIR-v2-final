@@ -52,7 +52,23 @@ const getPlaceCategoryShort = (place: TourismPlace) => {
 
 const getPlaceHighlightsShort = (place: TourismPlace) => {
   if (!place.highlights || place.highlights.length === 0) return '';
-  return place.highlights.slice(0, 3).join(' · ');
+  const filtered = place.highlights.filter(
+    (h) => h && h.trim() && !h.toLowerCase().includes('praias · parques')
+  );
+  if (filtered.length === 0) return '';
+  return filtered.slice(0, 3).join(' · ').replace(/^[\s·.-]+/, '');
+};
+
+export const getLanguageFlag = (lang: string): string => {
+  const l = lang.toLowerCase();
+  if (l.includes('inglês') || l.includes('ingles')) return '🇬🇧';
+  if (l.includes('mandarim') || l.includes('chinês') || l.includes('chines')) return '🇨🇳';
+  if (l.includes('francês') || l.includes('frances')) return '🇫🇷';
+  if (l.includes('espanhol')) return '🇪🇸';
+  if (l.includes('alemão') || l.includes('alemao')) return '🇩🇪';
+  if (l.includes('português') || l.includes('portugues')) return '🇵🇹';
+  if (l.includes('changana') || l.includes('emakhuwa') || l.includes('sena') || l.includes('ndau') || l.includes('gitonga') || l.includes('ronga') || l.includes('xitswa') || l.includes('locais')) return '🇲🇿';
+  return '🌐';
 };
 
 interface TourGuidesTabProps {
@@ -111,6 +127,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   const [selectedPlaceCategory, setSelectedPlaceCategory] = useState<string>('all');
   const [selectedExpCategory, setSelectedExpCategory] = useState<string>('all');
   const [selectedGuideSpecialty, setSelectedGuideSpecialty] = useState<string>('all');
+  const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string>('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [highRatingOnly, setHighRatingOnly] = useState(false);
 
@@ -163,6 +180,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     setSelectedPlaceCategory('all');
     setSelectedExpCategory('all');
     setSelectedGuideSpecialty('all');
+    setSelectedLanguageFilter('all');
     setVerifiedOnly(false);
     setHighRatingOnly(false);
   };
@@ -276,12 +294,20 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         const matchCity = g.city.toLowerCase().includes(q);
         const matchBio = g.bio.toLowerCase().includes(q);
         const matchSpec = g.specialties.some((s) => s.toLowerCase().includes(q));
-        if (!matchName && !matchCity && !matchBio && !matchSpec) return false;
+        const matchLang = g.languages.some((l) => l.toLowerCase().includes(q));
+        if (!matchName && !matchCity && !matchBio && !matchSpec && !matchLang) return false;
       }
 
       // Specialty
       if (selectedGuideSpecialty !== 'all' && !g.specialties.some(s => s.toLowerCase().includes(selectedGuideSpecialty.toLowerCase()))) {
         return false;
+      }
+
+      // Spoken Language Filter
+      if (selectedLanguageFilter !== 'all') {
+        const qLang = selectedLanguageFilter.toLowerCase();
+        const hasLang = g.languages.some((l) => l.toLowerCase().includes(qLang));
+        if (!hasLang) return false;
       }
 
       // Verified
@@ -375,9 +401,6 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   <span>TURISMO </span>
                   <span className="text-amber-400">MOÇAMBIQUE</span>
                 </h1>
-                <span className="text-[9.5px] sm:text-[10px] uppercase font-black tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                  <ShieldCheck className="w-3 h-3" /> Oficial
-                </span>
               </div>
               <p className="text-[11px] sm:text-xs text-emerald-100 font-medium mt-0.5">
                 Explore lugares, experiências e encontre quem o pode guiar.
@@ -482,115 +505,14 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           </button>
         </div>
 
-        {/* Dynamic Filters Row: Província + Categoria Específica */}
-        <div className="grid grid-cols-2 gap-2 pt-0.5">
-          {/* Province Selector */}
-          <div className="relative">
-            <select
-              value={selectedProvince}
-              onChange={(e) => handleProvinceClick(e.target.value)}
-              className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
-            >
-              <option value="all">📍 Moçambique (Todas)</option>
-              {MOZ_PROVINCES_LIST.map((p) => (
-                <option key={p} value={p}>📍 {p}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
 
-          {/* Contextual Category Selector according to Active Section */}
-          <div className="relative">
-            {activeSection === 'lugares' ? (
-              <select
-                value={selectedPlaceCategory}
-                onChange={(e) => setSelectedPlaceCategory(e.target.value)}
-                className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
-              >
-                <option value="all">🌴 Todas as Atrações</option>
-                <option value="praias_ilhas">🏖️ Praias & Ilhas</option>
-                <option value="parques_natureza">🦁 Parques & Safáris</option>
-                <option value="patrimonio_historico">🏰 Património Histórico</option>
-                <option value="cultura_museus">🎨 Cultura & Museus</option>
-                <option value="atracoes_naturais">🌊 Atrações Naturais</option>
-              </select>
-            ) : activeSection === 'experiencias' ? (
-              <select
-                value={selectedExpCategory}
-                onChange={(e) => setSelectedExpCategory(e.target.value)}
-                className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
-              >
-                <option value="all">⚡ Todos os Tipos</option>
-                <option value="marinha_mergulho">🤿 Vida Marinha & Dhow</option>
-                <option value="safari_fauna">🚙 Safári 4x4 Fauna</option>
-                <option value="cultural_historica">🏛️ Rota Histórica & Cultural</option>
-              </select>
-            ) : (
-              <select
-                value={selectedGuideSpecialty}
-                onChange={(e) => setSelectedGuideSpecialty(e.target.value)}
-                className="w-full h-9.5 pl-2.5 pr-7 rounded-xl text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200/80 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer truncate"
-              >
-                <option value="all">🧭 Todas as Especialidades</option>
-                <option value="Dhow">⛵ Dhow Safari & Ilhas</option>
-                <option value="Tubarão">🦈 Tubarão-Baleia & Mergulho</option>
-                <option value="Gorongosa">🦁 Gorongosa & Fauna</option>
-                <option value="Golfinhos">🐬 Golfinhos</option>
-                <option value="UNESCO">🏰 Património UNESCO</option>
-                <option value="Mafalala">🏙️ City Tour Histórico</option>
-              </select>
-            )}
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Quick Horizontal Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
-          <button
-            onClick={() => setVerifiedOnly(!verifiedOnly)}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
-              verifiedOnly
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            <ShieldCheck className="w-3 h-3" />
-            <span>Apenas Verificados</span>
-          </button>
-
-          <button
-            onClick={() => setHighRatingOnly(!highRatingOnly)}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer transition-colors ${
-              highRatingOnly
-                ? 'bg-amber-600 text-white border-amber-600'
-                : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            <Star className="w-3 h-3 fill-amber-300" />
-            <span>Avaliação 4.8+</span>
-          </button>
-
-          {(selectedProvince !== 'all' || searchQuery || verifiedOnly || highRatingOnly) && (
-            <button
-              onClick={resetFilters}
-              className="text-[11px] text-neutral-500 font-bold underline hover:text-neutral-800 ml-auto shrink-0 cursor-pointer"
-            >
-              Limpar Filtros
-            </button>
-          )}
-        </div>
       </div>
 
       {/* SECTION 1: LUGARES */}
       {activeSection === 'lugares' && (
         <div className="space-y-3.5">
-          <div className="flex items-center justify-between px-1 text-xs text-neutral-600">
-            <div>
-              <strong className="text-neutral-900 font-bold">{filteredPlaces.length}</strong> lugares turísticos encontrados
-            </div>
-            <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              Praias · Parques · Património
-            </span>
+          <div className="px-1 text-xs text-neutral-600">
+            <strong className="text-neutral-900 font-bold">{filteredPlaces.length}</strong> lugares turísticos encontrados
           </div>
 
           {filteredPlaces.length > 0 ? (
@@ -683,13 +605,8 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       {/* SECTION 2: EXPERIÊNCIAS */}
       {activeSection === 'experiencias' && (
         <div className="space-y-3.5">
-          <div className="flex items-center justify-between px-1 text-xs text-neutral-600">
-            <div>
-              <strong className="text-neutral-900 font-bold">{filteredExperiences.length}</strong> experiências e passeios guiados
-            </div>
-            <span className="text-[11px] text-cyan-800 font-semibold bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-200">
-              Mergulho · Safári · Roteiros
-            </span>
+          <div className="px-1 text-xs text-neutral-600">
+            <strong className="text-neutral-900 font-bold">{filteredExperiences.length}</strong> experiências e passeios guiados
           </div>
 
           {filteredExperiences.length > 0 ? (
@@ -792,13 +709,8 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       {/* SECTION 3: GUIAS */}
       {activeSection === 'guias' && (
         <div className="space-y-3.5">
-          <div className="flex items-center justify-between px-1 text-xs text-neutral-600">
-            <div>
-              <strong className="text-neutral-900 font-bold">{filteredGuides.length}</strong> guias turísticos credenciados
-            </div>
-            <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              Profissionais Locais com BI
-            </span>
+          <div className="px-1 text-xs text-neutral-600">
+            <strong className="text-neutral-900 font-bold">{filteredGuides.length}</strong> guias turísticos credenciados
           </div>
 
           {filteredGuides.length > 0 ? (
@@ -806,13 +718,12 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
               {filteredGuides.map((guide) => (
                 <div
                   key={guide.id}
-                  className="bg-white rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between h-full space-y-3 group active:scale-[0.99] touch-manipulation"
+                  className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between h-full space-y-3 group active:scale-[0.99] touch-manipulation relative overflow-hidden"
                 >
                   <div onClick={() => setSelectedGuide(guide)} className="cursor-pointer space-y-2.5">
-                    {/* Top Header: 1. Foto + 2. Nome + 3. Selo de Verificação + 4. Localização */}
+                    {/* Header: Photo + Name + Verified Badge + Location */}
                     <div className="flex items-start gap-3">
-                      {/* 1. Foto */}
-                      <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-100 shadow-2xs">
+                      <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-neutral-200/90 shrink-0 bg-neutral-100 shadow-2xs">
                         <img
                           src={guide.photo}
                           alt={guide.name}
@@ -821,117 +732,139 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                         />
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        {/* 2. Nome */}
-                        <h3 className="font-extrabold text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors">
-                          {guide.name}
-                        </h3>
-
-                        {/* 3. Selo de verificação */}
-                        <div className="mt-0.5">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block"></span>
-                            <span>Verificado</span>
-                          </span>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <h3 className="font-extrabold text-sm sm:text-base text-neutral-900 truncate group-hover:text-emerald-700 transition-colors flex items-center gap-1">
+                            <span className="truncate">{guide.name}</span>
+                            {guide.verified && (
+                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-600 text-white shrink-0 shadow-2xs" title="Guia Verificado">
+                                <Check className="w-2.5 h-2.5 stroke-[3]" />
+                              </span>
+                            )}
+                          </h3>
                         </div>
 
-                        {/* 4. Localização */}
-                        <div className="flex items-center gap-1 text-xs text-neutral-600 font-medium mt-1 truncate">
+                        <div className="flex items-center gap-1 text-[11.5px] text-neutral-500 font-medium truncate">
                           <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span className="truncate">{guide.city}</span>
+                          <span className="truncate">{guide.city}, {guide.province}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-700 font-semibold pt-0.5">
+                          <div className="flex items-center gap-1 text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-md border border-amber-200/60">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+                            <span className="font-extrabold text-[11px]">{guide.rating.toFixed(1)}</span>
+                            <span className="text-[10px] text-amber-600 font-normal">({guide.reviewsCount})</span>
+                          </div>
+                          <span className="text-neutral-500 text-[11px] font-medium">• {guide.experienceYears}a exp</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* 6. Avaliação + 7. Experiência */}
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-700 font-semibold pt-0.5">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-                        <span className="font-bold">{guide.rating.toFixed(1)}</span>
-                      </div>
-                      <span aria-hidden="true" className="text-neutral-300">·</span>
-                      <span className="text-neutral-600 font-medium">{guide.experienceYears} anos de experiência</span>
-                    </div>
-
-                    {/* 5. Especialidade principal */}
+                    {/* Specialties */}
                     {guide.specialties && guide.specialties.length > 0 && (
-                      <p className="text-xs text-neutral-600 font-medium line-clamp-1">
-                        <span className="text-neutral-800 font-semibold">Especialista em:</span> {guide.specialties.slice(0, 2).join(' e ')}
+                      <p className="text-[11.5px] text-neutral-600 font-medium line-clamp-1 bg-neutral-50 px-2.5 py-1 rounded-xl border border-neutral-100">
+                        <span className="text-neutral-900 font-extrabold">Especialidade:</span> {guide.specialties.slice(0, 2).join(' · ')}
                       </p>
                     )}
 
-                    {/* 8. Preço, quando aplicável */}
-                    <div className="text-xs text-neutral-700 font-semibold pt-0.5">
-                      {guide.ratePerDay ? (
-                        <span>
-                          <strong className="text-neutral-900 font-extrabold text-sm">{guide.ratePerDay.toLocaleString('pt-MZ')} MT</strong>
-                          <span className="text-neutral-500 font-normal">/dia</span>
+                    {/* Spoken Languages Bar - Max 3 pills + count overflow */}
+                    {guide.languages && guide.languages.length > 0 && (
+                      <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
+                        <span className="text-[10.5px] font-bold text-neutral-500 shrink-0 flex items-center gap-1">
+                          <Languages className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>Línguas:</span>
                         </span>
-                      ) : (
-                        <span className="text-neutral-500 font-medium">Preço sob consulta</span>
-                      )}
-                    </div>
+                        {guide.languages.slice(0, 3).map((lang, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[10.5px] font-bold bg-emerald-50/80 text-emerald-950 border border-emerald-200/80 px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-2xs"
+                          >
+                            <span>{getLanguageFlag(lang)}</span>
+                            <span>{lang}</span>
+                          </span>
+                        ))}
+                        {guide.languages.length > 3 && (
+                          <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100/70 border border-emerald-200 px-1.5 py-0.5 rounded-lg">
+                            +{guide.languages.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {/* 9. WhatsApp + 10. Ligar */}
-                  <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center gap-2">
-                    <a
-                      href={`https://wa.me/${guide.whatsapp}?text=${encodeURIComponent(
-                        `Olá ${guide.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de agendar uma excursão em ${guide.city}.`
-                      )}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const allowed = contactUnlockService.triggerContactAttempt(
-                          {
-                            id: guide.id,
-                            name: guide.name,
-                            photo: guide.photo,
-                            phone: guide.phone,
-                            whatsapp: guide.whatsapp,
-                            module: 'guide',
-                            moduleLabel: 'Guia Turístico',
-                            unlockFee: 1000,
-                          },
-                          guide.isContactUnlocked
-                        );
-                        if (!allowed) {
-                          e.preventDefault();
-                        }
-                      }}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 h-10 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs touch-manipulation cursor-pointer"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 fill-white" />
-                      <span>WhatsApp</span>
-                    </a>
+                  {/* Footer Row: Price + Action CTAs */}
+                  <div className="pt-2.5 mt-auto border-t border-neutral-100 flex items-center justify-between gap-2">
+                    <div className="text-xs text-neutral-700 font-semibold">
+                      {guide.ratePerDay ? (
+                        <div>
+                          <span className="text-[10px] text-neutral-400 block font-normal leading-none">Diária</span>
+                          <strong className="text-neutral-900 font-black text-sm">{guide.ratePerDay.toLocaleString('pt-MZ')} MT</strong>
+                        </div>
+                      ) : (
+                        <span className="text-neutral-500 font-medium text-[11px]">Sob consulta</span>
+                      )}
+                    </div>
 
-                    <a
-                      href={`tel:${guide.phone}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const allowed = contactUnlockService.triggerContactAttempt(
-                          {
-                            id: guide.id,
-                            name: guide.name,
-                            photo: guide.photo,
-                            phone: guide.phone,
-                            whatsapp: guide.whatsapp,
-                            module: 'guide',
-                            moduleLabel: 'Guia Turístico',
-                            unlockFee: 1000,
-                          },
-                          guide.isContactUnlocked
-                        );
-                        if (!allowed) {
-                          e.preventDefault();
-                        }
-                      }}
-                      className="flex-1 h-10 px-3 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all touch-manipulation cursor-pointer"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>Ligar</span>
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={`tel:${guide.phone}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const allowed = contactUnlockService.triggerContactAttempt(
+                            {
+                              id: guide.id,
+                              name: guide.name,
+                              photo: guide.photo,
+                              phone: guide.phone,
+                              whatsapp: guide.whatsapp,
+                              module: 'guide',
+                              moduleLabel: 'Guia Turístico',
+                              unlockFee: 1000,
+                            },
+                            guide.isContactUnlocked
+                          );
+                          if (!allowed) {
+                            e.preventDefault();
+                          }
+                        }}
+                        className="h-9 px-2.5 sm:px-3 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all touch-manipulation cursor-pointer border border-neutral-200/70"
+                        title="Ligar"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Ligar</span>
+                      </a>
+
+                      <a
+                        href={`https://wa.me/${guide.whatsapp}?text=${encodeURIComponent(
+                          `Olá ${guide.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de agendar uma excursão em ${guide.city}.`
+                        )}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const allowed = contactUnlockService.triggerContactAttempt(
+                            {
+                              id: guide.id,
+                              name: guide.name,
+                              photo: guide.photo,
+                              phone: guide.phone,
+                              whatsapp: guide.whatsapp,
+                              module: 'guide',
+                              moduleLabel: 'Guia Turístico',
+                              unlockFee: 1000,
+                            },
+                            guide.isContactUnlocked
+                          );
+                          if (!allowed) {
+                            e.preventDefault();
+                          }
+                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs touch-manipulation cursor-pointer"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                        <span>WhatsApp</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -958,34 +891,34 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
       {/* MODAL 1: DETALHES DO LUGAR TURÍSTICO */}
       {selectedPlace && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden animate-in fade-in duration-150">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 flex flex-col max-h-[88vh] sm:max-h-[85vh] my-0 sm:my-auto">
             {/* Header Image */}
-            <div className="relative aspect-16/10 w-full bg-neutral-900 shrink-0">
+            <div className="relative h-36 sm:h-44 w-full bg-neutral-900 shrink-0 overflow-hidden">
               <img
                 src={selectedPlace.photo}
                 alt={selectedPlace.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
 
               <button
                 onClick={() => setSelectedPlace(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80 transition-transform active:scale-90"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="absolute bottom-3 left-3 right-3 text-white space-y-0.5">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-600 text-white inline-block mb-1">
+              <div className="absolute bottom-2.5 left-3.5 right-3.5 text-white space-y-0.5">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white inline-block shadow-2xs">
                   {selectedPlace.categoryLabel}
                 </span>
-                <h2 className="text-lg sm:text-xl font-black">
+                <h2 className="text-base sm:text-lg font-black text-white leading-tight line-clamp-1 drop-shadow-md">
                   {selectedPlace.name}
                 </h2>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-300">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{selectedPlace.city}, {selectedPlace.province}</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-300 font-medium">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{selectedPlace.city}, {selectedPlace.province}</span>
                 </div>
               </div>
             </div>
@@ -1004,7 +937,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
               {/* Highlights */}
               <div>
                 <h4 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-1.5">
-                  Destaques & Roteiros
+                  Destaques & Atividades
                 </h4>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedPlace.highlights.map((hl, i) => (
@@ -1066,31 +999,29 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 </div>
               )}
 
-              {/* Official Source & Verification Badge */}
+              {/* Source & Information Card */}
               <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/90 text-xs space-y-1">
-                <div className="flex items-center justify-between text-neutral-700">
-                  <span className="font-bold flex items-center gap-1 text-emerald-800">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Fonte Oficial:
-                  </span>
-                  <span className="font-medium text-neutral-900 text-right truncate max-w-[200px]">
-                    {selectedPlace.source}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-neutral-500 text-[11px]">
-                  <span>Última verificação pública:</span>
-                  <span className="font-semibold text-neutral-700">{selectedPlace.lastVerifiedDate}</span>
-                </div>
+                {selectedPlace.source && (
+                  <div className="flex items-center justify-between text-neutral-700">
+                    <span className="font-bold flex items-center gap-1 text-emerald-800">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      Fonte / Credenciais:
+                    </span>
+                    <span className="font-medium text-neutral-900 text-right truncate max-w-[200px]">
+                      {selectedPlace.source}
+                    </span>
+                  </div>
+                )}
                 {selectedPlace.officialWebsite && (
                   <div className="pt-1 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
-                    <span className="text-neutral-500">Portal oficial:</span>
+                    <span className="text-neutral-500">Website / Portal:</span>
                     <a
                       href={selectedPlace.officialWebsite}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
                     >
-                      <span>Aceder ao Portal</span>
+                      <span>Aceder</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
@@ -1191,38 +1122,38 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
       {/* MODAL 2: DETALHES DA EXPERIÊNCIA */}
       {selectedExperience && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            <div className="relative aspect-16/10 w-full bg-neutral-900 shrink-0">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden animate-in fade-in duration-150">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 flex flex-col max-h-[88vh] sm:max-h-[85vh] my-0 sm:my-auto">
+            <div className="relative h-36 sm:h-44 w-full bg-neutral-900 shrink-0 overflow-hidden">
               <img
                 src={selectedExperience.photo}
                 alt={selectedExperience.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
 
               <button
                 onClick={() => setSelectedExperience(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80 transition-transform active:scale-90"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="absolute bottom-3 left-3 right-3 text-white space-y-0.5">
+              <div className="absolute bottom-2.5 left-3.5 right-3.5 text-white space-y-0.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
                     {selectedExperience.categoryLabel}
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 text-white">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/60 text-white border border-white/20">
                     ⏱️ {selectedExperience.duration}
                   </span>
                 </div>
-                <h2 className="text-lg sm:text-xl font-black">
+                <h2 className="text-base sm:text-lg font-black text-white leading-tight line-clamp-1 drop-shadow-md">
                   {selectedExperience.title}
                 </h2>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-300">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{selectedExperience.placeName}, {selectedExperience.province}</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-300 font-medium">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{selectedExperience.placeName}, {selectedExperience.province}</span>
                 </div>
               </div>
             </div>
@@ -1280,20 +1211,18 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   <span className="font-bold text-neutral-700">Operador / Guia:</span>
                   <strong className="text-neutral-900 font-extrabold">{selectedExperience.operatorName || selectedExperience.guideName}</strong>
                 </div>
-                <div className="flex items-center justify-between text-neutral-600 text-[11px]">
-                  <span className="flex items-center gap-1 text-emerald-800 font-bold">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Fonte Oficial:
-                  </span>
-                  <span className="font-medium text-neutral-800 truncate max-w-[200px]">{selectedExperience.source}</span>
-                </div>
-                <div className="flex items-center justify-between text-neutral-500 text-[11px]">
-                  <span>Última verificação:</span>
-                  <span className="font-semibold text-neutral-700">{selectedExperience.lastVerifiedDate}</span>
-                </div>
+                {selectedExperience.source && (
+                  <div className="flex items-center justify-between text-neutral-600 text-[11px]">
+                    <span className="flex items-center gap-1 text-emerald-800 font-bold">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      Organização / Credenciais:
+                    </span>
+                    <span className="font-medium text-neutral-800 truncate max-w-[200px]">{selectedExperience.source}</span>
+                  </div>
+                )}
                 {selectedExperience.officialWebsite && (
                   <div className="pt-1 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
-                    <span className="text-neutral-500">Website Oficial:</span>
+                    <span className="text-neutral-500">Website:</span>
                     <a
                       href={selectedExperience.officialWebsite}
                       target="_blank"
@@ -1351,126 +1280,133 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
         </div>
       )}
 
-      {/* MODAL 3: DETALHES DO GUIA (Preservado) */}
+      {/* MODAL 3: DETALHES DO GUIA (Modern Mobile-First UX) */}
       {selectedGuide && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in fade-in zoom-in-95 duration-150 my-auto">
-            <div className="relative aspect-4/3 w-full bg-neutral-100">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden animate-in fade-in duration-150">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 flex flex-col max-h-[88vh] sm:max-h-[85vh] my-0 sm:my-auto">
+            
+            {/* 1. Header Hero Image Banner - Compact & Modern */}
+            <div className="relative h-36 sm:h-44 w-full bg-neutral-900 shrink-0 overflow-hidden">
               <img
                 src={selectedGuide.photo}
                 alt={selectedGuide.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
 
+              {/* Close Button */}
               <button
+                type="button"
                 onClick={() => setSelectedGuide(null)}
-                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center cursor-pointer hover:bg-black/70"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black/80 transition-transform active:scale-90"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-black">
+              {/* Title & Location Overlay */}
+              <div className="absolute bottom-2.5 left-3.5 right-3.5 text-white space-y-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-white leading-tight line-clamp-2 drop-shadow-md pr-1">
                     {selectedGuide.name}{selectedGuide.age ? `, ${selectedGuide.age} anos` : ''}
                   </h2>
-                  <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-lg">
-                    <ShieldCheck className="w-3 h-3" /> Verificado
-                  </span>
+                  {selectedGuide.verified && (
+                    <span className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white shadow-2xs" title="Guia Verificado">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-neutral-200">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{selectedGuide.city}, {selectedGuide.province}</span>
+                <div className="flex items-center gap-1 text-[11px] text-neutral-200 font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="truncate">{selectedGuide.city}, {selectedGuide.province}</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                {selectedGuide.age && (
-                  <div className="font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                    <span>Idade:</span>
-                    <strong className="text-neutral-900">{selectedGuide.age} anos</strong>
+            {/* 2. Scrollable Body Content */}
+            <div className="p-3.5 sm:p-4 space-y-2.5 overflow-y-auto flex-1">
+              
+              {/* Quick Key Metrics Grid (Rating, Exp, Price) */}
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="p-2 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-950 font-bold flex flex-col items-center justify-center text-center shadow-2xs">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
+                    <span className="text-sm font-black">{selectedGuide.rating.toFixed(1)}</span>
+                  </div>
+                  <span className="text-[9.5px] text-amber-700 font-semibold truncate max-w-full">
+                    {selectedGuide.reviewsCount} avaliações
+                  </span>
+                </div>
+
+                <div className="p-2 rounded-xl bg-neutral-100/90 border border-neutral-200 text-neutral-800 font-bold flex flex-col items-center justify-center text-center shadow-2xs">
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+                    <span className="text-sm font-black">{selectedGuide.experienceYears}a</span>
+                  </div>
+                  <span className="text-[9.5px] text-neutral-500 font-semibold truncate max-w-full">
+                    Experiência
+                  </span>
+                </div>
+
+                {selectedGuide.ratePerDay ? (
+                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 font-bold flex flex-col items-center justify-center text-center shadow-2xs">
+                    <span className="text-[9.5px] text-emerald-800 font-semibold">Preço/dia</span>
+                    <strong className="text-xs text-emerald-900 font-black truncate max-w-full">
+                      {selectedGuide.ratePerDay.toLocaleString('pt-MZ')} MT
+                    </strong>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-neutral-50 border border-neutral-200 text-neutral-600 font-medium text-[10px] flex items-center justify-center text-center">
+                    Sob consulta
                   </div>
                 )}
-                <div className="font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <span>Experiência:</span>
-                  <strong className="text-neutral-900">{selectedGuide.experienceYears} anos</strong>
-                </div>
-                <div className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  <span>{selectedGuide.rating.toFixed(1)} ({selectedGuide.reviewsCount} avaliações)</span>
-                </div>
               </div>
 
-              {/* Official Source & Credential Badge */}
-              {selectedGuide.source && (
-                <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/90 text-xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-neutral-700 flex items-center gap-1 text-emerald-800">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      Registo & Credenciação:
-                    </span>
-                    <span className="font-medium text-neutral-900 truncate max-w-[180px]">
-                      {selectedGuide.source}
-                    </span>
-                  </div>
-                  {selectedGuide.lastVerifiedDate && (
-                    <div className="flex items-center justify-between text-neutral-500 text-[11px]">
-                      <span>Última verificação:</span>
-                      <span className="font-semibold text-neutral-700">{selectedGuide.lastVerifiedDate}</span>
-                    </div>
-                  )}
-                  {selectedGuide.officialWebsite && (
-                    <div className="pt-1 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
-                      <span className="text-neutral-500">Website Oficial:</span>
-                      <a
-                        href={selectedGuide.officialWebsite}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
-                      >
-                        <span>Aceder</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  )}
+              {/* Website / External Link */}
+              {selectedGuide.officialWebsite && (
+                <div className="px-3 py-2 bg-neutral-50 rounded-xl border border-neutral-200/90 text-xs flex items-center justify-between">
+                  <span className="font-bold text-neutral-700 text-[11px]">Website / Página:</span>
+                  <a
+                    href={selectedGuide.officialWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 text-[11px] font-black hover:underline flex items-center gap-1 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200"
+                  >
+                    <span>Aceder</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               )}
 
-              {/* Accordions */}
-              <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-emerald-50/50">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('verification')}
-                  className="w-full p-2.5 flex items-center justify-between text-left hover:bg-emerald-100/50 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950">
-                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                    <span>Identidade Confirmada (BI + Facial)</span>
+              {/* Spoken Languages & Communication Competence */}
+              {selectedGuide.languages && selectedGuide.languages.length > 0 && (
+                <div className="p-2.5 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-emerald-50/90 rounded-2xl border border-emerald-200/90 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-950">
+                    <Languages className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>Línguas Faladas & Comunicação:</span>
                   </div>
-                  {expandedSections.verification ? (
-                    <ChevronUp className="w-4 h-4 text-emerald-700 shrink-0" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-emerald-700 shrink-0" />
-                  )}
-                </button>
-                {expandedSections.verification && (
-                  <div className="px-2.5 pb-2.5 pt-0 text-[11px] text-emerald-900 leading-relaxed border-t border-emerald-100">
-                    Guia credenciado com verificação biométrica facial e Bilhete de Identidade ativo verificado pelos moderadores.
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {selectedGuide.languages.map((lang, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[11px] font-bold bg-white text-emerald-950 border border-emerald-300/80 px-2.5 py-0.5 rounded-lg shadow-2xs flex items-center gap-1"
+                      >
+                        <span className="text-xs">{getLanguageFlag(lang)}</span>
+                        <span>{lang}</span>
+                      </span>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
+              {/* Collapsible About Section */}
               <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
                 <button
                   type="button"
                   onClick={() => toggleSection('about')}
-                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                  className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
                 >
-                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
-                    Sobre o Guia
+                  <span className="text-[11px] font-black uppercase tracking-wider text-neutral-800">
+                    Sobre o Guia / Apresentação
                   </span>
                   {expandedSections.about ? (
                     <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
@@ -1479,20 +1415,21 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   )}
                 </button>
                 {expandedSections.about && (
-                  <div className="px-3 pb-3 pt-0 text-xs sm:text-sm text-neutral-700 leading-relaxed border-t border-neutral-100 pt-2">
+                  <div className="px-3 pb-3 text-xs text-neutral-700 leading-relaxed border-t border-neutral-100 pt-2 bg-neutral-50/50">
                     {selectedGuide.bio}
                   </div>
                 )}
               </div>
 
+              {/* Collapsible Specialties Section */}
               <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
                 <button
                   type="button"
                   onClick={() => toggleSection('specialties')}
-                  className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                  className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
                 >
-                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
-                    Especialidades & Roteiros
+                  <span className="text-[11px] font-black uppercase tracking-wider text-neutral-800">
+                    Especialidades & Atuação
                   </span>
                   {expandedSections.specialties ? (
                     <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
@@ -1501,11 +1438,11 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   )}
                 </button>
                 {expandedSections.specialties && (
-                  <div className="px-3 pb-3 pt-2 border-t border-neutral-100 flex flex-wrap gap-1.5">
+                  <div className="px-3 pb-3 pt-2 border-t border-neutral-100 flex flex-wrap gap-1.5 bg-neutral-50/50">
                     {selectedGuide.specialties.map((spec, i) => (
                       <span
                         key={i}
-                        className="text-xs font-bold bg-emerald-100/70 text-emerald-900 px-2.5 py-1 rounded-lg"
+                        className="text-[11px] font-bold bg-emerald-100/80 text-emerald-950 px-2 py-0.5 rounded-lg border border-emerald-200/60"
                       >
                         {spec}
                       </span>
@@ -1515,7 +1452,8 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
               </div>
             </div>
 
-            <div className="p-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center gap-2">
+            {/* 3. Fixed Bottom Action Bar */}
+            <div className="p-3 border-t border-neutral-100 bg-neutral-50 flex items-center gap-2 shrink-0">
               <a
                 href={`tel:${selectedGuide.phone}`}
                 onClick={(e) => {
@@ -1536,9 +1474,9 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                     e.preventDefault();
                   }
                 }}
-                className="h-11 px-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="h-10 px-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs touch-manipulation"
               >
-                <Phone className="w-3.5 h-3.5" />
+                <Phone className="w-3.5 h-3.5 text-neutral-700" />
                 <span>Ligar</span>
               </a>
 
@@ -1566,7 +1504,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer touch-manipulation"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
                 <span>Contactar no WhatsApp</span>
