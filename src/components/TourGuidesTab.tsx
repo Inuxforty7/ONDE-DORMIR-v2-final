@@ -34,6 +34,7 @@ import { getPlatformTenureText } from '../utils/tenure';
 import { contactUnlockService } from '../services/contactUnlockService';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 import { getDirectionsUrl } from '../utils/geo';
+import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
 const getPlaceCategoryShort = (place: TourismPlace) => {
   if (place.category === 'praias_ilhas') {
@@ -69,6 +70,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   onSelectProvince,
   onSelectAllMozambique,
 }) => {
+  const { getModuleCount } = useVisitAnalytics();
   // Navigation Sections: Lugares | Experiências | Guias
   const [activeSection, setActiveSection] = useState<'lugares' | 'experiencias' | 'guias'>('lugares');
 
@@ -383,13 +385,24 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={handleStartGuideRegistration}
-            className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-            <span>+ Registar como Guia</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Real Module Visit Counter */}
+            <div 
+              className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
+              title="Visitas ao módulo Turismo"
+            >
+              <Eye className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+              <span>{formatVisitCount(getModuleCount('turismo'))}</span>
+            </div>
+
+            <button
+              onClick={handleStartGuideRegistration}
+              className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+              <span>+ Registar como Guia</span>
+            </button>
+          </div>
         </div>
       </div>
 

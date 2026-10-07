@@ -26,6 +26,7 @@ import { PlatformOwnerDashboardModal } from './components/PlatformOwnerDashboard
 import { BottomNavBar } from './components/BottomNavBar';
 import { contactUnlockService } from './services/contactUnlockService';
 import { propertyService } from './services/propertyService';
+import { analyticsService, ModuleId } from './services/analyticsService';
 import { LockedContactTarget } from './types/contactUnlock';
 
 export default function App() {
@@ -43,9 +44,33 @@ export default function App() {
     });
   }, []);
 
+  // Real visit analytics: track genuine visits to main modules without counting re-renders
+  const lastVisitedModuleTabRef = React.useRef<string | null>(null);
+
   // Active Bottom Tab
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [previousTab, setPreviousTab] = useState<ActiveTab>('home');
+
+  React.useEffect(() => {
+    const tabToModuleMap: Record<string, ModuleId> = {
+      explore: 'onde_dormir',
+      guides: 'turismo',
+      rentacar: 'rentacar',
+      heartlink: 'heartlink',
+      loveshop: 'loveshop',
+    };
+
+    const currentModule = tabToModuleMap[activeTab];
+    if (currentModule) {
+      if (lastVisitedModuleTabRef.current !== activeTab) {
+        lastVisitedModuleTabRef.current = activeTab;
+        analyticsService.recordModuleVisit(currentModule);
+      }
+    } else {
+      // User navigated to a non-module tab (e.g. home, saved, account, more)
+      lastVisitedModuleTabRef.current = null;
+    }
+  }, [activeTab]);
 
   const handleNavigateToTab = useCallback((tab: ActiveTab) => {
     setActiveTab((prev) => {

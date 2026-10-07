@@ -2,10 +2,12 @@ import React from 'react';
 import { 
   ChevronRight, 
   MapPin, 
-  Bell 
+  Bell,
+  Eye
 } from 'lucide-react';
 import { Accommodation, AccommodationType, ActiveTab, UserLocationState } from '../types';
 import { Logo } from './Logo';
+import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 import heroBgImage from '../assets/images/mozambique_coastal_hero_bg_1790583006189.jpg';
 
 interface HomeTabProps {
@@ -35,6 +37,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onOpenNotifications,
   unreadCount = 0,
 }) => {
+  const { totalVisits } = useVisitAnalytics();
+
   return (
     <div className="relative h-dvh max-h-dvh w-full flex flex-col justify-between overflow-hidden select-none">
       
@@ -63,20 +67,29 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             Encontre onde dormir, quem o pode guiar e como se deslocar.
           </p>
 
-          {/* Location & Notification pill */}
-          <div className="flex items-center gap-1.5 pt-0.5">
+          {/* Location, Total Visits & Notification pills */}
+          <div className="flex items-center justify-center gap-1.5 pt-0.5 flex-wrap">
             <button
               onClick={onOpenLocationModal}
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/35 text-white text-[10.5px] font-bold transition-all active:scale-95 shadow-xs cursor-pointer"
               title="Alterar Província"
             >
               <MapPin className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span className="truncate max-w-[170px]">
+              <span className="truncate max-w-[150px]">
                 {userLocation.isAllMozambique
                   ? 'Moçambique (Todas as Províncias)'
                   : `${userLocation.province || userLocation.name}`}
               </span>
             </button>
+
+            {/* Total Visits Across All Modules Combined */}
+            <div 
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/35 text-white text-[10.5px] font-bold shadow-xs"
+              title="Total de visitas acumuladas"
+            >
+              <Eye className="w-3 h-3 text-cyan-300 shrink-0" />
+              <span>{formatVisitCount(totalVisits)}</span>
+            </div>
 
             {onOpenNotifications && (
               <button

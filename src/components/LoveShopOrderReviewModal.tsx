@@ -58,15 +58,15 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
 
   const renderStarSelector = (
     label: string,
-    sublabel: string,
     value: number,
-    onChange: (val: number) => void
+    onChange: (val: number) => void,
+    sublabel?: string
   ) => (
     <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-200/80 space-y-1.5">
       <div className="flex items-center justify-between">
         <div>
           <span className="text-xs font-bold text-neutral-900 block">{label}</span>
-          <span className="text-[10px] text-neutral-500">{sublabel}</span>
+          {sublabel && <span className="text-[10px] text-neutral-500">{sublabel}</span>}
         </div>
       </div>
 
@@ -160,56 +160,31 @@ export const LoveShopOrderReviewModal: React.FC<LoveShopOrderReviewModalProps> =
                 </div>
               </div>
 
-              {/* 4 Rating Criteria (Exatamente 4 Critérios) */}
-              <div className="space-y-3">
-                {/* Seção A: Avaliação do Produto */}
-                <div className="p-3 bg-rose-50/80 rounded-2xl border border-rose-200/80 space-y-2">
-                  <div className="text-[11px] font-black uppercase tracking-wider text-rose-700 flex items-center justify-between">
-                    <span>A. Avaliação Exclusiva do Produto</span>
-                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-rose-200 text-rose-800">
-                      Afeta apenas a nota do Artigo
-                    </span>
-                  </div>
-                  {renderStarSelector(
-                    '1. Qualidade do Produto',
-                    'Acabamento, tecido/material e conformidade com o anúncio',
-                    productQuality,
-                    setProductQuality
-                  )}
-                </div>
+              {/* 4 Rating Criteria (Critérios Naturais para o Cliente) */}
+              <div className="space-y-2.5">
+                {renderStarSelector(
+                  'Qualidade do produto',
+                  productQuality,
+                  setProductQuality
+                )}
 
-                {/* Seção B: Avaliação do Vendedor (3 Critérios que calculam a nota da Loja) */}
-                <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200/80 space-y-2">
-                  <div className="text-[11px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-between">
-                    <span>B. Avaliação do Vendedor / Loja</span>
-                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-800">
-                      Calcula a Nota da Loja (3 Critérios)
-                    </span>
-                  </div>
+                {renderStarSelector(
+                  'Atendimento',
+                  customerService,
+                  setCustomerService
+                )}
 
-                  <div className="space-y-2">
-                    {renderStarSelector(
-                      '2. Atendimento ao Cliente',
-                      'Atenção no WhatsApp, esclarecimento de dúvidas e cordialidade',
-                      customerService,
-                      setCustomerService
-                    )}
+                {renderStarSelector(
+                  'Recomendação',
+                  recommendation,
+                  setRecommendation
+                )}
 
-                    {renderStarSelector(
-                      '3. Recomendação do Vendedor',
-                      'Probabilidade de recomendar este vendedor/loja',
-                      recommendation,
-                      setRecommendation
-                    )}
-
-                    {renderStarSelector(
-                      '4. Satisfação Geral',
-                      'Nível global de satisfação com a compra nesta loja',
-                      deliverySpeed,
-                      setDeliverySpeed
-                    )}
-                  </div>
-                </div>
+                {renderStarSelector(
+                  'Satisfação Geral',
+                  deliverySpeed,
+                  setDeliverySpeed
+                )}
               </div>
 
               {/* User details & optional comment */}

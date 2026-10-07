@@ -8,6 +8,14 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 24,
     gender: 'feminino',
     photo: '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+      '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+      '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+      '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+    ],
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoDuration: '0:15 min',
     city: 'Maputo',
     province: 'Maputo Cidade',
     intentions: ['amizade', 'matrimonio'],
@@ -20,6 +28,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258841239901',
     whatsapp: '258841239901',
     availabilitySchedule: 'Tardes e fins de semana',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'limited_hours', hours: '14:00 - 19:00' },
+      videoCall: { state: 'limited_hours', hours: '20:00 - 22:00' }
+    },
     preferredAccommodations: ['Sommerschield Guest House', 'Costa do Sol']
   },
   {
@@ -28,6 +41,14 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 25,
     gender: 'feminino',
     photo: '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+      '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+      '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+      '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+    ],
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    videoDuration: '0:15 min',
     city: 'Maputo',
     province: 'Maputo Cidade',
     intentions: ['matrimonio'],
@@ -40,6 +61,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258849876543',
     whatsapp: '258849876543',
     availabilitySchedule: 'Fins de semana',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'unavailable' },
+      videoCall: { state: 'limited_hours', hours: '19:00 - 21:00' }
+    },
     preferredAccommodations: ['Polana Cimento', 'Sommerschield']
   },
 
@@ -50,6 +76,14 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 28,
     gender: 'masculino',
     photo: '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+      '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+      '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+      '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+    ],
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    videoDuration: '0:15 min',
     city: 'Matola',
     province: 'Maputo Província',
     intentions: ['matrimonio'],
@@ -62,6 +96,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258847890123',
     whatsapp: '258847890123',
     availabilitySchedule: 'Fins de semana e horários pós-laborais',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'available' },
+      videoCall: { state: 'limited_hours', hours: '18:00 - 21:00' }
+    },
     preferredAccommodations: ['Matola Fomento Suites', 'Macaneta']
   },
 
@@ -72,6 +111,14 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 23,
     gender: 'feminino',
     photo: '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+      '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+      '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+      '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+    ],
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoDuration: '0:15 min',
     city: 'Vilankulo',
     province: 'Inhambane',
     intentions: ['amizade'],
@@ -84,6 +131,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258846665544',
     whatsapp: '258846665544',
     availabilitySchedule: 'Horário flexível',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'limited_hours', hours: '08:00 - 17:00' },
+      videoCall: { state: 'unavailable' }
+    },
     preferredAccommodations: ['Vilankulo Beach']
   },
   {
@@ -92,6 +144,12 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 26,
     gender: 'feminino',
     photo: '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+      '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+      '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+      '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+    ],
     city: 'Inhambane',
     province: 'Inhambane',
     intentions: ['amizade', 'matrimonio'],
@@ -104,6 +162,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258843991122',
     whatsapp: '258843991122',
     availabilitySchedule: 'Fins de semana e tardes',
+    contactAvailability: {
+      whatsapp: { state: 'limited_hours', hours: '12:00 - 20:00' },
+      phone: { state: 'available' },
+      videoCall: { state: 'limited_hours', hours: '18:00 - 21:00' }
+    },
   },
   {
     id: 'hl-inh-2',
@@ -111,6 +174,12 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 29,
     gender: 'masculino',
     photo: '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+      '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+      '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+      '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+    ],
     city: 'Inhambane',
     province: 'Inhambane',
     intentions: ['matrimonio'],
@@ -123,6 +192,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258843887766',
     whatsapp: '258843887766',
     availabilitySchedule: 'Horário pós-laboral',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'limited_hours', hours: '17:00 - 22:00' },
+      videoCall: { state: 'unavailable' }
+    },
   },
 
   // ================= Sofala (Beira) =================
@@ -132,6 +206,14 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 26,
     gender: 'feminino',
     photo: '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+      '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+      '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+      '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+    ],
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    videoDuration: '0:15 min',
     city: 'Beira',
     province: 'Sofala',
     intentions: ['amizade', 'matrimonio'],
@@ -144,6 +226,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258823456781',
     whatsapp: '258823456781',
     availabilitySchedule: 'Disponível com contacto prévio',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'limited_hours', hours: '08:00 - 16:00' },
+      videoCall: { state: 'available' }
+    },
     preferredAccommodations: ['Pensão Ponta Gêa Beira', 'Macuti']
   },
 
@@ -154,6 +241,12 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 32,
     gender: 'masculino',
     photo: '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+      '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+      '/src/assets/images/moz_profile_joao_1790448768692.jpg',
+      '/src/assets/images/moz_profile_carlos_1790448747366.jpg',
+    ],
     city: 'Nampula',
     province: 'Nampula',
     intentions: ['amizade', 'matrimonio'],
@@ -166,6 +259,11 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     phone: '+258845671234',
     whatsapp: '258845671234',
     availabilitySchedule: 'Fins de semana e noites',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'available' },
+      videoCall: { state: 'limited_hours', hours: '20:00 - 23:00' }
+    },
     preferredAccommodations: ['Nampula Bairro Central']
   },
 
@@ -176,6 +274,14 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     age: 25,
     gender: 'feminino',
     photo: '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+    photos: [
+      '/src/assets/images/moz_profile_elisa_1790448779859.jpg',
+      '/src/assets/images/moz_profile_ana_1790448736252.jpg',
+      '/src/assets/images/moz_profile_lucia_1790448757834.jpg',
+      '/src/assets/images/moz_profile_vanessa_1790448789948.jpg',
+    ],
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoDuration: '0:15 min',
     city: 'Pemba',
     province: 'Cabo Delgado',
     intentions: ['amizade', 'matrimonio'],
@@ -187,5 +293,10 @@ export const INITIAL_HEARTLINK_PROFILES: HeartLinkProfile[] = [
     profession: 'Assistente Administrativa',
     phone: '+258841129933',
     whatsapp: '258841129933',
+    contactAvailability: {
+      whatsapp: { state: 'available' },
+      phone: { state: 'unavailable' },
+      videoCall: { state: 'limited_hours', hours: '18:00 - 21:00' }
+    },
   }
 ];

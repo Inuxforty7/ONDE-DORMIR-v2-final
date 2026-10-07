@@ -32,17 +32,31 @@ import {
   Home,
   Briefcase,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  HeartHandshake,
+  Gem,
+  Crown
 } from 'lucide-react';
-import { HeartLinkProfile, HeartLinkIntention, Accommodation, UserLocationState } from '../types';
+import { HeartLinkProfile, HeartLinkIntention, ContactAvailability, Accommodation, UserLocationState } from '../types';
 import { INITIAL_HEARTLINK_PROFILES } from '../data/heartLinkProfiles';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
 import { HeartLinkBubblingHearts } from './HeartLinkBubblingHearts';
+import { HeartLinkP2PCapsule } from './HeartLinkP2PCapsule';
+import { HeartLinkMediaManager, HeartLinkMediaState } from './HeartLinkMediaManager';
+import { HeartLinkMediaGallery } from './HeartLinkMediaGallery';
+import { 
+  HeartLinkContactAvailabilitySection, 
+  HeartLinkContactMiniBadges, 
+  DEFAULT_CONTACT_AVAILABILITY 
+} from './HeartLinkContactAvailability';
+import { HeartLinkContactConfigurator } from './HeartLinkContactConfigurator';
 import { getPlatformTenureText } from '../utils/tenure';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { heartLinkService, FriendshipRecord, MarriageRecord, P2PTier, P2PGroupMessage } from '../services/heartLinkService';
+import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
 interface HeartLinkTabProps {
   onBackToHome?: () => void;
@@ -65,6 +79,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   onSelectAccommodation,
   onNavigateToExplore
 }) => {
+  const { getModuleCount } = useVisitAnalytics();
   const [profiles, setProfiles] = useState<HeartLinkProfile[]>(() => {
     const saved = localStorage.getItem('onde_dormir_heartlink_profiles');
     if (saved) {
@@ -84,8 +99,29 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     return saved ? JSON.parse(saved) : ['hl-1', 'hl-5'];
   });
 
-  const [activeSubTab, setActiveSubTab] = useState<'descobrir' | 'pessoas' | 'mensagens' | 'curtidas'>('descobrir');
+  const [activeSubTab, setActiveSubTab] = useState<'amizades' | 'pessoas' | 'casamentos'>('pessoas');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Real Persistent Friendships & Marriages
+  const [friendships, setFriendships] = useState<FriendshipRecord[]>(() => heartLinkService.getFriendships());
+  const [marriages, setMarriages] = useState<MarriageRecord[]>(() => heartLinkService.getMarriages());
+  const [isConfirmFriendshipModalOpen, setIsConfirmFriendshipModalOpen] = useState(false);
+  const [isConfirmMarriageModalOpen, setIsConfirmMarriageModalOpen] = useState(false);
+  const [selectedFriendshipTargetId, setSelectedFriendshipTargetId] = useState<string>('');
+  const [selectedMarriageTargetId, setSelectedMarriageTargetId] = useState<string>('');
+  const [friendshipFeedback, setFriendshipFeedback] = useState<string | null>(null);
+  const [marriageFeedback, setMarriageFeedback] = useState<string | null>(null);
+
+  // Compact P2P Chat State
+  const [activeP2PGroupModal, setActiveP2PGroupModal] = useState<P2PTier | null>(null);
+  const [p2pModalPlanTarget, setP2PModalPlanTarget] = useState<'vis_24h' | 'vis_7d' | 'vis_30d'>('vis_24h');
+  const [p2pTab, setP2PTab] = useState<'chat' | 'contactos'>('chat');
+  const [p2pMessages, setP2PMessages] = useState<Record<P2PTier, P2PGroupMessage[]>>(() => ({
+    heart: heartLinkService.getP2PMessages('heart'),
+    diamond: heartLinkService.getP2PMessages('diamond'),
+    king: heartLinkService.getP2PMessages('king'),
+  }));
+  const [p2pInputText, setP2PInputText] = useState('');
   
   const [selectedProvince, setSelectedProvince] = useState<string>(() => {
     if (!userLocation || userLocation.isAllMozambique) return 'all';
@@ -115,6 +151,13 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   const [regVisibilityMode, setRegVisibilityMode] = useState<'anonymous' | 'public'>('anonymous');
   const [pendingAction, setPendingAction] = useState<{ type: 'chat' | 'whatsapp' | 'register' | 'like'; profile?: HeartLinkProfile } | null>(null);
 
+  // HeartLink Profile Media State (4 photo slots + 1 video slot)
+  const [regMedia, setRegMedia] = useState<HeartLinkMediaState>({
+    photos: [null, null, null, null],
+    video: null,
+    videoDuration: undefined,
+  });
+
   // User Visibility State (Modo Anónimo vs. Vitrine Pública)
   const [userVisibility, setUserVisibility] = useState<UserVisibilityData>(() => {
     const saved = localStorage.getItem('onde_dormir_heartlink_visibility');
@@ -140,6 +183,11 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     const saved = localStorage.getItem('onde_dormir_my_heartlink_profile');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // HeartLink Contact Availability State for profile owner configuration
+  const [regContactAvailability, setRegContactAvailability] = useState<ContactAvailability>(
+    () => myProfile?.contactAvailability || DEFAULT_CONTACT_AVAILABILITY
+  );
 
   const handleSaveVisibility = (updated: UserVisibilityData) => {
     setUserVisibility(updated);
@@ -312,6 +360,36 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
   // Open Register with KYC Check
   const handleOpenRegister = () => {
+    // Populate media state if user already has a profile or verified selfie
+    if (myProfile) {
+      const existingPhotos: (string | null)[] = myProfile.photos && myProfile.photos.length > 0
+        ? [...myProfile.photos]
+        : [myProfile.photo];
+      while (existingPhotos.length < 4) {
+        existingPhotos.push(null);
+      }
+      setRegMedia({
+        photos: existingPhotos.slice(0, 4),
+        video: myProfile.video || null,
+        videoDuration: myProfile.videoDuration,
+      });
+      setRegContactAvailability(myProfile.contactAvailability || DEFAULT_CONTACT_AVAILABILITY);
+    } else if (verifiedDossier?.biometricSelfiePhoto) {
+      setRegMedia({
+        photos: [verifiedDossier.biometricSelfiePhoto, null, null, null],
+        video: null,
+        videoDuration: undefined,
+      });
+      setRegContactAvailability(DEFAULT_CONTACT_AVAILABILITY);
+    } else {
+      setRegMedia({
+        photos: [null, null, null, null],
+        video: null,
+        videoDuration: undefined,
+      });
+      setRegContactAvailability(DEFAULT_CONTACT_AVAILABILITY);
+    }
+
     if (!verifiedDossier) {
       setPendingAction({ type: 'register' });
       setIsVerificationOpen(true);
@@ -323,6 +401,12 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   // Verification completed callback
   const handleVerificationComplete = (dossier: VerificationDossier) => {
     setVerifiedDossier(dossier);
+    if (dossier.biometricSelfiePhoto && !regMedia.photos[0]) {
+      setRegMedia((prev) => ({
+        ...prev,
+        photos: [dossier.biometricSelfiePhoto, prev.photos[1], prev.photos[2], prev.photos[3]],
+      }));
+    }
     if (pendingAction) {
       const action = pendingAction;
       setPendingAction(null);
@@ -338,6 +422,150 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         setIsRegisterOpen(true);
       }
     }
+  };
+
+  // Real Persistent Counters
+  const activeP2PTier = heartLinkService.getActiveP2PTier(userVisibility);
+  const confirmedFriendshipsCount = useMemo(
+    () => friendships.filter((f) => f.status === 'confirmed').length,
+    [friendships]
+  );
+  const confirmedMarriagesCount = useMemo(
+    () => marriages.filter((m) => m.status === 'confirmed').length,
+    [marriages]
+  );
+
+  const handleP2PIconClick = (tier: P2PTier, planId: 'vis_24h' | 'vis_7d' | 'vis_30d') => {
+    if (activeP2PTier === tier) {
+      setActiveP2PGroupModal(tier);
+      setP2PTab('chat');
+    } else {
+      setP2PModalPlanTarget(planId);
+      setIsVisibilityModalOpen(true);
+    }
+  };
+
+  const handleSendP2PMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeP2PGroupModal || !p2pInputText.trim()) return;
+
+    const myName = myProfile?.name || verifiedDossier?.fullName || 'Você';
+    const myPhoto = myProfile?.photo || '/src/assets/images/moz_profile_ana_1790448736252.jpg';
+    const myId = myProfile?.id || (verifiedDossier ? `bi-${verifiedDossier.biNumber}` : 'my-id');
+
+    const newMsg = heartLinkService.sendP2PMessage(activeP2PGroupModal, {
+      senderId: myId,
+      senderName: myName,
+      senderPhoto: myPhoto,
+      text: p2pInputText.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    });
+
+    setP2PMessages((prev) => ({
+      ...prev,
+      [activeP2PGroupModal]: [...(prev[activeP2PGroupModal] || []), newMsg],
+    }));
+    setP2PInputText('');
+  };
+
+  const handleInitiateFriendship = (targetProfile: HeartLinkProfile) => {
+    const myId = myProfile?.id || (verifiedDossier ? `bi-${verifiedDossier.biNumber}` : 'my-user');
+    const myName = myProfile?.name || verifiedDossier?.fullName || 'Você';
+    const myPhoto = myProfile?.photo || '/src/assets/images/moz_profile_ana_1790448736252.jpg';
+
+    const result = heartLinkService.confirmFriendship({
+      user1Id: myId,
+      user1Name: myName,
+      user1Photo: myPhoto,
+      user2Id: targetProfile.id,
+      user2Name: targetProfile.name,
+      user2Photo: targetProfile.photo,
+      city: targetProfile.city,
+      asUser: 1,
+    });
+
+    setFriendships(heartLinkService.getFriendships());
+    if (result.becameConfirmed) {
+      setFriendshipFeedback(`Amizade com ${targetProfile.name} confirmada por ambos!`);
+    } else if (!result.isNew) {
+      setFriendshipFeedback(`Amizade já confirmada anteriormente.`);
+    } else {
+      setFriendshipFeedback(`Pedido registado! Aguardando confirmação mútua de ${targetProfile.name}.`);
+    }
+    setTimeout(() => setFriendshipFeedback(null), 3500);
+    setIsConfirmFriendshipModalOpen(false);
+    setSelectedFriendshipTargetId('');
+  };
+
+  const handlePartnerConfirmFriendship = (record: FriendshipRecord) => {
+    heartLinkService.confirmFriendship({
+      user1Id: record.user1Id,
+      user1Name: record.user1Name,
+      user1Photo: record.user1Photo,
+      user2Id: record.user2Id,
+      user2Name: record.user2Name,
+      user2Photo: record.user2Photo,
+      city: record.city,
+      asUser: 2,
+    });
+    setFriendships(heartLinkService.getFriendships());
+    setFriendshipFeedback(`Amizade confirmada por ambos os utilizadores!`);
+    setTimeout(() => setFriendshipFeedback(null), 3500);
+  };
+
+  const handleInitiateMarriage = (targetProfile: HeartLinkProfile) => {
+    const myId = myProfile?.id || (verifiedDossier ? `bi-${verifiedDossier.biNumber}` : 'my-user');
+    const myName = myProfile?.name || verifiedDossier?.fullName || 'Você';
+    const myPhoto = myProfile?.photo || '/src/assets/images/moz_profile_ana_1790448736252.jpg';
+
+    const result = heartLinkService.confirmMarriage({
+      user1Id: myId,
+      user1Name: myName,
+      user1Photo: myPhoto,
+      user2Id: targetProfile.id,
+      user2Name: targetProfile.name,
+      user2Photo: targetProfile.photo,
+      city: targetProfile.city,
+      asUser: 1,
+    });
+
+    setMarriages(heartLinkService.getMarriages());
+    if (result.becameConfirmed) {
+      setMarriageFeedback(`Casamento com ${targetProfile.name} confirmado por ambos!`);
+    } else if (!result.isNew) {
+      setMarriageFeedback(`Casamento já confirmado anteriormente.`);
+    } else {
+      setMarriageFeedback(`Pedido registado! Aguardando confirmação mútua de ${targetProfile.name}.`);
+    }
+    setTimeout(() => setMarriageFeedback(null), 3500);
+    setIsConfirmMarriageModalOpen(false);
+    setSelectedMarriageTargetId('');
+  };
+
+  const handlePartnerConfirmMarriage = (record: MarriageRecord) => {
+    heartLinkService.confirmMarriage({
+      user1Id: record.user1Id,
+      user1Name: record.user1Name,
+      user1Photo: record.user1Photo,
+      user2Id: record.user2Id,
+      user2Name: record.user2Name,
+      user2Photo: record.user2Photo,
+      city: record.city,
+      asUser: 2,
+    });
+    setMarriages(heartLinkService.getMarriages());
+    setMarriageFeedback(`Casamento confirmado por ambos os utilizadores!`);
+    setTimeout(() => setMarriageFeedback(null), 3500);
+  };
+
+  const getTierMembers = (tier: P2PTier): HeartLinkProfile[] => {
+    const sliceMap: Record<P2PTier, [number, number]> = {
+      heart: [0, 5],
+      diamond: [2, 7],
+      king: [4, 9],
+    };
+    const [start, end] = sliceMap[tier];
+    return profiles.slice(start, end);
   };
 
   // Source profiles for the showcase (respects Anonymous Mode vs Public Showcase)
@@ -396,13 +624,9 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         return false;
       }
 
-      if (activeSubTab === 'curtidas' && !likedProfileIds.includes(profile.id)) {
-        return false;
-      }
-
       return true;
     });
-  }, [allShowcaseProfiles, searchQuery, selectedProvince, selectedCity, selectedGender, selectedIntention, activeSubTab, likedProfileIds]);
+  }, [allShowcaseProfiles, searchQuery, selectedProvince, selectedCity, selectedGender, selectedIntention]);
 
   const featuredProfiles = useMemo(() => {
     return allShowcaseProfiles.filter((p) => p.isFeatured || p.isPremium || p.verified || p.isPubliclyVisible);
@@ -412,6 +636,14 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   const handleCreateProfile = (newP: HeartLinkProfile, initialMode: 'anonymous' | 'public') => {
     setMyProfile(newP);
     localStorage.setItem('onde_dormir_my_heartlink_profile', JSON.stringify(newP));
+
+    // Persist into profiles list
+    setProfiles((prev) => {
+      const filtered = prev.filter((p) => p.id !== newP.id);
+      const updated = [newP, ...filtered];
+      localStorage.setItem('onde_dormir_heartlink_profiles', JSON.stringify(updated));
+      return updated;
+    });
 
     if (initialMode === 'public') {
       setIsRegisterOpen(false);
@@ -448,8 +680,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     setTimeout(() => {
       const replies = [
         `Olá! Muito obrigado pela mensagem. Como tem corrido o teu dia em ${chatProfile.city}?`,
-        `Podes mandar mensagem no meu WhatsApp (${chatProfile.whatsapp || '84 123 4567'}) para conversarmos melhor! ✨`,
-        `Olá! Que bom receber o teu contacto. Conte-me mais sobre si.`
+        `Olá! Que bom receber o teu contacto. Conte-me mais sobre si.`,
+        `Prazer em falar contigo! O que mais gostas de fazer no teu tempo livre?`
       ];
       const randomReply = replies[Math.floor(Math.random() * replies.length)];
       setChatMessages((prev) => ({
@@ -491,22 +723,32 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={handleOpenRegister}
-            className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Criar Perfil</span>
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            {/* Real Module Visit Counter */}
+            <div 
+              className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
+              title="Visitas ao módulo HeartLink"
+            >
+              <Eye className="w-3.5 h-3.5 text-pink-200 shrink-0" />
+              <span>{formatVisitCount(getModuleCount('heartlink'))}</span>
+            </div>
+
+            <button
+              onClick={handleOpenRegister}
+              className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{myProfile ? 'Editar Meu Perfil' : 'Criar Perfil'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Sub Navigation Tabs */}
         <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-white/20 overflow-x-auto no-scrollbar">
           {[
-            { id: 'descobrir', label: 'Descobrir', icon: Sparkles },
-            { id: 'pessoas', label: 'Pessoas', icon: Users },
-            { id: 'mensagens', label: 'Mensagens', icon: MessageCircle, count: Object.keys(chatMessages).length },
-            { id: 'curtidas', label: 'Curtidas', icon: Heart, count: likedProfileIds.length },
+            { id: 'amizades', label: 'Amizades Confirmadas', icon: HeartHandshake, count: confirmedFriendshipsCount },
+            { id: 'pessoas', label: 'Pessoas', icon: Users, count: filteredProfiles.length },
+            { id: 'casamentos', label: 'Casamentos Confirmados', icon: Gem, count: confirmedMarriagesCount },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
@@ -514,7 +756,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id as any)}
-                className={`h-8 px-3 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                className={`h-8.5 px-3 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95 ${
                   isActive
                     ? 'bg-white text-rose-700 shadow-xs'
                     : 'bg-white/15 text-white hover:bg-white/25'
@@ -522,7 +764,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'fill-rose-700' : ''}`} />
                 <span>{tab.label}</span>
-                {tab.count !== undefined && tab.count > 0 && (
+                {tab.count !== undefined && (
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${isActive ? 'bg-rose-100 text-rose-700' : 'bg-white/30 text-white'}`}>
                     {tab.count}
                   </span>
@@ -533,184 +775,210 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       </div>
 
-      {/* 2. Visibility Status Banner (Modo Anónimo vs. Vitrine Pública) */}
-      <div className="overflow-hidden rounded-3xl border shadow-xs transition-all">
-        {userVisibility.isUnlocked && userVisibility.mode === 'public_showcase' ? (
-          /* Estado 1: Perfil Visível na Vitrine */
-          <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 text-white p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shrink-0 shadow-inner">
-                <Eye className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-extrabold text-sm text-white">
-                    ✨ Perfil em Destaque na Vitrine
-                  </span>
-                  <span className="text-[10px] font-black bg-black/25 text-amber-200 px-2 py-0.5 rounded-full border border-amber-200/30">
-                    {userVisibility.planName || 'Passe Ativo'}
-                  </span>
-                </div>
-                <p className="text-xs text-pink-100 mt-0.5 flex items-center gap-1.5 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-amber-200 shrink-0" />
-                  <span>{calculateRemainingTime(userVisibility.expiresAt)} restantes</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={handleToggleAnonymous}
-                className="flex-1 sm:flex-none h-9 px-3 bg-black/30 hover:bg-black/40 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                title="Pausar destaque"
-              >
-                <EyeOff className="w-3.5 h-3.5" />
-                <span>Pausar</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsVisibilityModalOpen(true)}
-                className="flex-1 sm:flex-none h-9 px-3.5 bg-white text-rose-700 hover:bg-rose-50 active:scale-95 font-black text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-              >
-                <span>Renovar</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Estado 2: Modo Anónimo */
-          <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white p-3.5 sm:p-4 border-neutral-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
-                <EyeOff className="w-5 h-5 text-neutral-300" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-white">
-                    Modo Privado Ativo
-                  </span>
-                  <span className="text-[10px] font-semibold bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/40">
-                    Grátis
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-400 mt-0.5 leading-snug">
-                  Navegue e converse com total discrição e privacidade.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-              {userVisibility.isUnlocked ? (
-                <button
-                  type="button"
-                  onClick={handleToggleAnonymous}
-                  className="h-9 px-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs rounded-xl border border-neutral-600 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Reativar</span>
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setIsVisibilityModalOpen(true)}
-                className="flex-1 sm:flex-none h-9 sm:h-10 px-3.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Destacar Perfil</span>
-              </button>
-            </div>
-          </div>
-        )}
+      {/* 2. CHAT P2P Glossy Capsule Section */}
+      <div className="bg-white/80 backdrop-blur-xs rounded-2xl sm:rounded-3xl border border-pink-100 p-2.5 sm:p-4 shadow-sm">
+        <HeartLinkP2PCapsule
+          activeTier={activeP2PTier}
+          onSelectTier={handleP2PIconClick}
+        />
       </div>
 
-      {/* 3. MENSAGENS SUB-TAB (DEDICATED INBOX) */}
-      {activeSubTab === 'mensagens' && (
-        <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-neutral-100 flex items-center justify-between">
+      {/* 3. AMIZADES CONFIRMADAS TAB */}
+      {activeSubTab === 'amizades' && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-2xs overflow-hidden p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-neutral-100">
             <div>
-              <h2 className="text-base font-extrabold text-neutral-900">Conversas</h2>
-              <p className="text-xs text-neutral-500">Suas mensagens e contactos no HeartLink</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
+                  Amizades Confirmadas
+                </h2>
+                <span className="text-xs font-black bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200">
+                  {confirmedFriendshipsCount}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Conexões reais formadas e confirmadas mutuamente por ambos os utilizadores.
+              </p>
             </div>
-            <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200/80">
-              {Object.keys(chatMessages).length} conversas
-            </span>
+            <button
+              type="button"
+              onClick={() => setIsConfirmFriendshipModalOpen(true)}
+              className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <HeartHandshake className="w-3.5 h-3.5" />
+              <span>Confirmar Amizade</span>
+            </button>
           </div>
 
-          <div className="divide-y divide-neutral-100">
-            {Object.keys(chatMessages).length === 0 ? (
-              <div className="p-8 text-center space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto text-rose-600">
-                  <MessageCircle className="w-7 h-7" />
-                </div>
-                <h3 className="font-bold text-neutral-800 text-sm">Ainda não iniciou nenhuma conversa</h3>
-                <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-                  Explore os perfis verificados e toque em "Conversar" para quebrar o gelo!
-                </p>
-                <button
-                  onClick={() => setActiveSubTab('descobrir')}
-                  className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl active:scale-95 cursor-pointer"
+          {friendshipFeedback && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{friendshipFeedback}</span>
+            </div>
+          )}
+
+          {friendships.length === 0 ? (
+            <div className="p-8 text-center text-xs text-neutral-500 font-medium">
+              Ainda não existem amizades registadas.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {friendships.map((f) => (
+                <div
+                  key={f.id}
+                  className="p-3.5 rounded-2xl border border-neutral-200/90 bg-neutral-50/70 hover:bg-white hover:border-neutral-300 transition-colors shadow-2xs space-y-2.5"
                 >
-                  Descobrir Perfis
-                </button>
-              </div>
-            ) : (
-              Object.entries(chatMessages).map(([profileId, messages]) => {
-                const targetProf = profiles.find((p) => p.id === profileId) || {
-                  id: profileId,
-                  name: 'Contacto HeartLink',
-                  photo: '/src/assets/images/moz_profile_ana_1790448736252.jpg',
-                  city: 'Maputo',
-                  verified: true,
-                } as HeartLinkProfile;
-
-                const lastMsg = messages[messages.length - 1];
-
-                return (
-                  <div
-                    key={profileId}
-                    onClick={() => setChatProfile(targetProf)}
-                    className="p-3.5 sm:p-4 hover:bg-neutral-50 flex items-center justify-between gap-3 cursor-pointer transition-colors active:bg-neutral-100"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-neutral-900 shrink-0 border border-neutral-200">
-                        <img src={targetProf.photo} alt={targetProf.name} className="w-full h-full object-cover" />
-                        {targetProf.verified && (
-                          <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-tl-lg flex items-center justify-center text-white">
-                            <Check className="w-2.5 h-2.5 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <img src={f.user1Photo} alt={f.user1Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-sm text-neutral-900 truncate">
-                            {targetProf.name}
-                          </h4>
-                          <span className="text-[10px] text-neutral-400 font-medium">
-                            {targetProf.city}
-                          </span>
-                        </div>
-                        <p className="text-xs text-neutral-600 truncate mt-0.5">
-                          {lastMsg?.sender === 'user' ? 'Você: ' : ''}{lastMsg?.text || 'Iniciar conversa...'}
-                        </p>
+                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{f.user1Name}</span>
+                        <span className="text-[10px] text-neutral-400 block">{f.city || 'Maputo'}</span>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-medium text-neutral-400 block">
-                        {lastMsg?.time || 'Hoje'}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto mt-1" />
+                    <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                      <HeartHandshake className="w-3.5 h-3.5" />
+                    </div>
+
+                    <div className="flex items-center gap-2 min-w-0 flex-1 justify-end text-right">
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{f.user2Name}</span>
+                        <span className="text-[10px] text-neutral-400 block">{f.city || 'Maputo'}</span>
+                      </div>
+                      <img src={f.user2Photo} alt={f.user2Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
                     </div>
                   </div>
-                );
-              })
-            )}
-          </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60 text-[11px]">
+                    {f.status === 'confirmed' ? (
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Confirmada por ambos ({f.confirmedAt || 'Registada'})</span>
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-semibold flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Aguardando confirmação de {f.user2Name.split(' ')[0]}</span>
+                      </span>
+                    )}
+
+                    {f.status === 'pending' && !f.user2Confirmed && (
+                      <button
+                        type="button"
+                        onClick={() => handlePartnerConfirmFriendship(f)}
+                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10.5px] font-bold cursor-pointer"
+                      >
+                        Confirmar como {f.user2Name.split(' ')[0]}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* 4. DISCOVER, PESSOAS & CURTIDAS (SEARCH + FILTERS + GRID) */}
-      {activeSubTab !== 'mensagens' && (
+      {/* 4. CASAMENTOS CONFIRMADOS TAB */}
+      {activeSubTab === 'casamentos' && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-2xs overflow-hidden p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-neutral-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
+                  Casamentos Confirmados
+                </h2>
+                <span className="text-xs font-black bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200">
+                  {confirmedMarriagesCount}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Uniões matrimoniais de casais que se conheceram através do HeartLink.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsConfirmMarriageModalOpen(true)}
+              className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <Gem className="w-3.5 h-3.5" />
+              <span>Confirmar Casamento</span>
+            </button>
+          </div>
+
+          {marriageFeedback && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{marriageFeedback}</span>
+            </div>
+          )}
+
+          {marriages.length === 0 ? (
+            <div className="p-8 text-center text-xs text-neutral-500 font-medium">
+              Ainda não existem casamentos registados.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {marriages.map((m) => (
+                <div
+                  key={m.id}
+                  className="p-3.5 rounded-2xl border border-neutral-200/90 bg-neutral-50/70 hover:bg-white hover:border-neutral-300 transition-colors shadow-2xs space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <img src={m.user1Photo} alt={m.user1Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{m.user1Name}</span>
+                        <span className="text-[10px] text-neutral-400 block">{m.city || 'Maputo'}</span>
+                      </div>
+                    </div>
+
+                    <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                      <Gem className="w-3.5 h-3.5" />
+                    </div>
+
+                    <div className="flex items-center gap-2 min-w-0 flex-1 justify-end text-right">
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{m.user2Name}</span>
+                        <span className="text-[10px] text-neutral-400 block">{m.city || 'Maputo'}</span>
+                      </div>
+                      <img src={m.user2Photo} alt={m.user2Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60 text-[11px]">
+                    {m.status === 'confirmed' ? (
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Casamento Confirmado ({m.confirmedAt || 'Registado'})</span>
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-semibold flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Aguardando confirmação de {m.user2Name.split(' ')[0]}</span>
+                      </span>
+                    )}
+
+                    {m.status === 'pending' && !m.user2Confirmed && (
+                      <button
+                        type="button"
+                        onClick={() => handlePartnerConfirmMarriage(m)}
+                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10.5px] font-bold cursor-pointer"
+                      >
+                        Confirmar como {m.user2Name.split(' ')[0]}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 5. PESSOAS TAB (SEARCH + FILTERS + GRID) */}
+      {activeSubTab === 'pessoas' && (
         <>
           {/* Filter and Search Bar - Sticky on scroll for instant access */}
           <div className="sticky top-[48px] sm:top-[56px] z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl border border-neutral-200 shadow-sm space-y-2">
@@ -814,13 +1082,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
           <div className="space-y-2.5">
             <div className="flex items-center justify-between text-xs text-neutral-600 px-1">
               <span>
-                <strong className="text-neutral-900 font-bold">{filteredProfiles.length}</strong> {activeSubTab === 'curtidas' ? 'perfis curtidos' : 'perfis verificados'}
+                <strong className="text-neutral-900 font-bold">{filteredProfiles.length}</strong> perfis disponíveis
               </span>
-              {activeSubTab === 'curtidas' && (
-                <span className="text-rose-600 font-semibold flex items-center gap-1">
-                  <Heart className="w-3.5 h-3.5 fill-rose-600" /> Os seus favoritos
-                </span>
-              )}
             </div>
 
             {filteredProfiles.length === 0 ? (
@@ -829,16 +1092,14 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   <HeartLinkTwoHeartsIcon className="w-8 h-8" variant="embroidered" showStitches={true} />
                 </div>
                 <h3 className="font-extrabold text-neutral-800 text-base">
-                  {activeSubTab === 'curtidas' ? 'Ainda não adicionou perfis aos favoritos' : 'Nenhum perfil encontrado com os filtros atuais'}
+                  Nenhum perfil encontrado com os filtros atuais
                 </h3>
                 <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                  {activeSubTab === 'curtidas'
-                    ? 'Toque no coração de qualquer perfil na vitrine para guardá-lo nesta lista de curtidas.'
-                    : 'Experimente selecionar outra província ou remover os filtros para ver mais pretendentes.'}
+                  Experimente selecionar outra província ou remover os filtros para ver mais pretendentes.
                 </p>
                 <button
                   onClick={() => {
-                    setActiveSubTab('descobrir');
+                    setActiveSubTab('pessoas');
                     setSelectedProvince('all');
                     setSelectedCity('all');
                     setSelectedGender('all');
@@ -921,6 +1182,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                         <p className="text-[11px] text-neutral-600 line-clamp-2 leading-tight">
                           {profile.bio}
                         </p>
+                        <HeartLinkContactMiniBadges availability={profile.contactAvailability} className="pt-0.5" />
                       </div>
 
                       <button
@@ -943,38 +1205,15 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       {selectedProfile && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="relative aspect-[3/4] sm:aspect-[4/5] max-h-[380px] sm:max-h-[420px] w-full bg-neutral-100 flex items-center justify-center overflow-hidden">
-              <img
-                src={selectedProfile.photo}
-                alt={selectedProfile.name}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover object-top"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
-
+            {/* Media Gallery (4 photos + 1 video) */}
+            <div className="relative w-full">
+              <HeartLinkMediaGallery profile={selectedProfile} />
               <button
                 onClick={() => setSelectedProfile(null)}
-                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center cursor-pointer transition-colors z-20"
               >
                 <X className="w-4 h-4" />
               </button>
-
-              <div className="absolute bottom-3 left-3.5 right-3.5 text-white space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-black">
-                    {selectedProfile.name}, {selectedProfile.age}
-                  </h2>
-                  {selectedProfile.verified && !selectedProfile.id.startsWith('hl-') && (
-                    <span className="flex items-center gap-1 text-[10.5px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md">
-                      <CheckCircle2 className="w-3 h-3" /> Verificado
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-neutral-200">
-                  <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                  <span>{selectedProfile.city} • {selectedProfile.province}</span>
-                </div>
-              </div>
             </div>
 
             <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
@@ -1046,27 +1285,23 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* 3. Disponibilidade de Contacto */}
+              <HeartLinkContactAvailabilitySection 
+                availability={selectedProfile.contactAvailability} 
+                showTitle={true}
+              />
             </div>
 
             {/* Action Buttons */}
             <div className="p-3.5 border-t border-neutral-100 flex items-center gap-2 bg-neutral-50">
               <button
                 onClick={(e) => handleOpenChat(selectedProfile, e)}
-                className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors"
+                className="w-full h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>Conversar no Chat</span>
+                <span>Conversar no Chat Interno</span>
               </button>
-
-              {selectedProfile.whatsapp && (
-                <button
-                  onClick={(e) => handleOpenWhatsApp(selectedProfile, e)}
-                  className="h-11 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-sm cursor-pointer transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -1114,12 +1349,16 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   '/src/assets/images/moz_profile_joao_1790448768692.jpg',
                 ];
 
-                const chosenPhoto = verifiedDossier?.biometricSelfiePhoto || (gender === 'feminino' 
+                const fallbackPhoto = verifiedDossier?.biometricSelfiePhoto || (gender === 'feminino' 
                   ? defaultFemalePhotos[Math.floor(Math.random() * defaultFemalePhotos.length)]
                   : defaultMalePhotos[Math.floor(Math.random() * defaultMalePhotos.length)]);
 
+                const validUploadedPhotos = regMedia.photos.filter((p): p is string => Boolean(p));
+                const primaryPhoto = validUploadedPhotos.length > 0 ? validUploadedPhotos[0] : fallbackPhoto;
+                const finalPhotosList = validUploadedPhotos.length > 0 ? validUploadedPhotos : [primaryPhoto];
+
                 const newProfile: HeartLinkProfile = {
-                  id: `hl-custom-${Date.now()}`,
+                  id: myProfile?.id || `hl-custom-${Date.now()}`,
                   name,
                   age,
                   gender,
@@ -1129,7 +1368,11 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   profession,
                   whatsapp,
                   phone: whatsapp,
-                  photo: chosenPhoto,
+                  contactAvailability: regContactAvailability,
+                  photo: primaryPhoto,
+                  photos: finalPhotosList,
+                  video: regMedia.video || undefined,
+                  videoDuration: regMedia.videoDuration || (regMedia.video ? '0:30 min' : undefined),
                   intentions: regIntentions.length > 0 ? regIntentions : ['amizade'],
                   verified: true,
                   isPremium: regVisibilityMode === 'public',
@@ -1138,14 +1381,23 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
                 handleCreateProfile(newProfile, regVisibilityMode);
               }}
-              className="p-4 space-y-3 max-h-[75vh] overflow-y-auto"
+              className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto"
             >
+              {/* Media Upload (4 Photos Slots + 1 Video Slot) */}
+              <div className="bg-neutral-50/70 p-3 rounded-2xl border border-neutral-200/90">
+                <HeartLinkMediaManager
+                  media={regMedia}
+                  onChange={setRegMedia}
+                  isEditable={true}
+                />
+              </div>
+
               <div>
                 <label className="text-xs font-bold text-neutral-700 block mb-1">Nome ou Apelido *</label>
                 <input 
                   name="name" 
                   required 
-                  defaultValue={verifiedDossier?.fullName || ''}
+                  defaultValue={myProfile?.name || verifiedDossier?.fullName || ''}
                   placeholder="Ex: Tatiana" 
                   className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm outline-none" 
                 />
@@ -1154,11 +1406,11 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-bold text-neutral-700 block mb-1">Idade *</label>
-                  <input name="age" type="number" min="18" max="75" defaultValue="24" required className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm outline-none" />
+                  <input name="age" type="number" min="18" max="75" defaultValue={myProfile?.age || 24} required className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm outline-none" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-neutral-700 block mb-1">Género *</label>
-                  <select name="gender" className="w-full h-10 px-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none">
+                  <select name="gender" defaultValue={myProfile?.gender || 'feminino'} className="w-full h-10 px-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none">
                     <option value="feminino">Feminino</option>
                     <option value="masculino">Masculino</option>
                   </select>
@@ -1170,7 +1422,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   <label className="text-xs font-bold text-neutral-700 block mb-1">Província *</label>
                   <select 
                     name="province" 
-                    defaultValue={verifiedDossier?.province || 'Maputo Cidade'}
+                    defaultValue={myProfile?.province || verifiedDossier?.province || 'Maputo Cidade'}
                     className="w-full h-10 px-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none"
                   >
                     {mozProvinces.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -1180,12 +1432,22 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                   <label className="text-xs font-bold text-neutral-700 block mb-1">Cidade *</label>
                   <select 
                     name="city" 
-                    defaultValue={verifiedDossier?.city || 'Maputo'}
+                    defaultValue={myProfile?.city || verifiedDossier?.city || 'Maputo'}
                     className="w-full h-10 px-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none"
                   >
                     {mozCities.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-700 block mb-1">Profissão / Ocupação</label>
+                <input 
+                  name="profession" 
+                  defaultValue={myProfile?.profession || ''}
+                  placeholder="Ex: Gestor Comercial, Estudante..." 
+                  className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm outline-none" 
+                />
               </div>
 
               {/* Strict 2 Objectives Selector */}
@@ -1235,15 +1497,28 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 <input 
                   name="whatsapp" 
                   required 
-                  defaultValue={verifiedDossier?.whatsapp || ''}
+                  defaultValue={myProfile?.whatsapp || verifiedDossier?.whatsapp || ''}
                   placeholder="Ex: 841234567" 
                   className="w-full h-10 px-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs sm:text-sm outline-none" 
                 />
               </div>
 
+              {/* Contact Availability Configurator */}
+              <HeartLinkContactConfigurator
+                value={regContactAvailability}
+                onChange={setRegContactAvailability}
+              />
+
               <div>
                 <label className="text-xs font-bold text-neutral-700 block mb-1">Sobre Mim *</label>
-                <textarea name="bio" required rows={2} placeholder="Descreva um pouco sobre si..." className="w-full p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none resize-none" />
+                <textarea 
+                  name="bio" 
+                  required 
+                  rows={2} 
+                  defaultValue={myProfile?.bio || ''}
+                  placeholder="Descreva um pouco sobre si..." 
+                  className="w-full p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs outline-none resize-none" 
+                />
               </div>
 
               {/* Escolha de Visibilidade */}
@@ -1351,15 +1626,6 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5">
-                {chatProfile.whatsapp && (
-                  <button
-                    onClick={() => handleOpenWhatsApp(chatProfile)}
-                    className="w-7 h-7 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center cursor-pointer shadow-xs"
-                    title="WhatsApp"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                  </button>
-                )}
                 <button
                   onClick={() => setChatProfile(null)}
                   className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer"
@@ -1426,6 +1692,355 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       )}
 
+      {/* 8. Confirm Friendship Modal */}
+      {isConfirmFriendshipModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-rose-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                  <HeartHandshake className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-extrabold text-base">Confirmar Amizade</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsConfirmFriendshipModalOpen(false);
+                  setSelectedFriendshipTargetId('');
+                }}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Selecione o utilizador com quem estabeleceu amizade através do HeartLink para registar a confirmação.
+              </p>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {profiles.map((p) => {
+                  const isSelected = selectedFriendshipTargetId === p.id;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedFriendshipTargetId(p.id)}
+                      className={`p-2.5 rounded-2xl border flex items-center justify-between gap-2.5 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-rose-600 bg-rose-50/70 ring-2 ring-rose-500/20'
+                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={p.photo}
+                          alt={p.name}
+                          className="w-9 h-9 rounded-full object-cover border border-neutral-200 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="font-bold text-xs text-neutral-900 block truncate">{p.name}</span>
+                          <span className="text-[10px] text-neutral-500 block truncate">{p.city}</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsConfirmFriendshipModalOpen(false);
+                    setSelectedFriendshipTargetId('');
+                  }}
+                  className="flex-1 h-10 rounded-xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedFriendshipTargetId}
+                  onClick={() => {
+                    const target = profiles.find((p) => p.id === selectedFriendshipTargetId);
+                    if (target) handleInitiateFriendship(target);
+                  }}
+                  className="flex-1 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. Confirm Marriage Modal */}
+      {isConfirmMarriageModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-rose-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Gem className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-extrabold text-base">Confirmar Casamento</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsConfirmMarriageModalOpen(false);
+                  setSelectedMarriageTargetId('');
+                }}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Selecione o cônjuge com quem se conheceu através do HeartLink para registar a celebração do matrimónio.
+              </p>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {profiles.map((p) => {
+                  const isSelected = selectedMarriageTargetId === p.id;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedMarriageTargetId(p.id)}
+                      className={`p-2.5 rounded-2xl border flex items-center justify-between gap-2.5 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-rose-600 bg-rose-50/70 ring-2 ring-rose-500/20'
+                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={p.photo}
+                          alt={p.name}
+                          className="w-9 h-9 rounded-full object-cover border border-neutral-200 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="font-bold text-xs text-neutral-900 block truncate">{p.name}</span>
+                          <span className="text-[10px] text-neutral-500 block truncate">{p.city}</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsConfirmMarriageModalOpen(false);
+                    setSelectedMarriageTargetId('');
+                  }}
+                  className="flex-1 h-10 rounded-xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedMarriageTargetId}
+                  onClick={() => {
+                    const target = profiles.find((p) => p.id === selectedMarriageTargetId);
+                    if (target) handleInitiateMarriage(target);
+                  }}
+                  className="flex-1 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. Active P2P Group Modal (Chat & Direct Contacts) */}
+      {activeP2PGroupModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full h-[88vh] max-h-[600px] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="bg-neutral-900 text-white p-3 sm:p-4 flex items-center justify-between shrink-0 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg">
+                  {activeP2PGroupModal === 'heart' && '♥'}
+                  {activeP2PGroupModal === 'diamond' && '◆'}
+                  {activeP2PGroupModal === 'king' && '♛'}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base flex items-center gap-2">
+                    <span>
+                      Chat P2P {activeP2PGroupModal === 'heart' ? '♥' : activeP2PGroupModal === 'diamond' ? '◆' : '♛'}
+                    </span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                      Plano Ativo
+                    </span>
+                  </h3>
+                  <div className="text-[10.5px] text-neutral-400">
+                    {heartLinkService.getTierMembers(activeP2PGroupModal, profiles, myProfile).length} Membros Conectados
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveP2PGroupModal(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Sub-tabs: Chat vs Direct Contacts */}
+            <div className="flex border-b border-neutral-200 bg-neutral-100/70 p-1.5 gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setP2PTab('chat')}
+                className={`flex-1 h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  p2pTab === 'chat'
+                    ? 'bg-white text-neutral-900 shadow-2xs font-extrabold'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Chat em Grupo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setP2PTab('contactos')}
+                className={`flex-1 h-8.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  p2pTab === 'contactos'
+                    ? 'bg-white text-neutral-900 shadow-2xs font-extrabold'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Contactos Directos</span>
+              </button>
+            </div>
+
+            {/* Body */}
+            {p2pTab === 'chat' ? (
+              <>
+                <div className="flex-1 p-3 overflow-y-auto space-y-2.5 bg-neutral-50/50">
+                  {(p2pMessages[activeP2PGroupModal] || []).map((msg) => {
+                    const isMe = msg.senderId === (myProfile?.id || (verifiedDossier ? `bi-${verifiedDossier.biNumber}` : 'my-user'));
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
+                      >
+                        <img
+                          src={msg.senderPhoto}
+                          alt={msg.senderName}
+                          className="w-7 h-7 rounded-full object-cover border border-neutral-200 shrink-0"
+                        />
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-3 py-1.5 text-xs shadow-2xs ${
+                            isMe
+                              ? 'bg-rose-600 text-white rounded-tr-xs'
+                              : 'bg-white text-neutral-800 border border-neutral-200 rounded-tl-xs'
+                          }`}
+                        >
+                          {!isMe && (
+                            <span className="font-bold text-[10px] text-rose-600 block mb-0.5">
+                              {msg.senderName}
+                            </span>
+                          )}
+                          <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                          <span
+                            className={`text-[9px] block text-right mt-0.5 ${
+                              isMe ? 'text-rose-200' : 'text-neutral-400'
+                            }`}
+                          >
+                            {msg.time}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <form
+                  onSubmit={handleSendP2PMessage}
+                  className="p-2.5 bg-white border-t border-neutral-200 flex items-center gap-1.5 shrink-0"
+                >
+                  <input
+                    type="text"
+                    placeholder="Escreva no grupo..."
+                    value={p2pInputText}
+                    onChange={(e) => setP2PInputText(e.target.value)}
+                    className="flex-1 h-10 px-3 bg-neutral-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-rose-400"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!p2pInputText.trim()}
+                    className="w-10 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white flex items-center justify-center cursor-pointer transition-colors shrink-0 shadow-xs"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 bg-neutral-50/50">
+                {heartLinkService
+                  .getTierMembers(activeP2PGroupModal, profiles, myProfile)
+                  .filter((m) => m.id !== (myProfile?.id || (verifiedDossier ? `bi-${verifiedDossier.biNumber}` : 'my-user')))
+                  .map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-3 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={member.photo}
+                          alt={member.name}
+                          className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="font-extrabold text-xs text-neutral-900 block truncate">
+                            {member.name}
+                          </span>
+                          <span className="text-[10px] text-neutral-500 block truncate">
+                            {member.city} • {member.whatsapp || member.phone || '+258 84 000 0000'}
+                          </span>
+                          <HeartLinkContactMiniBadges availability={member.contactAvailability} className="mt-1" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const num = member.whatsapp || member.phone;
+                            if (num) {
+                              const text = encodeURIComponent(
+                                `Olá ${member.name}! Sou membro do grupo ${
+                                  activeP2PGroupModal === 'heart' ? '♥' : activeP2PGroupModal === 'diamond' ? '◆' : '♛'
+                                } no HeartLink e gostaria de conversar.`
+                              );
+                              window.open(`https://wa.me/${num.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+                            }
+                          }}
+                          className="h-8.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95 transition-all"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Visibility Modal */}
       <HeartLinkVisibilityModal
         isOpen={isVisibilityModalOpen}
@@ -1433,6 +2048,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         currentVisibility={userVisibility}
         onSaveVisibility={handleSaveVisibility}
         userPhone={myProfile?.whatsapp || verifiedDossier?.phone}
+        initialPlanId={p2pModalPlanTarget}
       />
 
       {/* Biometric KYC Modal for HeartLink */}

@@ -34,31 +34,31 @@ export interface VisibilityPlan {
 export const VISIBILITY_PLANS: VisibilityPlan[] = [
   {
     id: 'vis_24h',
-    name: 'Passe 24 Horas',
+    name: '♥ Coração',
     durationLabel: '24 Horas',
     durationHours: 24,
-    priceMt: 150,
-    description: 'Apareça na vitrine pública por 1 dia inteiro. Ideal para o fim de semana ou testar a atração.',
-    badge: 'Mais Acessível'
+    priceMt: 100,
+    description: 'Acesso P2P e vitrine ♥.',
+    badge: '100 MT'
   },
   {
     id: 'vis_7d',
-    name: 'Passe 7 Dias',
-    durationLabel: '7 Dias (1 Semana)',
+    name: '◆ Diamante',
+    durationLabel: '7 Dias',
     durationHours: 168,
-    priceMt: 450,
-    description: '1 semana completa no topo da vitrine para ser vista(o) e cortejada(o) por centenas de pretendentes.',
-    badge: 'Mais Procurado',
+    priceMt: 250,
+    description: 'Acesso P2P e vitrine ◆.',
+    badge: '250 MT',
     isPopular: true
   },
   {
     id: 'vis_30d',
-    name: 'Passe 30 Dias (VIP)',
-    durationLabel: '30 Dias (1 Mês)',
+    name: '♛ King',
+    durationLabel: '30 Dias (VIP)',
     durationHours: 720,
     priceMt: 1000,
-    description: 'Máxima visibilidade durante 1 mês inteiro com selo de Destaque VIP e prioridade nas buscas.',
-    badge: 'Máxima Visibilidade'
+    description: 'Acesso P2P e vitrine ♛.',
+    badge: '1000 MT'
   }
 ];
 
@@ -79,6 +79,7 @@ interface HeartLinkVisibilityModalProps {
   currentVisibility: UserVisibilityData;
   onSaveVisibility: (updated: UserVisibilityData) => void;
   userPhone?: string;
+  initialPlanId?: 'vis_24h' | 'vis_7d' | 'vis_30d';
 }
 
 export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> = ({
@@ -86,9 +87,18 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
   onClose,
   currentVisibility,
   onSaveVisibility,
-  userPhone = ''
+  userPhone = '',
+  initialPlanId
 }) => {
-  const [selectedPlanId, setSelectedPlanId] = useState<'vis_24h' | 'vis_7d' | 'vis_30d'>('vis_7d');
+  const [selectedPlanId, setSelectedPlanId] = useState<'vis_24h' | 'vis_7d' | 'vis_30d'>(
+    initialPlanId || currentVisibility.planId || 'vis_24h'
+  );
+
+  React.useEffect(() => {
+    if (initialPlanId) {
+      setSelectedPlanId(initialPlanId);
+    }
+  }, [initialPlanId]);
   const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'emola'>('mpesa');
   const [phoneNumber, setPhoneNumber] = useState(
     userPhone ? userPhone.replace('+258', '').replace(/\s+/g, '') : '841234567'

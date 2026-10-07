@@ -66,11 +66,52 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
     store ? loveShopOrderService.getReviewsByStoreId(store.id) : []
   );
 
+  // Store review form state (natural customer-facing criteria)
+  const [isAddingStoreReview, setIsAddingStoreReview] = useState(false);
+  const [newReviewName, setNewReviewName] = useState('');
+  const [newReviewCity, setNewReviewCity] = useState('Maputo');
+  const [newQuality, setNewQuality] = useState(5);
+  const [newCustomerService, setNewCustomerService] = useState(5);
+  const [newDeliverySpeed, setNewDeliverySpeed] = useState(5);
+  const [newRecommendation, setNewRecommendation] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState('');
+
   const refreshOrdersAndReviews = () => {
     if (store) {
       setStoreOrders(loveShopOrderService.getOrdersByStoreId(store.id));
       setStoreReviews(loveShopOrderService.getReviewsByStoreId(store.id));
     }
+  };
+
+  const handleAddStoreReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewName.trim() || !store) return;
+
+    const firstProd = customCatalog[0];
+    loveShopOrderService.addDirectProductReview(
+      firstProd?.id || `store-prod-${store.id}`,
+      store.id,
+      firstProd?.name || store.name,
+      newReviewName,
+      newReviewCity,
+      {
+        productQuality: newQuality,
+        customerService: newCustomerService,
+        recommendation: newRecommendation,
+        overallSatisfaction: newDeliverySpeed,
+        deliverySpeed: newDeliverySpeed,
+      },
+      newReviewComment
+    );
+
+    refreshOrdersAndReviews();
+    setNewReviewName('');
+    setNewReviewComment('');
+    setNewQuality(5);
+    setNewCustomerService(5);
+    setNewDeliverySpeed(5);
+    setNewRecommendation(5);
+    setIsAddingStoreReview(false);
   };
 
   const handleUpdateOrderStatus = (orderId: string, status: 'concluido' | 'cancelado') => {
@@ -255,8 +296,10 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-amber-300 font-black text-sm">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <span>{storeReputation.count > 0 ? storeReputation.rating.toFixed(1) : store.rating.toFixed(1)}</span>
-                    <span className="text-[11px] text-neutral-300 font-normal">({storeReputation.count || store.reviewsCount})</span>
+                    <span>{storeReputation.count > 0 ? storeReputation.rating.toFixed(1) : 'Sem avaliações'}</span>
+                    {storeReputation.count > 0 && (
+                      <span className="text-[11px] text-neutral-300 font-normal">({storeReputation.count})</span>
+                    )}
                   </div>
                   <span className="text-[10px] font-bold text-emerald-300 block">
                     🛍️ {store.salesCount.toLocaleString('pt-MZ')} vendas
@@ -617,111 +660,268 @@ export const LoveShopStoreModal: React.FC<LoveShopStoreModalProps> = ({
               </div>
             )}
 
-            {/* TAB 3: REPUTAÇÃO INTELIGENTE & AVALIAÇÕES */}
+            {/* TAB 3: CLASSIFICAÇÃO DA LOJA (ONE SINGLE UNIFIED REVIEW SECTION) */}
             {activeStoreTab === 'reputacao' && (
-              <div className="p-4 space-y-4">
-                {/* Store Reputation Breakdown */}
-                <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-3">
-                  <div className="flex items-center justify-between">
+              <div className="p-4">
+                <div className="p-4 sm:p-5 bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 space-y-4 shadow-2xs">
+                  {/* 1. Header with Title and "Rate this store" action */}
+                  <div className="flex items-center justify-between gap-2">
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-neutral-500">
-                        Reputação Global da Loja
-                      </h4>
-                      <p className="text-[11px] text-neutral-500">
-                        Calculada exclusivamente com base nos 3 critérios do Vendedor (Atendimento, Recomendação e Satisfação Geral)
-                      </p>
+                      <h3 className="text-sm sm:text-base font-black text-neutral-950 leading-tight">
+                        Classificação da Loja
+                      </h3>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-black text-rose-600 flex items-center gap-1 justify-end">
-                        <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                        <span>{storeReputation.rating.toFixed(1)}</span>
-                      </div>
-                      <span className="text-[10px] text-neutral-400">
-                        {storeReputation.count} avaliações verificadas
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingStoreReview(!isAddingStoreReview)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-black border border-rose-200/80 transition-colors shadow-2xs cursor-pointer active:scale-95"
+                    >
+                      <Star className="w-3.5 h-3.5 fill-rose-600" />
+                      <span>{isAddingStoreReview ? '✕ Fechar Formulário' : 'Avaliar esta Loja'}</span>
+                    </button>
+                  </div>
+
+                  {/* 2. Overall Rating Summary at the Top */}
+                  {storeReputation.count === 0 ? (
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-neutral-800 shadow-md text-center py-6">
+                      <span className="text-base sm:text-lg font-bold text-neutral-300 block">
+                        Sem avaliações
                       </span>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-neutral-200 text-xs">
-                    <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">1. Atendimento</span>
-                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ⭐</strong>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">2. Recomendação</span>
-                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ⭐</strong>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl border border-neutral-100">
-                      <span className="text-neutral-500 block text-[10.5px]">3. Satisfação Geral</span>
-                      <strong className="text-neutral-900 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ⭐</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reviews List with Report Button */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-neutral-500">
-                    Avaliações de Clientes Verificados ({storeReviews.length})
-                  </h4>
-
-                  {storeReviews.length === 0 ? (
-                    <div className="p-6 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500 font-bold">
-                      Ainda sem avaliações verificadas.
-                    </div>
                   ) : (
-                    storeReviews.map((rev) => (
-                      <div
-                        key={rev.id}
-                        className="p-3.5 bg-white rounded-2xl border border-neutral-200 space-y-2 text-xs shadow-2xs"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-bold text-neutral-900">{rev.userName}</span>
-                            <span className="text-neutral-400 text-[11px] ml-1.5">• {rev.userCity} ({rev.date})</span>
-                          </div>
-                          <div className="flex items-center gap-1 font-black text-amber-500">
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            <span>{rev.storeRatingAverage.toFixed(1)}</span>
-                          </div>
-                        </div>
-
-                        {rev.productName && (
-                          <div className="text-[11px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md inline-block font-semibold">
-                            Artigo: {rev.productName} • Qualidade: {rev.productQualityRating} ⭐
-                          </div>
-                        )}
-
-                        {rev.comment && (
-                          <p className="text-neutral-700 leading-relaxed text-xs">
-                            "{rev.comment}"
-                          </p>
-                        )}
-
-                        {/* Report review button for merchant */}
-                        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                          <span className="text-emerald-700 font-bold flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" /> Compra Verificada (Pedido: {rev.orderId})
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-zinc-950 text-white border border-emerald-500/30 shadow-md space-y-3 overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs sm:text-sm font-black tracking-wider uppercase text-emerald-400 block leading-tight">
+                            Overall Rating {storeReputation.rating.toFixed(1)} ⭐
                           </span>
-
-                          {rev.isReported ? (
-                            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold">
-                              🚩 Em Análise
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedReviewToReport(rev)}
-                              className="text-neutral-400 hover:text-red-600 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
-                              title="Denunciar se não foi seu cliente ou avaliação fraudulenta"
-                            >
-                              <Flag className="w-3 h-3" />
-                              <span>Denunciar</span>
-                            </button>
-                          )}
+                          <span className="text-[10px] text-neutral-400">
+                            {storeReputation.count} {storeReputation.count === 1 ? 'avaliação' : 'avaliações'}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-1.5 text-right">
+                          <span className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
+                            {Math.round((storeReputation.rating / 5) * 100)}%
+                          </span>
+                          <span className="text-[11px] text-neutral-300 font-bold">
+                            de Satisfação
+                          </span>
                         </div>
                       </div>
-                    ))
+
+                      {/* 3 Store-Level Criteria Breakdown Underneath */}
+                      <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-neutral-800 text-[10.5px]">
+                        <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                          <span className="text-neutral-400 block text-[9.5px]">Atendimento</span>
+                          <strong className="text-amber-400 font-black">{storeReputation.breakdown.customerService.toFixed(1)} ⭐</strong>
+                        </div>
+                        <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                          <span className="text-neutral-400 block text-[9.5px]">Recomendação</span>
+                          <strong className="text-amber-400 font-black">{storeReputation.breakdown.recommendation.toFixed(1)} ⭐</strong>
+                        </div>
+                        <div className="p-2 bg-neutral-800/80 rounded-xl border border-neutral-700/50 text-center">
+                          <span className="text-neutral-400 block text-[9.5px]">Satisfação Geral</span>
+                          <strong className="text-amber-400 font-black">{storeReputation.breakdown.overallSatisfaction.toFixed(1)} ⭐</strong>
+                        </div>
+                      </div>
+                    </div>
                   )}
+
+                  {/* 3. Inline Review Form */}
+                  {isAddingStoreReview && (
+                    <form
+                      onSubmit={handleAddStoreReview}
+                      className="p-3.5 sm:p-4 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-3 animate-in fade-in duration-200 shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between border-b border-rose-200/80 pb-2.5 gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                          <span className="text-xs sm:text-sm font-black text-neutral-900 tracking-tight truncate leading-tight">
+                            Avaliar Compra por Estrelas (4 Critérios)
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingStoreReview(false)}
+                          className="w-6 h-6 rounded-full hover:bg-rose-100 flex items-center justify-center text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 text-xs font-bold cursor-pointer"
+                          title="Fechar Formulário"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {[
+                          { label: 'Qualidade do produto', value: newQuality, setValue: setNewQuality },
+                          { label: 'Atendimento', value: newCustomerService, setValue: setNewCustomerService },
+                          { label: 'Recomendação', value: newRecommendation, setValue: setNewRecommendation },
+                          { label: 'Satisfação Geral', value: newDeliverySpeed, setValue: setNewDeliverySpeed },
+                        ].map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 bg-white rounded-xl border border-neutral-200/90 space-y-1 shadow-2xs"
+                          >
+                            <span className="text-xs font-bold text-neutral-900 block leading-tight">
+                              {item.label}
+                            </span>
+                            <div className="flex items-center gap-1 pt-0.5 flex-wrap">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => item.setValue(star)}
+                                  className="p-0.5 cursor-pointer transition-transform hover:scale-110 active:scale-95 shrink-0"
+                                  title={`${item.label}: ${star} estrelas`}
+                                >
+                                  <Star
+                                    className={`w-5 h-5 transition-colors ${
+                                      star <= item.value
+                                        ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
+                                        : 'text-neutral-300'
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                              <span className="text-xs font-black text-neutral-700 ml-1.5">{item.value}.0</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <input
+                          type="text"
+                          required
+                          placeholder="Seu nome (obrigatório)"
+                          value={newReviewName}
+                          onChange={(e) => setNewReviewName(e.target.value)}
+                          className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 font-medium"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Sua cidade (ex: Matola, Maputo)"
+                          value={newReviewCity}
+                          onChange={(e) => setNewReviewCity(e.target.value)}
+                          className="h-10 px-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 font-medium"
+                        />
+                      </div>
+
+                      <textarea
+                        rows={2}
+                        placeholder="Qual é a sua experiência? (Comentário opcional...)"
+                        value={newReviewComment}
+                        onChange={(e) => setNewReviewComment(e.target.value)}
+                        className="w-full p-3 bg-white rounded-xl border border-neutral-300 text-xs text-neutral-900 focus:outline-none focus:border-rose-600 resize-none font-medium"
+                      />
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingStoreReview(false)}
+                          className="h-10 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 h-10 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/30"
+                        >
+                          <Star className="w-4 h-4 fill-white" />
+                          <span>Submeter Avaliação</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* 4. Customer Review List Below (In same section) */}
+                  <div className="space-y-3 pt-3 border-t border-neutral-100">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-800">
+                        Avaliações de Clientes
+                      </h4>
+                      {storeReviews.length > 0 && (
+                        <span className="text-[11px] font-bold text-neutral-400">
+                          ({storeReviews.length})
+                        </span>
+                      )}
+                    </div>
+
+                    {storeReviews.length === 0 ? (
+                      <div className="p-6 text-center bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500 font-medium">
+                        <p className="font-bold text-neutral-700">Ainda não há avaliações.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {storeReviews.map((rev) => (
+                          <div
+                            key={rev.id}
+                            className="p-3.5 bg-neutral-50/80 rounded-2xl border border-neutral-200/90 space-y-2 shadow-2xs hover:border-neutral-300 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center shrink-0 border border-rose-200">
+                                  {rev.userName.charAt(0)}
+                                </div>
+                                <div>
+                                  <span className="font-extrabold text-xs text-neutral-900 block">
+                                    {rev.userName} <span className="text-[10px] text-neutral-400 font-normal">({rev.userCity})</span>
+                                  </span>
+                                  <div className="flex items-center text-amber-400 gap-0.5">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3 h-3 ${i < Math.round(rev.storeRatingAverage) ? 'fill-amber-400 text-amber-400' : 'text-neutral-200'}`}
+                                      />
+                                    ))}
+                                    <span className="text-[11px] font-bold text-neutral-700 ml-1">
+                                      {rev.storeRatingAverage.toFixed(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] text-neutral-400 font-medium block">
+                                  {rev.date}
+                                </span>
+                                <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-block mt-0.5">
+                                  ✓ Compra Verificada
+                                </span>
+                              </div>
+                            </div>
+
+                            {rev.comment && (
+                              <p className="text-xs text-neutral-700 leading-relaxed font-medium pt-1">
+                                "{rev.comment}"
+                              </p>
+                            )}
+
+                            {/* Report review button for merchant */}
+                            <div className="pt-2 border-t border-neutral-200/60 flex items-center justify-between text-[11px]">
+                              <span className="text-neutral-400 text-[10px]">
+                                Pedido: {rev.orderId}
+                              </span>
+
+                              {rev.isReported ? (
+                                <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold">
+                                  🚩 Em Análise
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedReviewToReport(rev)}
+                                  className="text-neutral-400 hover:text-red-600 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
+                                  title="Denunciar se não foi seu cliente ou avaliação fraudulenta"
+                                >
+                                  <Flag className="w-3 h-3" />
+                                  <span>Denunciar</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

@@ -29,12 +29,14 @@ import {
   Utensils,
   Tv,
   Waves,
-  Wine
+  Wine,
+  Eye
 } from 'lucide-react';
 import { Accommodation, AccommodationType, AmenityId, UserLocationState } from '../types';
 import { AccommodationCard } from './AccommodationCard';
 import { ACCOMMODATION_TYPE_LABELS, AMENITIES_CATALOG } from '../utils/amenities';
 import { calculateDistanceKm, formatDistance } from '../utils/geo';
+import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
 interface ExploreTabProps {
   accommodations: Accommodation[];
@@ -81,6 +83,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   onSelectAllMozambique,
   onOpenRegisterModal,
 }) => {
+  const { getModuleCount } = useVisitAnalytics();
   // 1. Province Filter
   const [selectedProvince, setSelectedProvince] = useState<string>(() => {
     if (userLocation.isAllMozambique) return 'all';
@@ -432,6 +435,15 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <p className="text-[10.5px] sm:text-xs text-sky-100 font-medium mt-0.5 sm:mt-1 leading-snug">
             Pensões, Guest Houses e Residenciais verificadas · Alojamento seguro perto de si.
           </p>
+        </div>
+
+        {/* Real Module Visit Counter */}
+        <div 
+          className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
+          title="Visitas ao módulo Onde Dormir"
+        >
+          <Eye className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+          <span>{formatVisitCount(getModuleCount('onde_dormir'))}</span>
         </div>
       </div>
 

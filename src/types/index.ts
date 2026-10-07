@@ -436,12 +436,29 @@ export interface CarOwnerFleetAccount {
 // Amizade & Companheirismo | Matrimónio & Relacionamento Sério
 export type HeartLinkIntention = 'amizade' | 'matrimonio';
 
+export type ContactAvailabilityState = 'available' | 'limited_hours' | 'unavailable';
+
+export interface ChannelAvailabilityConfig {
+  state: ContactAvailabilityState; // 'available' | 'limited_hours' | 'unavailable'
+  hours?: string; // Configured time range when limited (e.g. "08:00 - 18:00", "Seg-Sex, 09:00 - 17:00")
+}
+
+export interface ContactAvailability {
+  whatsapp: ChannelAvailabilityConfig;
+  phone: ChannelAvailabilityConfig;
+  videoCall: ChannelAvailabilityConfig;
+  generalHours?: string;
+}
+
 export interface HeartLinkProfile {
   id: string;
   name: string;
   age: number;
   gender: 'feminino' | 'masculino';
   photo: string;
+  photos?: string[]; // 4 Photo slots (Slot 1: Foto Principal, Slot 2, Slot 3, Slot 4)
+  video?: string; // 1 Video slot (Vídeo de Apresentação)
+  videoDuration?: string;
   city: string;
   province: string;
   intentions: HeartLinkIntention[];
@@ -457,6 +474,7 @@ export interface HeartLinkProfile {
   phone?: string;
   whatsapp?: string;
   availabilitySchedule?: string;
+  contactAvailability?: ContactAvailability;
   preferredAccommodations?: string[];
   likesReceived?: number;
   isOnline?: boolean;

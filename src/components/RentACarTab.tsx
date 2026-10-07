@@ -40,6 +40,7 @@ import { MOZ_PROVINCES_LIST } from './ExploreTab';
 import { getPlatformTenureText } from '../utils/tenure';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
 interface RentACarTabProps {
   onBackToHome?: () => void;
@@ -56,6 +57,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
   onSelectProvince,
   onSelectAllMozambique,
 }) => {
+  const { getModuleCount } = useVisitAnalytics();
   // Owner fleet account
   const [ownerFleet, setOwnerFleet] = useState<CarOwnerFleetAccount | null>(() => {
     const saved = localStorage.getItem('onde_dormir_owner_fleet');
@@ -431,7 +433,16 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            {/* Real Module Visit Counter */}
+            <div 
+              className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
+              title="Visitas ao módulo Rent-a-Car"
+            >
+              <Eye className="w-3.5 h-3.5 text-amber-200 shrink-0" />
+              <span>{formatVisitCount(getModuleCount('rentacar'))}</span>
+            </div>
+
             <button
               onClick={handleOpenOwnerFleet}
               className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-orange-900 hover:bg-orange-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
