@@ -34,7 +34,7 @@ export const HeartLinkP2PCapsule: React.FC<HeartLinkP2PCapsuleProps> = ({
     },
     {
       tier: 'king' as const,
-      name: 'King',
+      name: 'VIP',
       symbol: '♛',
       price: '1000 MT',
       planId: 'vis_30d' as const,
@@ -94,15 +94,15 @@ export const HeartLinkP2PCapsule: React.FC<HeartLinkP2PCapsuleProps> = ({
                       </span>
                     )}
 
-                    {/* 3D Icon */}
+                    {/* 3D Icon - Compact, Aesthetic and Refined */}
                     <div
                       className={`relative flex items-center justify-center transition-transform duration-200 ${t.hoverGlow}`}
                     >
-                      <IconComponent className="w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 shrink-0 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.35)]" />
+                      <IconComponent className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 shrink-0 filter drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
                     </div>
 
                     {/* Price Pill Tag */}
-                    <span className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] font-black text-white px-2 py-0.5 rounded-full bg-black/25 backdrop-blur-xs border border-white/20 tracking-tight shadow-2xs group-hover:bg-black/40 transition-colors">
+                    <span className="mt-1 text-[10px] sm:text-[11px] font-black text-white px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-xs border border-white/25 tracking-tight shadow-2xs group-hover:bg-black/45 transition-colors">
                       {t.price}
                     </span>
                   </button>

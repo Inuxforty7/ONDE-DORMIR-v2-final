@@ -306,25 +306,67 @@ export const heartLinkService = {
     return 'heart';
   },
 
-  // Get active members assigned to each tier
-  getTierMembers(tier: P2PTier, allProfiles: any[], myProfile?: any): any[] {
-    // Tier assignment based on profiles data with deterministic filtering
-    const tierMap: Record<P2PTier, (p: any, idx: number) => boolean> = {
-      heart: (_p, idx) => idx % 2 === 0, // Heart members
-      diamond: (_p, idx) => idx % 3 === 0 || idx === 1, // Diamond members
-      king: (_p, idx) => idx % 4 === 0 || idx === 2, // King members
-    };
+  // Helper to determine the single active P2P tier for any profile
+  getProfileP2PTier(profile: any): P2PTier | null {
+    if (!profile) return null;
 
-    const filterFn = tierMap[tier];
-    let members = allProfiles.filter(filterFn);
+    // Check if profile is myProfile (user's own profile)
+    const savedVis = localStorage.getItem('onde_dormir_heartlink_visibility');
+    const myProfileSaved = localStorage.getItem('onde_dormir_my_heartlink_profile');
+    let myId: string | null = null;
+    if (myProfileSaved) {
+      try {
+        const parsed = JSON.parse(myProfileSaved);
+        myId = parsed.id;
+      } catch {}
+    }
 
-    if (myProfile) {
-      const isAlreadyIn = members.some((m) => m.id === myProfile.id);
-      if (!isAlreadyIn) {
-        members = [myProfile, ...members];
+    if ((myId && profile.id === myId) || profile.id?.startsWith('my-') || profile.isMyProfile) {
+      if (savedVis) {
+        try {
+          const vis = JSON.parse(savedVis);
+          return this.getActiveP2PTier(vis);
+        } catch {}
       }
     }
-    return members;
+
+    // Check profile's explicit expiration date
+    if (profile.visibilityExpiresAt && new Date(profile.visibilityExpiresAt).getTime() < Date.now()) {
+      return null;
+    }
+
+    if (profile.activeP2PTier) return profile.activeP2PTier;
+    if (profile.p2pTier) return profile.p2pTier;
+
+    // Strict non-overlapping partitioning for showcase profiles
+    // Every showcase profile belongs strictly to ONE single tier
+    const str = String(profile.id || profile.name || '');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const mod = Math.abs(hash) % 3;
+    if (mod === 0) return 'heart';
+    if (mod === 1) return 'diamond';
+    return 'king';
+  },
+
+  // Get active members assigned STRICTLY to a single tier (NO mixing across tiers)
+  getTierMembers(tier: P2PTier, allProfiles: any[], myProfile?: any): any[] {
+    const list = allProfiles.filter((p) => {
+      if (myProfile && p.id === myProfile.id) return false;
+      return this.getProfileP2PTier(p) === tier;
+    });
+
+    if (myProfile) {
+      const myTier = this.getProfileP2PTier(myProfile);
+      if (myTier === tier) {
+        return [myProfile, ...list];
+      }
+    }
+
+    return list;
   },
 
   // Direct contact consent tracking per user

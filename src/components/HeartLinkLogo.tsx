@@ -254,3 +254,102 @@ export const HeartLinkLogo: React.FC<HeartLinkLogoProps> = ({
     </div>
   );
 };
+
+/**
+ * Two Interlocking Wedding Rings Icon (Alianças de Casamento)
+ * Clearly depicts two interlocking wedding rings with a sparkling jewel/band highlight.
+ */
+export const TwoWeddingRingsIcon: React.FC<{ className?: string; filled?: boolean }> = ({
+  className = 'w-4 h-4',
+  filled = false,
+}) => {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`inline-block shrink-0 ${className}`}
+    >
+      {/* Left Wedding Ring */}
+      <ellipse
+        cx="8.5"
+        cy="13"
+        rx="4.6"
+        ry="5.6"
+        transform="rotate(-20 8.5 13)"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        fill={filled ? 'currentColor' : 'none'}
+        fillOpacity={filled ? 0.2 : 0}
+      />
+      {/* Right Wedding Ring (Interlocking) */}
+      <ellipse
+        cx="15.5"
+        cy="13"
+        rx="4.6"
+        ry="5.6"
+        transform="rotate(20 15.5 13)"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        fill={filled ? 'currentColor' : 'none'}
+        fillOpacity={filled ? 0.2 : 0}
+      />
+      {/* Solitaire Brilliant / Wedding Diamond setting on Top of Left Ring */}
+      <path
+        d="M7.3 6.8L8.5 5L9.7 6.8L8.5 7.7L7.3 6.8Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="0.5"
+      />
+      {/* Sparkle Highlights */}
+      <path
+        d="M8.5 2.8V4.2M5.6 4.6L6.8 5.6M11.4 4.6L10.2 5.6"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
+
+/**
+ * Two Friends Emblem Icon (Amizades & Companheirismo)
+ * Depicts two friends with arms around each other and hearts.
+ */
+export const TwoFriendsEmblemIcon: React.FC<{ className?: string; filled?: boolean }> = ({
+  className = 'w-4 h-4',
+  filled = false,
+}) => {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`inline-block shrink-0 ${className}`}
+    >
+      {/* Left Friend Head */}
+      <circle cx="8" cy="7.2" r="2.8" stroke="currentColor" strokeWidth="1.8" fill={filled ? 'currentColor' : 'none'} fillOpacity={filled ? 0.2 : 0} />
+      {/* Right Friend Head */}
+      <circle cx="16" cy="7.2" r="2.8" stroke="currentColor" strokeWidth="1.8" fill={filled ? 'currentColor' : 'none'} fillOpacity={filled ? 0.2 : 0} />
+      {/* Bodies & Connected Hug/Arm around shoulder */}
+      <path
+        d="M4.5 19.5C4.5 15.8 6.5 13.8 9 13.8C10.2 13.8 11.2 14.3 12 15.2C12.8 14.3 13.8 13.8 15 13.8C17.5 13.8 19.5 15.8 19.5 19.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      {/* Arm connecting between them */}
+      <path
+        d="M8 14C10 12.8 14 12.8 16 14"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      {/* Small Heart on Top */}
+      <path
+        d="M12 3.8C11.5 2.8 10.3 2.8 9.8 3.4C9.3 4 9.5 4.8 12 6.4C14.5 4.8 14.7 4 14.2 3.4C13.7 2.8 12.5 2.8 12 3.8Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};

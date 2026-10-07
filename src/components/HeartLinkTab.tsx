@@ -41,7 +41,8 @@ import { HeartLinkProfile, HeartLinkIntention, ContactAvailability, Accommodatio
 import { INITIAL_HEARTLINK_PROFILES } from '../data/heartLinkProfiles';
 import { BiometricVerificationModal, VerificationDossier } from './BiometricVerificationModal';
 import { MOZ_PROVINCES_LIST } from './ExploreTab';
-import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
+import { HeartLinkTwoHeartsIcon, TwoWeddingRingsIcon, TwoFriendsEmblemIcon } from './HeartLinkLogo';
+import { WeddingConfirmedEmblemBadge, FriendshipConfirmedEmblemBadge } from './HeartLinkConfirmedEmblems';
 import { HeartLinkVisibilityModal, UserVisibilityData } from './HeartLinkVisibilityModal';
 import { HeartLinkBubblingHearts } from './HeartLinkBubblingHearts';
 import { HeartLinkP2PCapsule } from './HeartLinkP2PCapsule';
@@ -99,7 +100,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     return saved ? JSON.parse(saved) : ['hl-1', 'hl-5'];
   });
 
-  const [activeSubTab, setActiveSubTab] = useState<'amizades' | 'pessoas' | 'casamentos'>('pessoas');
+  const [activeSubTab, setActiveSubTab] = useState<'pessoas' | 'confirmados' | 'confirmadas'>('pessoas');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Real Persistent Friendships & Marriages
@@ -158,14 +159,14 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     videoDuration: undefined,
   });
 
-  // User Visibility State (Modo Anónimo vs. Vitrine Pública)
+  // User Contact Access Plan & Privacy State
   const [userVisibility, setUserVisibility] = useState<UserVisibilityData>(() => {
     const saved = localStorage.getItem('onde_dormir_heartlink_visibility');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed.expiresAt && new Date(parsed.expiresAt).getTime() < Date.now()) {
-          return { ...parsed, isUnlocked: false, mode: 'anonymous' };
+          return { ...parsed, isUnlocked: false };
         }
         return parsed;
       } catch (e) {
@@ -173,7 +174,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       }
     }
     return {
-      mode: 'anonymous',
+      mode: 'public_showcase',
       isUnlocked: false
     };
   });
@@ -195,8 +196,9 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     if (myProfile) {
       const updatedProfile: HeartLinkProfile = {
         ...myProfile,
-        isPubliclyVisible: updated.isUnlocked && updated.mode === 'public_showcase',
-        visibilityBadge: updated.planName || 'Passe Ativo',
+        isPubliclyVisible: updated.mode !== 'anonymous',
+        isContactUnlocked: updated.isUnlocked,
+        visibilityBadge: updated.isUnlocked ? (updated.planName || 'Contacto Ativo') : undefined,
         visibilityExpiresAt: updated.expiresAt
       };
       setMyProfile(updatedProfile);
@@ -568,23 +570,23 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     return profiles.slice(start, end);
   };
 
-  // Source profiles for the showcase (respects Anonymous Mode vs Public Showcase)
+  // Source profiles for the showcase (profiles are always visible; contact access depends on plan)
   const allShowcaseProfiles = useMemo(() => {
     let list = [...profiles];
     if (myProfile) {
       list = list.filter((p) => p.id !== myProfile.id);
 
-      // If user has unlocked visibility and is in showcase mode, place their profile at the top of the showcase!
-      if (userVisibility.isUnlocked && userVisibility.mode === 'public_showcase') {
+      // Unless the user explicitly set mode to anonymous in privacy settings, their profile is visible in the showcase
+      if (userVisibility.mode !== 'anonymous') {
         const enrichedMyProfile: HeartLinkProfile = {
           ...myProfile,
           isPubliclyVisible: true,
-          visibilityBadge: userVisibility.planName || 'Passe Ativo',
+          isContactUnlocked: userVisibility.isUnlocked,
+          visibilityBadge: userVisibility.isUnlocked ? (userVisibility.planName || 'Contacto Ativo') : undefined,
           visibilityExpiresAt: userVisibility.expiresAt
         };
         list = [enrichedMyProfile, ...list];
       }
-      // If user is in anonymous mode (or hasn't unlocked visibility), their profile is completely hidden from the public showcase!
     }
     return list;
   }, [profiles, myProfile, userVisibility]);
@@ -645,18 +647,14 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
       return updated;
     });
 
-    if (initialMode === 'public') {
-      setIsRegisterOpen(false);
-      setIsVisibilityModalOpen(true);
-    } else {
-      // Modo Anónimo: 100% Grátis
-      const updatedVis: UserVisibilityData = {
-        mode: 'anonymous',
-        isUnlocked: false
-      };
-      handleSaveVisibility(updatedVis);
-      setIsRegisterOpen(false);
-    }
+    const targetMode = initialMode === 'public' ? 'public_showcase' : 'anonymous';
+    const updatedVis: UserVisibilityData = {
+      ...userVisibility,
+      mode: targetMode,
+      isUnlocked: userVisibility.isUnlocked
+    };
+    handleSaveVisibility(updatedVis);
+    setIsRegisterOpen(false);
   };
 
   // Handle Send Chat Message
@@ -743,35 +741,19 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
           </div>
         </div>
 
-        {/* Sub Navigation Tabs */}
-        <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-white/20 overflow-x-auto no-scrollbar">
-          {[
-            { id: 'amizades', label: 'Amizades Confirmadas', icon: HeartHandshake, count: confirmedFriendshipsCount },
-            { id: 'pessoas', label: 'Pessoas', icon: Users, count: filteredProfiles.length },
-            { id: 'casamentos', label: 'Casamentos Confirmados', icon: Gem, count: confirmedMarriagesCount },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeSubTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id as any)}
-                className={`h-8.5 px-3 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                  isActive
-                    ? 'bg-white text-rose-700 shadow-xs'
-                    : 'bg-white/15 text-white hover:bg-white/25'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'fill-rose-700' : ''}`} />
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${isActive ? 'bg-rose-100 text-rose-700' : 'bg-white/30 text-white'}`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Sub Navigation Badges: Confirmados & Confirmadas */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 mt-2.5 pt-2.5 border-t border-white/20 max-w-md mx-auto w-full">
+          <WeddingConfirmedEmblemBadge
+            count={confirmedMarriagesCount}
+            isActive={activeSubTab === 'confirmados'}
+            onClick={() => setActiveSubTab(activeSubTab === 'confirmados' ? 'pessoas' : 'confirmados')}
+          />
+
+          <FriendshipConfirmedEmblemBadge
+            count={confirmedFriendshipsCount}
+            isActive={activeSubTab === 'confirmadas'}
+            onClick={() => setActiveSubTab(activeSubTab === 'confirmadas' ? 'pessoas' : 'confirmadas')}
+          />
         </div>
       </div>
 
@@ -783,128 +765,41 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         />
       </div>
 
-      {/* 3. AMIZADES CONFIRMADAS TAB */}
-      {activeSubTab === 'amizades' && (
+      {/* 3. CONFIRMADOS TAB */}
+      {activeSubTab === 'confirmados' && (
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-2xs overflow-hidden p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
-                  Amizades Confirmadas
-                </h2>
-                <span className="text-xs font-black bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200">
-                  {confirmedFriendshipsCount}
-                </span>
-              </div>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Conexões reais formadas e confirmadas mutuamente por ambos os utilizadores.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsConfirmFriendshipModalOpen(true)}
-              className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              <HeartHandshake className="w-3.5 h-3.5" />
-              <span>Confirmar Amizade</span>
-            </button>
-          </div>
-
-          {friendshipFeedback && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{friendshipFeedback}</span>
-            </div>
-          )}
-
-          {friendships.length === 0 ? (
-            <div className="p-8 text-center text-xs text-neutral-500 font-medium">
-              Ainda não existem amizades registadas.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {friendships.map((f) => (
-                <div
-                  key={f.id}
-                  className="p-3.5 rounded-2xl border border-neutral-200/90 bg-neutral-50/70 hover:bg-white hover:border-neutral-300 transition-colors shadow-2xs space-y-2.5"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <img src={f.user1Photo} alt={f.user1Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
-                      <div className="min-w-0">
-                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{f.user1Name}</span>
-                        <span className="text-[10px] text-neutral-400 block">{f.city || 'Maputo'}</span>
-                      </div>
-                    </div>
-
-                    <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                      <HeartHandshake className="w-3.5 h-3.5" />
-                    </div>
-
-                    <div className="flex items-center gap-2 min-w-0 flex-1 justify-end text-right">
-                      <div className="min-w-0">
-                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{f.user2Name}</span>
-                        <span className="text-[10px] text-neutral-400 block">{f.city || 'Maputo'}</span>
-                      </div>
-                      <img src={f.user2Photo} alt={f.user2Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60 text-[11px]">
-                    {f.status === 'confirmed' ? (
-                      <span className="text-emerald-700 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Confirmada por ambos ({f.confirmedAt || 'Registada'})</span>
-                      </span>
-                    ) : (
-                      <span className="text-amber-700 font-semibold flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Aguardando confirmação de {f.user2Name.split(' ')[0]}</span>
-                      </span>
-                    )}
-
-                    {f.status === 'pending' && !f.user2Confirmed && (
-                      <button
-                        type="button"
-                        onClick={() => handlePartnerConfirmFriendship(f)}
-                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10.5px] font-bold cursor-pointer"
-                      >
-                        Confirmar como {f.user2Name.split(' ')[0]}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 4. CASAMENTOS CONFIRMADOS TAB */}
-      {activeSubTab === 'casamentos' && (
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-2xs overflow-hidden p-4 sm:p-5 space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-neutral-100">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
-                  Casamentos Confirmados
+                <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight flex items-center gap-1.5">
+                  <span>💍</span>
+                  <span>Confirmados</span>
                 </h2>
                 <span className="text-xs font-black bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200">
                   {confirmedMarriagesCount}
                 </span>
               </div>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Uniões matrimoniais de casais que se conheceram através do HeartLink.
+                Conexões autênticas confirmadas com sucesso através do HeartLink.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsConfirmMarriageModalOpen(true)}
-              className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              <Gem className="w-3.5 h-3.5" />
-              <span>Confirmar Casamento</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('pessoas')}
+                className="h-9 px-3 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <span>← Ver Perfis</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsConfirmMarriageModalOpen(true)}
+                className="h-9 px-3.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <TwoWeddingRingsIcon className="w-3.5 h-3.5" />
+                <span>Confirmar</span>
+              </button>
+            </div>
           </div>
 
           {marriageFeedback && (
@@ -916,7 +811,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
           {marriages.length === 0 ? (
             <div className="p-8 text-center text-xs text-neutral-500 font-medium">
-              Ainda não existem casamentos registados.
+              Ainda não existem registos confirmados.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -935,7 +830,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     </div>
 
                     <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                      <Gem className="w-3.5 h-3.5" />
+                      <TwoWeddingRingsIcon className="w-3.5 h-3.5" />
                     </div>
 
                     <div className="flex items-center gap-2 min-w-0 flex-1 justify-end text-right">
@@ -951,7 +846,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     {m.status === 'confirmed' ? (
                       <span className="text-emerald-700 font-bold flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Casamento Confirmado ({m.confirmedAt || 'Registado'})</span>
+                        <span>Confirmado ({m.confirmedAt || 'Registado'})</span>
                       </span>
                     ) : (
                       <span className="text-amber-700 font-semibold flex items-center gap-1">
@@ -977,7 +872,114 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       )}
 
-      {/* 5. PESSOAS TAB (SEARCH + FILTERS + GRID) */}
+      {/* 4. CONFIRMADAS TAB */}
+      {activeSubTab === 'confirmadas' && (
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 shadow-2xs overflow-hidden p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-neutral-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight flex items-center gap-1.5">
+                  <TwoFriendsEmblemIcon className="w-5 h-5 text-blue-600" />
+                  <span>Confirmadas</span>
+                </h2>
+                <span className="text-xs font-black bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
+                  {confirmedFriendshipsCount}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Conexões confirmadas mutuamente por ambos os utilizadores.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('pessoas')}
+                className="h-9 px-3 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <span>← Ver Perfis</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsConfirmFriendshipModalOpen(true)}
+                className="h-9 px-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <TwoFriendsEmblemIcon className="w-3.5 h-3.5" />
+                <span>Confirmar</span>
+              </button>
+            </div>
+          </div>
+
+          {friendshipFeedback && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{friendshipFeedback}</span>
+            </div>
+          )}
+
+          {friendships.length === 0 ? (
+            <div className="p-8 text-center text-xs text-neutral-500 font-medium">
+              Ainda não existem registos confirmados.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {friendships.map((f) => (
+                <div
+                  key={f.id}
+                  className="p-3.5 rounded-2xl border border-neutral-200/90 bg-neutral-50/70 hover:bg-white hover:border-neutral-300 transition-colors shadow-2xs space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <img src={f.user1Photo} alt={f.user1Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{f.user1Name}</span>
+                        <span className="text-[10px] text-neutral-400 block">{f.city || 'Maputo'}</span>
+                      </div>
+                    </div>
+
+                    <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <TwoFriendsEmblemIcon className="w-3.5 h-3.5" />
+                    </div>
+
+                    <div className="flex items-center gap-2 min-w-0 flex-1 justify-end text-right">
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-xs text-neutral-900 block truncate">{f.user2Name}</span>
+                        <span className="text-[10px] text-neutral-400 block">{f.city || 'Maputo'}</span>
+                      </div>
+                      <img src={f.user2Photo} alt={f.user2Name} className="w-10 h-10 rounded-full object-cover border border-neutral-200 shrink-0" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60 text-[11px]">
+                    {f.status === 'confirmed' ? (
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Confirmado ({f.confirmedAt || 'Registado'})</span>
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-semibold flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Aguardando confirmação de {f.user2Name.split(' ')[0]}</span>
+                      </span>
+                    )}
+
+                    {f.status === 'pending' && !f.user2Confirmed && (
+                      <button
+                        type="button"
+                        onClick={() => handlePartnerConfirmFriendship(f)}
+                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10.5px] font-bold cursor-pointer"
+                      >
+                        Confirmar como {f.user2Name.split(' ')[0]}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. PESSOAS TAB (SEARCH + FILTERS + GRID) */}
       {activeSubTab === 'pessoas' && (
         <>
           {/* Filter and Search Bar - Sticky on scroll for instant access */}
@@ -1289,6 +1291,12 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               {/* 3. Disponibilidade de Contacto */}
               <HeartLinkContactAvailabilitySection 
                 availability={selectedProfile.contactAvailability} 
+                isContactUnlocked={selectedProfile.id === myProfile?.id ? userVisibility.isUnlocked : contactUnlockService.isContactUnlocked(selectedProfile.id, selectedProfile.isContactUnlocked)}
+                isOwnProfile={selectedProfile.id === myProfile?.id}
+                onActivateContactAccess={() => {
+                  setIsVisibilityModalOpen(true);
+                  setSelectedProfile(null);
+                }}
                 showTitle={true}
               />
             </div>
@@ -1297,11 +1305,22 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             <div className="p-3.5 border-t border-neutral-100 flex items-center gap-2 bg-neutral-50">
               <button
                 onClick={(e) => handleOpenChat(selectedProfile, e)}
-                className="w-full h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors"
+                className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>Conversar no Chat Interno</span>
+                <span>Conversar no Chat</span>
               </button>
+              {selectedProfile.whatsapp && (
+                <button
+                  type="button"
+                  onClick={(e) => handleOpenWhatsApp(selectedProfile, e)}
+                  className="h-11 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-colors"
+                  title="Contactar via WhatsApp"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1521,18 +1540,42 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 />
               </div>
 
-              {/* Escolha de Visibilidade */}
+              {/* Modo de Apresentação */}
               <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-rose-950 uppercase tracking-wide">
-                    Escolha de Visibilidade
+                    Privacidade do Perfil
                   </span>
                   <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
-                    Cadastro Gratuito
+                    Registo Gratuito
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
+                  <div
+                    onClick={() => setRegVisibilityMode('public')}
+                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                      regVisibilityMode === 'public' ? 'bg-white border-rose-600 ring-1 ring-rose-600' : 'bg-neutral-50/80 border-neutral-200'
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="visibilityChoice" 
+                      checked={regVisibilityMode === 'public'} 
+                      onChange={() => setRegVisibilityMode('public')}
+                      className="mt-0.5 text-rose-600" 
+                    />
+                    <div>
+                      <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Vitrine Pública (Perfil Visível)</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
+                        O seu perfil e fotos ficam visíveis na vitrine do HeartLink para todos os utilizadores.
+                      </p>
+                    </div>
+                  </div>
+
                   <div
                     onClick={() => setRegVisibilityMode('anonymous')}
                     className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
@@ -1549,34 +1592,10 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     <div>
                       <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
                         <EyeOff className="w-3.5 h-3.5 text-neutral-600" />
-                        <span>Modo Anónimo (0 MT - Gratuito)</span>
+                        <span>Modo Anónimo (Oculto da Vitrine)</span>
                       </div>
                       <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
-                        O seu perfil não é exibido na vitrine pública. Pode ver perfis e conversar no anonimato com total privacidade.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    onClick={() => setRegVisibilityMode('public')}
-                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
-                      regVisibilityMode === 'public' ? 'bg-white border-rose-600 ring-1 ring-rose-600' : 'bg-neutral-50/80 border-neutral-200'
-                    }`}
-                  >
-                    <input 
-                      type="radio" 
-                      name="visibilityChoice" 
-                      checked={regVisibilityMode === 'public'} 
-                      onChange={() => setRegVisibilityMode('public')}
-                      className="mt-0.5 text-rose-600" 
-                    />
-                    <div>
-                      <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-rose-600" />
-                        <span>Desbloquear Visibilidade na Vitrine</span>
-                      </div>
-                      <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
-                        Apareça na vitrine pública do HeartLink para ser visto(a) e cortejado(a) por centenas de pretendentes.
+                        O seu perfil não é exibido na vitrine pública. Pode explorar e conversar no anonimato.
                       </p>
                     </div>
                   </div>
@@ -1587,17 +1606,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                 type="submit"
                 className="w-full h-11 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                {regVisibilityMode === 'anonymous' ? (
-                  <>
-                    <EyeOff className="w-4 h-4" />
-                    <span>Concluir Cadastro no Modo Anónimo (Grátis)</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Avançar para Desbloquear Visibilidade</span>
-                  </>
-                )}
+                <Check className="w-4 h-4" />
+                <span>Guardar Perfil</span>
               </button>
             </form>
           </div>
@@ -1785,7 +1795,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             <div className="bg-rose-600 text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Gem className="w-5 h-5 text-white" />
+                  <TwoWeddingRingsIcon className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="font-extrabold text-base">Confirmar Casamento</h3>
               </div>

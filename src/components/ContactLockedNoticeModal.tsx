@@ -97,7 +97,7 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
                 Aviso do Sistema
               </div>
               <h2 className="text-base sm:text-lg font-black tracking-tight leading-tight">
-                Contacto não desbloqueado
+                Chat P2P Indisponível
               </h2>
             </div>
           </div>
@@ -128,22 +128,25 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-orange-700 bg-orange-100 px-2 py-0.5 rounded-md inline-block mb-0.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md inline-block mb-0.5">
                 {target.moduleLabel}
               </span>
               <h3 className="font-extrabold text-sm sm:text-base text-neutral-900 truncate">
                 {target.name}
               </h3>
               <p className="text-[11px] text-neutral-500 truncate">
-                Recepção direta e WhatsApp bloqueados
+                Perfil visível • Chat P2P Indisponível
               </p>
             </div>
           </div>
 
           {/* Explanation Text */}
-          <div className="space-y-2 text-xs sm:text-sm text-neutral-700 leading-relaxed">
-            <p className="font-medium">
-              Este perfil ainda não pagou a taxa mensal de ativação (<strong>{target.unlockFee || 1000} MT/mês</strong>) para receber chamadas e mensagens no WhatsApp.
+          <div className="space-y-2 text-xs sm:text-sm text-neutral-800 leading-relaxed bg-rose-50/70 p-3 rounded-2xl border border-rose-200/80">
+            <p className="font-bold text-rose-950 text-sm">
+              Este utilizador ainda não tem o Chat P2P ativo.
+            </p>
+            <p className="text-xs text-neutral-600">
+              O perfil e as fotografias permanecem totalmente visíveis, mas o envio de mensagens privadas e contactos diretos só está disponível quando o titular ativar um plano de Chat P2P.
             </p>
           </div>
 
@@ -151,14 +154,14 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
           <div className="p-3.5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl space-y-2">
             <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs">
               <Bell className="w-4 h-4 text-orange-600 shrink-0 animate-bounce" />
-              <span>Notificação Automática Enviada ao Proprietário:</span>
+              <span>Notificação Enviada ao Titular:</span>
             </div>
             
-            <p className="text-xs text-amber-950/90 leading-snug">
-              <em>&ldquo;Tem clientes interessados em falar consigo sobre <strong>{target.name}</strong>...&rdquo;</em>
+            <p className="text-xs text-amber-950/90 leading-snug font-medium bg-white/70 p-2 rounded-xl border border-amber-200">
+              <em>&ldquo;Alguém quer conversar consigo no HeartLink. Ative o Chat P2P para poder receber mensagens.&rdquo;</em>
             </p>
 
-            <div className="flex items-center gap-2 pt-1 border-t border-amber-200/60 text-[11px] text-neutral-600 font-medium">
+            <div className="flex items-center gap-2 pt-1 text-[11px] text-neutral-600 font-medium">
               <EyeOff className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
               <span>Privacidade Garantida: O seu número e identidade não foram revelados.</span>
             </div>
@@ -169,7 +172,7 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
             <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-2 text-xs text-emerald-900 font-bold animate-in fade-in">
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Contacto desbloqueado com sucesso! Acesso ao WhatsApp libertado.</span>
+                <span>Acesso a contactos ativado com sucesso! Contacto disponível.</span>
               </div>
               {generatedInvoice && (
                 <button
@@ -195,8 +198,8 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
                 <Sparkles className="w-4 h-4 text-amber-300" />
                 <span>
                   {isSimulatingUnlock 
-                    ? 'A validar taxa de 1.000 MT...' 
-                    : 'Desbloquear Perfil (Taxa 1.000 MT / Fatura)'}
+                    ? 'A ativar taxa de contacto...' 
+                    : `Ativar Acesso a Contactos (${target.unlockFee || 1000} MT / Fatura)`}
                 </span>
               </button>
             ) : null}

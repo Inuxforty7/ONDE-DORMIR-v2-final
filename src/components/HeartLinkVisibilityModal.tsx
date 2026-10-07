@@ -13,12 +13,15 @@ import {
   Zap,
   Star,
   Flame,
-  ArrowRight
+  ArrowRight,
+  Phone,
+  MessageSquare,
+  Lock,
+  FileText
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { TermsModal } from './TermsModal';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
-import { FileText } from 'lucide-react';
 
 export interface VisibilityPlan {
   id: 'vis_24h' | 'vis_7d' | 'vis_30d';
@@ -38,7 +41,7 @@ export const VISIBILITY_PLANS: VisibilityPlan[] = [
     durationLabel: '24 Horas',
     durationHours: 24,
     priceMt: 100,
-    description: 'Acesso P2P e vitrine ♥.',
+    description: 'Acesso a contactos directos e grupo P2P ♥.',
     badge: '100 MT'
   },
   {
@@ -47,17 +50,17 @@ export const VISIBILITY_PLANS: VisibilityPlan[] = [
     durationLabel: '7 Dias',
     durationHours: 168,
     priceMt: 250,
-    description: 'Acesso P2P e vitrine ◆.',
+    description: 'Acesso a contactos directos e grupo P2P ◆.',
     badge: '250 MT',
     isPopular: true
   },
   {
     id: 'vis_30d',
-    name: '♛ King',
+    name: '♛ VIP',
     durationLabel: '30 Dias (VIP)',
     durationHours: 720,
     priceMt: 1000,
-    description: 'Acesso P2P e vitrine ♛.',
+    description: 'Acesso total a contactos directos e grupo VIP P2P ♛.',
     badge: '1000 MT'
   }
 ];
@@ -99,6 +102,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
       setSelectedPlanId(initialPlanId);
     }
   }, [initialPlanId]);
+
   const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'emola'>('mpesa');
   const [phoneNumber, setPhoneNumber] = useState(
     userPhone ? userPhone.replace('+258', '').replace(/\s+/g, '') : '841234567'
@@ -142,8 +146,8 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         dueDate: new Date(now.getTime() + selectedPlan.durationHours * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
         status: 'PAID',
         moduleType: 'general',
-        serviceTitle: `HeartLink • ${selectedPlan.name}`,
-        serviceDescription: `Subscrição de Visibilidade Pública HeartLink (${selectedPlan.durationLabel})`,
+        serviceTitle: `HeartLink • Acesso a Contactos (${selectedPlan.name})`,
+        serviceDescription: `Subscrição de Acesso a Contactos HeartLink (${selectedPlan.durationLabel})`,
         clientName: `Utilizador HeartLink (+258 ${phoneNumber})`,
         clientNuitOrBi: 'Consumidor Final (18+)',
         clientPhone: `+258 ${phoneNumber}`,
@@ -151,7 +155,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         clientCity: 'Moçambique',
         itemDetails: [
           {
-            description: `Ativação ${selectedPlan.name} • Visibilidade Pública HeartLink`,
+            description: `Ativação de Acesso a Contactos (${selectedPlan.name}) • HeartLink`,
             quantity: 1,
             unitPriceMzn: selectedPlan.priceMt,
             totalMzn: selectedPlan.priceMt,
@@ -172,22 +176,6 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
     }, 2400);
   };
 
-  const handleToggleToAnonymous = () => {
-    onSaveVisibility({
-      ...currentVisibility,
-      mode: 'anonymous'
-    });
-    onClose();
-  };
-
-  const handleReactivateShowcase = () => {
-    onSaveVisibility({
-      ...currentVisibility,
-      mode: 'public_showcase'
-    });
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150">
@@ -201,10 +189,10 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-md">
-                  Vitrine HeartLink
+                  CHAT P2P HEARTLINK
                 </span>
                 <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5">
-                  Desbloquear Visibilidade de Perfil
+                  Desbloquear Chat P2P
                 </h2>
               </div>
             </div>
@@ -223,44 +211,38 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
           {/* STEP 1: SELECT PLAN */}
           {step === 'select_plan' && (
             <>
-              {/* Concept Banner explaining the system logic */}
+              {/* Informative Banner explaining that profiles are public and payment is for Chat P2P */}
               <div className="bg-rose-50/80 border border-rose-200/90 rounded-2xl p-3.5 space-y-2">
                 <div className="flex items-start gap-2.5">
-                  <Eye className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <MessageSquare className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                   <div className="text-xs text-neutral-800 space-y-1">
-                    <p className="font-extrabold text-rose-950">
-                      Como funciona a Visibilidade no HeartLink?
+                    <p className="font-black text-rose-950 text-sm">
+                      Desbloquear Chat P2P
                     </p>
-                    <p className="leading-relaxed text-neutral-700">
-                      • <strong>Cadastro 100% Grátis:</strong> Qualquer pessoa se cadastra gratuitamente e pode navegar no <em>Modo Anónimo</em>, vendo todos e mandando mensagens sem aparecer na vitrine.
+                    <p className="font-bold text-rose-900 leading-relaxed text-xs">
+                      Veja perfis, conheça pessoas e converse através do Chat P2P.
                     </p>
-                    <p className="leading-relaxed text-neutral-700">
-                      • <strong>Desbloquear a Visibilidade:</strong> Para o seu perfil <strong>aparecer na vitrine pública</strong>, ser visto e cortejado por centenas de pretendentes, desbloqueie um dos pacotes abaixo.
-                    </p>
+                    <div className="pt-1.5 space-y-1 text-[11px] text-neutral-700 leading-relaxed">
+                      <p>
+                        • O seu perfil e fotografias ficam visíveis por defeito após o registo (gerido pelas suas definições de privacidade).
+                      </p>
+                      <p>
+                        • A ativação do plano dá acesso ao Chat P2P e aos contactos diretos para conversar livremente.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* If user currently has active visibility, allow quick toggle */}
+                {/* If user currently has active P2P plan */}
                 {currentVisibility.isUnlocked && (
                   <div className="pt-2 border-t border-rose-200/70 flex items-center justify-between text-xs">
-                    <span className="text-rose-900 font-bold">
-                      Estado Atual: {currentVisibility.mode === 'public_showcase' ? '👁️ Visível na Vitrine' : '🕶️ Modo Anónimo'}
+                    <span className="text-rose-900 font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Plano Ativo: {currentVisibility.planName || 'Chat P2P'}</span>
                     </span>
-                    {currentVisibility.mode === 'public_showcase' ? (
-                      <button
-                        onClick={handleToggleToAnonymous}
-                        className="text-[11px] font-bold text-neutral-700 hover:text-neutral-900 underline cursor-pointer"
-                      >
-                        Pausar e ficar anónimo(a)
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleReactivateShowcase}
-                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
-                      >
-                        Reativar vitrine
-                      </button>
-                    )}
+                    <span className="text-[11px] text-emerald-700 font-extrabold">
+                      Chat P2P Ativo
+                    </span>
                   </div>
                 )}
               </div>
@@ -268,7 +250,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               {/* 3 Packages Cards */}
               <div className="space-y-2">
                 <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block">
-                  Escolha o seu Pacote de Visibilidade:
+                  ESCOLHA O SEU PLANO DE CHAT P2P:
                 </label>
 
                 <div className="grid grid-cols-1 gap-2">
@@ -292,8 +274,8 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                             {plan.badge && (
                               <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-md ${
                                 plan.isPopular
-                                  ? 'bg-rose-600 text-white'
-                                  : 'bg-amber-100 text-amber-900 border border-amber-300/80'
+                                    ? 'bg-rose-600 text-white'
+                                    : 'bg-amber-100 text-amber-900 border border-amber-300/80'
                               }`}>
                                 {plan.badge}
                               </span>
@@ -380,7 +362,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 </p>
               </div>
 
-              {/* Terms Acceptance Checkbox (Adults 18+ and HeartLink Terms) */}
+              {/* Terms Acceptance Checkbox */}
               <div className="pt-0.5">
                 <label className="flex items-start gap-2.5 cursor-pointer p-2.5 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
                   <input
@@ -413,7 +395,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   onClick={onClose}
                   className="h-11 px-4 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
-                  Continuar no Modo Anónimo (Grátis)
+                  Cancelar
                 </button>
                 <button
                   type="button"
@@ -421,7 +403,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   disabled={phoneNumber.length < 8 || !agreedToTerms}
                   className="flex-1 h-11 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
-                  <span>Pagar {selectedPlan.priceMt} MT e Desbloquear</span>
+                  <span>Pagar {selectedPlan.priceMt} MT e Ativar Chat P2P</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -455,17 +437,17 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-neutral-900">
-                  Visibilidade Desbloqueada com Sucesso! ✨
+                  Chat P2P Ativado com Sucesso! ✨
                 </h3>
                 <p className="text-xs text-neutral-600 max-w-sm mx-auto leading-relaxed">
-                  O seu perfil já está <strong>visível na vitrine pública do HeartLink</strong>. Agora centenas de utilizadores podem ver o seu perfil, foto e iniciar conversas consigo!
+                  O seu acesso ao Chat P2P e contactos diretos está agora ativo.
                 </p>
               </div>
 
               <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-950 font-bold space-y-1">
                 <div>Plano Ativo: {selectedPlan.name} ({selectedPlan.durationLabel})</div>
                 <div className="text-[11px] text-emerald-800 font-medium">
-                  Pode alternar para o <em>Modo Anónimo</em> a qualquer momento nas opções se desejar privacidade temporária.
+                  Estado: Contacto disponível
                 </div>
               </div>
 
@@ -486,7 +468,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   onClick={onClose}
                   className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
-                  <span>Ver Meu Perfil na Vitrine</span>
+                  <span>Concluir</span>
                   <Check className="w-4 h-4" />
                 </button>
               </div>
@@ -504,7 +486,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
           setAgreedToTerms(true);
           setIsTermsModalOpen(false);
         }}
-        contextText="Para desbloquear visibilidade no HeartLink, confirme a leitura e aceitação dos Termos Gerais (Adultos 18+)."
+        contextText="Para ativar acesso a contactos no HeartLink, confirme a leitura e aceitação dos Termos Gerais (Adultos 18+)."
       />
 
       {/* Official Billing & Invoice Modal */}
