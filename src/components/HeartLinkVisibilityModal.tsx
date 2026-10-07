@@ -32,36 +32,58 @@ export interface VisibilityPlan {
   description: string;
   badge?: string;
   isPopular?: boolean;
+  popularLabel?: string;
+  features: string[];
 }
 
 export const VISIBILITY_PLANS: VisibilityPlan[] = [
   {
     id: 'vis_24h',
-    name: '♥ Coração',
+    name: '♥️ CORAÇÃO',
     durationLabel: '24 Horas',
     durationHours: 24,
     priceMt: 100,
-    description: 'Acesso a contactos directos e grupo P2P ♥.',
-    badge: '100 MT'
+    description: 'Acesso a contactos directos e grupo P2P ♥️',
+    badge: '100 MT',
+    features: [
+      '20 mensagens por dia',
+      'Participação em grupos',
+      'Contactos básicos'
+    ]
   },
   {
     id: 'vis_7d',
-    name: '◆ Diamante',
+    name: '💎 DIAMANTE',
     durationLabel: '7 Dias',
     durationHours: 168,
     priceMt: 250,
-    description: 'Acesso a contactos directos e grupo P2P ◆.',
+    description: 'Acesso prioritário e mensagens ilimitadas no Chat P2P',
     badge: '250 MT',
-    isPopular: true
+    isPopular: true,
+    popularLabel: 'mais escolhido pelos utilizadores',
+    features: [
+      'Mensagens ilimitadas',
+      'Perfil destacado',
+      'Prioridade nas pesquisas',
+      'Selo Diamante 💎'
+    ]
   },
   {
     id: 'vis_30d',
-    name: '♛ VIP',
+    name: '👑 VIP',
     durationLabel: '30 Dias (VIP)',
     durationHours: 720,
     priceMt: 1000,
-    description: 'Acesso total a contactos directos e grupo VIP P2P ♛.',
-    badge: '1000 MT'
+    description: 'Acesso exclusivo total com máximo destaque e suporte prioritário',
+    badge: '1000 MT',
+    features: [
+      'Tudo do Diamante',
+      'Grupo VIP exclusivo',
+      'Perfil no topo das pesquisas',
+      'Selo VIP 👑',
+      'Máximo destaque e visibilidade',
+      'Suporte prioritário'
+    ]
   }
 ];
 
@@ -147,7 +169,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         status: 'PAID',
         moduleType: 'general',
         serviceTitle: `HeartLink • Acesso a Contactos (${selectedPlan.name})`,
-        serviceDescription: `Subscrição de Acesso a Contactos HeartLink (${selectedPlan.durationLabel})`,
+        serviceDescription: `Subscrição de Acesso a Contactos HeartLink (${selectedPlan.name})`,
         clientName: `Utilizador HeartLink (+258 ${phoneNumber})`,
         clientNuitOrBi: 'Consumidor Final (18+)',
         clientPhone: `+258 ${phoneNumber}`,
@@ -181,24 +203,25 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
       <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-4 sm:p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0 shadow-inner">
-                <HeartLinkTwoHeartsIcon className="w-7 h-7" variant="white" showStitches={true} />
+        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-3.5 sm:p-5 relative overflow-hidden shrink-0">
+          <div className="flex items-center justify-between gap-2 relative z-10">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0 shadow-inner">
+                <HeartLinkTwoHeartsIcon className="w-6 h-6 sm:w-7 sm:h-7" variant="white" showStitches={true} />
               </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-md">
+              <div className="min-w-0">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-md inline-block whitespace-nowrap">
                   CHAT P2P HEARTLINK
                 </span>
-                <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5">
+                <h2 className="text-sm sm:text-lg font-black tracking-tight mt-0.5 truncate leading-tight">
                   Desbloquear Chat P2P
                 </h2>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 text-white flex items-center justify-center cursor-pointer transition-colors"
+              className="w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 text-white flex items-center justify-center cursor-pointer transition-colors shrink-0"
+              aria-label="Fechar"
             >
               <X className="w-4 h-4" />
             </button>
@@ -206,98 +229,81 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-3.5 sm:p-5 space-y-3.5 max-h-[80vh] overflow-y-auto">
 
           {/* STEP 1: SELECT PLAN */}
           {step === 'select_plan' && (
             <>
-              {/* Informative Banner explaining that profiles are public and payment is for Chat P2P */}
-              <div className="bg-rose-50/80 border border-rose-200/90 rounded-2xl p-3.5 space-y-2">
-                <div className="flex items-start gap-2.5">
-                  <MessageSquare className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                  <div className="text-xs text-neutral-800 space-y-1">
-                    <p className="font-black text-rose-950 text-sm">
-                      Desbloquear Chat P2P
-                    </p>
-                    <p className="font-bold text-rose-900 leading-relaxed text-xs">
-                      Veja perfis, conheça pessoas e converse através do Chat P2P.
-                    </p>
-                    <div className="pt-1.5 space-y-1 text-[11px] text-neutral-700 leading-relaxed">
-                      <p>
-                        • O seu perfil e fotografias ficam visíveis por defeito após o registo (gerido pelas suas definições de privacidade).
-                      </p>
-                      <p>
-                        • A ativação do plano dá acesso ao Chat P2P e aos contactos diretos para conversar livremente.
-                      </p>
-                    </div>
-                  </div>
+              {/* Informative Banner */}
+              <div className="bg-rose-50/90 border border-rose-200/90 rounded-2xl p-3 sm:p-3.5 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <MessageSquare className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
+                  <p className="font-bold text-rose-900 leading-relaxed text-[11.5px] sm:text-xs min-w-0 flex-1">
+                    Veja perfis, conheça pessoas e converse através do Chat P2P.
+                  </p>
                 </div>
 
                 {/* If user currently has active P2P plan */}
                 {currentVisibility.isUnlocked && (
-                  <div className="pt-2 border-t border-rose-200/70 flex items-center justify-between text-xs">
-                    <span className="text-rose-900 font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Plano Ativo: {currentVisibility.planName || 'Chat P2P'}</span>
-                    </span>
-                    <span className="text-[11px] text-emerald-700 font-extrabold">
-                      Chat P2P Ativo
-                    </span>
+                  <div className="pt-2 border-t border-rose-200/70 flex items-center gap-1.5 text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="text-rose-900 font-bold truncate">Plano Ativo: {currentVisibility.planName || 'Chat P2P'}</span>
                   </div>
                 )}
               </div>
 
               {/* 3 Packages Cards */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-neutral-800 uppercase tracking-wide block">
+                <label className="text-[11px] sm:text-xs font-black text-neutral-800 uppercase tracking-wide block">
                   ESCOLHA O SEU PLANO DE CHAT P2P:
                 </label>
 
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:gap-2.5">
                   {VISIBILITY_PLANS.map((plan) => {
                     const isSelected = selectedPlanId === plan.id;
                     return (
                       <div
                         key={plan.id}
                         onClick={() => setSelectedPlanId(plan.id)}
-                        className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex items-center justify-between gap-3 ${
+                        className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-2 ${
                           isSelected
-                            ? 'border-rose-600 bg-rose-50/70 shadow-xs ring-1 ring-rose-600/20'
+                            ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-600/20'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
-                        <div className="space-y-0.5 pr-2 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-extrabold text-sm text-neutral-900">
+                        {/* Top Header: Title & Price */}
+                        <div className="flex items-center justify-between gap-2 pr-6">
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                            <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight whitespace-nowrap">
                               {plan.name}
                             </span>
-                            {plan.badge && (
-                              <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-md ${
-                                plan.isPopular
-                                    ? 'bg-rose-600 text-white'
-                                    : 'bg-amber-100 text-amber-900 border border-amber-300/80'
-                              }`}>
-                                {plan.badge}
+                            {plan.popularLabel && (
+                              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-400 text-amber-950 border border-amber-500/30 whitespace-nowrap">
+                                ⭐ {plan.popularLabel}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-neutral-600 leading-snug">
-                            {plan.description}
-                          </p>
+
+                          <div className="text-right shrink-0">
+                            <div className="font-black text-base sm:text-lg text-rose-600 tracking-tight whitespace-nowrap">
+                              {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                          <div className="font-black text-base sm:text-lg text-rose-600">
-                            {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
-                          </div>
-                          <div className="text-[10px] text-neutral-500 font-semibold">
-                            {plan.durationLabel}
-                          </div>
+                        {/* Bulleted Feature List */}
+                        <div className="pt-2 border-t border-neutral-200/80 grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5 text-xs text-neutral-800">
+                          {plan.features.map((feat, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 font-bold text-[10.5px] sm:text-[11px]">
+                              <span className="text-emerald-600 font-extrabold text-xs shrink-0">✅</span>
+                              <span className="text-neutral-800 leading-tight">{feat}</span>
+                            </div>
+                          ))}
                         </div>
 
                         {isSelected && (
-                          <div className="absolute top-2 right-2 w-4.5 h-4.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-2xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
+                          <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
                           </div>
                         )}
                       </div>

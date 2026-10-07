@@ -1568,10 +1568,10 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     <div>
                       <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-rose-600" />
-                        <span>Vitrine Pública (Perfil Visível)</span>
+                        <span>Perfil Visível</span>
                       </div>
                       <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
-                        O seu perfil e fotos ficam visíveis na vitrine do HeartLink para todos os utilizadores.
+                        O seu perfil fica visível para os outros utilizadores no HeartLink.
                       </p>
                     </div>
                   </div>
@@ -1592,10 +1592,10 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
                     <div>
                       <div className="text-xs font-black text-neutral-900 flex items-center gap-1.5">
                         <EyeOff className="w-3.5 h-3.5 text-neutral-600" />
-                        <span>Modo Anónimo (Oculto da Vitrine)</span>
+                        <span>Perfil Privado (Oculto)</span>
                       </div>
                       <p className="text-[11px] text-neutral-600 leading-snug mt-0.5">
-                        O seu perfil não é exibido na vitrine pública. Pode explorar e conversar no anonimato.
+                        O seu perfil fica oculto do feed principal. Pode explorar de forma privada.
                       </p>
                     </div>
                   </div>

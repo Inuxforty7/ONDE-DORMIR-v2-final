@@ -141,12 +141,9 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
           </div>
 
           {/* Explanation Text */}
-          <div className="space-y-2 text-xs sm:text-sm text-neutral-800 leading-relaxed bg-rose-50/70 p-3 rounded-2xl border border-rose-200/80">
+          <div className="space-y-1.5 text-xs sm:text-sm text-neutral-800 leading-relaxed bg-rose-50/70 p-3.5 rounded-2xl border border-rose-200/80">
             <p className="font-bold text-rose-950 text-sm">
               Este utilizador ainda não tem o Chat P2P ativo.
-            </p>
-            <p className="text-xs text-neutral-600">
-              O perfil e as fotografias permanecem totalmente visíveis, mas o envio de mensagens privadas e contactos diretos só está disponível quando o titular ativar um plano de Chat P2P.
             </p>
           </div>
 
