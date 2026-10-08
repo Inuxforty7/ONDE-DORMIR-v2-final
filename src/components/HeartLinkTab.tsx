@@ -57,6 +57,7 @@ import { HeartLinkContactConfigurator } from './HeartLinkContactConfigurator';
 import { getPlatformTenureText } from '../utils/tenure';
 import { contactUnlockService } from '../services/contactUnlockService';
 import { heartLinkService, FriendshipRecord, MarriageRecord, P2PTier, P2PGroupMessage } from '../services/heartLinkService';
+import { heartLinkAccessService, HeartLinkPlanId } from '../services/heartLinkAccessService';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
 interface HeartLinkTabProps {
@@ -145,12 +146,23 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   
   // Modals & KYC State
   const [selectedProfile, setSelectedProfile] = useState<HeartLinkProfile | null>(null);
+  const [targetUnlockProfile, setTargetUnlockProfile] = useState<HeartLinkProfile | null>(null);
   const [chatProfile, setChatProfile] = useState<HeartLinkProfile | null>(null);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isVisibilityModalOpen, setIsVisibilityModalOpen] = useState(false);
   const [regVisibilityMode, setRegVisibilityMode] = useState<'anonymous' | 'public'>('anonymous');
   const [pendingAction, setPendingAction] = useState<{ type: 'chat' | 'whatsapp' | 'register' | 'like'; profile?: HeartLinkProfile } | null>(null);
+
+  // Authoritative HeartLink Contact Access state
+  const [accessState, setAccessState] = useState(() => heartLinkAccessService.getAccessStatus());
+
+  React.useEffect(() => {
+    const unsub = heartLinkAccessService.subscribe(() => {
+      setAccessState(heartLinkAccessService.getAccessStatus());
+    });
+    return unsub;
+  }, []);
 
   // HeartLink Profile Media State (4 photo slots + 1 video slot)
   const [regMedia, setRegMedia] = useState<HeartLinkMediaState>({
@@ -316,9 +328,26 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     });
   };
 
-  // Open Chat with KYC Check
+  // Open Chat with Authoritative Contact Unlock & KYC Check
   const handleOpenChat = (profile: HeartLinkProfile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+
+    // 1. Authoritative Contact Check
+    const allowed = heartLinkAccessService.canContactUser(profile.id);
+    if (!allowed) {
+      // Create real notification: "${profile.name} quer conversar consigo no HeartLink."
+      heartLinkAccessService.createContactAttemptNotification({
+        id: profile.id,
+        name: profile.name,
+        photo: profile.photo,
+      });
+
+      setTargetUnlockProfile(profile);
+      setPendingAction({ type: 'chat', profile });
+      setIsVisibilityModalOpen(true);
+      return;
+    }
+
     if (!verifiedDossier) {
       setPendingAction({ type: 'chat', profile });
       setIsVerificationOpen(true);
@@ -328,24 +357,23 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     }
   };
 
-  // Open WhatsApp with KYC Check
+  // Open WhatsApp with Authoritative Contact Unlock & KYC Check
   const handleOpenWhatsApp = (profile: HeartLinkProfile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
-    const allowed = contactUnlockService.triggerContactAttempt(
-      {
+    // 1. Authoritative Contact Check
+    const allowed = heartLinkAccessService.canContactUser(profile.id);
+    if (!allowed) {
+      // Create real notification: "${profile.name} quer conversar consigo no HeartLink."
+      heartLinkAccessService.createContactAttemptNotification({
         id: profile.id,
         name: profile.name,
         photo: profile.photo,
-        phone: profile.phone,
-        whatsapp: profile.whatsapp,
-        module: 'heartlink',
-        moduleLabel: 'HeartLink',
-        unlockFee: 500,
-      },
-      profile.isContactUnlocked
-    );
-    if (!allowed) {
+      });
+
+      setTargetUnlockProfile(profile);
+      setPendingAction({ type: 'whatsapp', profile });
+      setIsVisibilityModalOpen(true);
       return;
     }
 
@@ -2053,14 +2081,33 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       )}
 
-      {/* Visibility Modal */}
+      {/* Contact Unlock & Access Modal */}
       <HeartLinkVisibilityModal
         isOpen={isVisibilityModalOpen}
-        onClose={() => setIsVisibilityModalOpen(false)}
+        onClose={() => {
+          setIsVisibilityModalOpen(false);
+          setTargetUnlockProfile(null);
+        }}
+        targetProfile={targetUnlockProfile}
+        onSuccessUnlock={(_scope, _contactId) => {
+          if (pendingAction?.type === 'chat' && pendingAction.profile) {
+            setSelectedProfile(null);
+            setChatProfile(pendingAction.profile);
+            setPendingAction(null);
+          } else if (pendingAction?.type === 'whatsapp' && pendingAction.profile) {
+            const prof = pendingAction.profile;
+            const text = encodeURIComponent(
+              `Olá ${prof.name}! Sou ${verifiedDossier?.fullName ? verifiedDossier.fullName.split(' ')[0] : 'utilizador'} no HeartLink. Vi o teu perfil e gostaria de conversar!`
+            );
+            window.open(`https://wa.me/${prof.whatsapp}?text=${text}`, '_blank');
+            setPendingAction(null);
+          }
+          setTargetUnlockProfile(null);
+        }}
         currentVisibility={userVisibility}
         onSaveVisibility={handleSaveVisibility}
         userPhone={myProfile?.whatsapp || verifiedDossier?.phone}
-        initialPlanId={p2pModalPlanTarget}
+        initialPlanId={p2pModalPlanTarget as any}
       />
 
       {/* Biometric KYC Modal for HeartLink */}

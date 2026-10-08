@@ -29,7 +29,8 @@ import {
   ChevronLeft,
   FileText,
   Clock,
-  Home
+  Home,
+  Star
 } from 'lucide-react';
 import { CarRental, UserLocationState, CarOwnerFleetAccount } from '../types';
 import { INITIAL_CAR_RENTALS } from '../data/carRentals';
@@ -41,6 +42,8 @@ import { getPlatformTenureText } from '../utils/tenure';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 import { contactUnlockService } from '../services/contactUnlockService';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
+import { CarRentalReviewModal } from './CarRentalReviewModal';
+import { carRentalReviewService } from '../services/carRentalReviewService';
 
 interface RentACarTabProps {
   onBackToHome?: () => void;
@@ -220,14 +223,28 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
   const [expandedSections, setExpandedSections] = useState<{
     verification: boolean;
     description: boolean;
+    reviews: boolean;
   }>({
     verification: false,
     description: false,
+    reviews: true,
   });
 
-  const toggleSection = (key: 'verification' | 'description') => {
+  const toggleSection = (key: 'verification' | 'description' | 'reviews') => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // Review modal state and real-time subscription
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewingVehicle, setReviewingVehicle] = useState<CarRental | null>(null);
+  const [, setReviewVersion] = useState(0);
+
+  React.useEffect(() => {
+    const unsubscribe = carRentalReviewService.subscribe(() => {
+      setReviewVersion((v) => v + 1);
+    });
+    return unsubscribe;
+  }, []);
   
   // KYC / Verification State for Client vs Owner
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
@@ -577,6 +594,18 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                     <span>{car.photos.length} fotos</span>
                   </span>
                 )}
+                {(() => {
+                  const vStats = carRentalReviewService.getVehicleRatingStats(car.id);
+                  return (
+                    <span className="text-[10px] font-black bg-black/75 backdrop-blur-xs text-white px-2 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <span>{vStats.rating.toFixed(1)}</span>
+                      {vStats.reviewsCount > 0 && (
+                        <span className="text-neutral-300 font-normal">({vStats.reviewsCount})</span>
+                      )}
+                    </span>
+                  );
+                })()}
               </div>
 
               <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-lg text-xs font-extrabold shadow-sm">
@@ -609,11 +638,25 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                   <span className="text-neutral-500 text-[11px]">{getPlatformTenureText(car.registeredAt, car.platformTenure, car.id)}</span>
                 </div>
 
-                {/* Owner info */}
+                {/* Owner info & Provider Rating */}
                 {car.ownerName && (
-                  <div className="mt-1.5 flex items-center gap-1 text-xs text-neutral-600 truncate">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">Proprietário: <span className="text-neutral-800 font-semibold">{car.ownerName}</span></span>
+                  <div className="mt-1.5 flex items-center justify-between gap-1 text-xs text-neutral-600">
+                    <div className="flex items-center gap-1 min-w-0 truncate">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">Proprietário: <span className="text-neutral-800 font-semibold">{car.ownerName}</span></span>
+                    </div>
+                    {(() => {
+                      const pStats = carRentalReviewService.getProviderRatingStats(car.ownerName);
+                      if (pStats.reviewsCount > 0) {
+                        return (
+                          <div className="flex items-center gap-1 shrink-0 bg-amber-50 text-amber-800 border border-amber-200/80 px-1.5 py-0.5 rounded-md text-[10px] font-bold">
+                            <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                            <span>{pStats.rating.toFixed(1)} operador</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 )}
 
@@ -791,7 +834,19 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
               })()}
 
               <div>
-                <h2 className="text-base sm:text-lg font-black text-neutral-900">{selectedVehicle.model}</h2>
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="text-base sm:text-lg font-black text-neutral-900">{selectedVehicle.model}</h2>
+                  {(() => {
+                    const vStats = carRentalReviewService.getVehicleRatingStats(selectedVehicle.id);
+                    return (
+                      <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                        <span className="text-xs font-black text-amber-900">{vStats.rating.toFixed(1)}</span>
+                        <span className="text-[10px] text-neutral-500">({vStats.reviewsCount})</span>
+                      </div>
+                    );
+                  })()}
+                </div>
                 <p className="text-xs text-neutral-600 flex items-center gap-1 mt-0.5">
                   <MapPin className="w-3.5 h-3.5 text-orange-600" />
                   <span>{selectedVehicle.city}, {selectedVehicle.province}</span>
@@ -839,6 +894,24 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
                 {expandedSections.verification && (
                   <div className="p-3 pt-1 border-t border-emerald-100 space-y-2 text-xs">
+                    {(() => {
+                      if (!selectedVehicle.ownerName) return null;
+                      const pStats = carRentalReviewService.getProviderRatingStats(selectedVehicle.ownerName);
+                      return (
+                        <div className="p-2.5 bg-white/90 rounded-xl border border-emerald-100 flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-neutral-800 text-xs block">Reputação do Operador</span>
+                            <span className="text-[10.5px] text-neutral-500">Atendimento ao Cliente & Pontualidade</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <span>{pStats.rating.toFixed(1)}</span>
+                            <span className="text-[10px] text-neutral-500 font-normal">({pStats.reviewsCount})</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                       <div className="flex items-center gap-1.5 text-neutral-600">
                         <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -880,6 +953,161 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Reviews & Ratings Section (Accordion) */}
+              {(() => {
+                const vehicleStats = carRentalReviewService.getVehicleRatingStats(selectedVehicle.id);
+                const providerStats = selectedVehicle.ownerName 
+                  ? carRentalReviewService.getProviderRatingStats(selectedVehicle.ownerName)
+                  : null;
+                const vehicleReviews = carRentalReviewService.getReviewsByVehicleId(selectedVehicle.id);
+
+                return (
+                  <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('reviews')}
+                      className="w-full p-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                        <span className="text-xs font-black uppercase tracking-wider text-neutral-800">
+                          Avaliações e Reputação
+                        </span>
+                        <span className="text-[11px] font-bold text-neutral-500">
+                          ({vehicleReviews.length})
+                        </span>
+                      </div>
+                      {expandedSections.reviews ? (
+                        <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                      )}
+                    </button>
+
+                    {expandedSections.reviews && (
+                      <div className="px-3 pb-3 pt-1 border-t border-neutral-100 space-y-3">
+                        {/* Rating Separation Cards: Vehicle Quality vs Provider Service */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                          {/* 1. Qualidade da Viatura */}
+                          <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 space-y-1.5">
+                            <div className="flex items-center justify-between pb-1 border-b border-neutral-200/60">
+                              <div className="flex items-center gap-1.5 font-bold text-neutral-900 text-xs">
+                                <Car className="w-3.5 h-3.5 text-orange-600" />
+                                <span>Qualidade da Viatura</span>
+                              </div>
+                              <div className="flex items-center gap-0.5 font-black text-amber-600 text-xs">
+                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                <span>{vehicleStats.rating.toFixed(1)}</span>
+                              </div>
+                            </div>
+                            <div className="space-y-1 text-[11px] text-neutral-600">
+                              <div className="flex justify-between">
+                                <span>Estado da Viatura</span>
+                                <span className="font-bold text-neutral-800">{vehicleStats.breakdown.vehicleCondition.toFixed(1)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Limpeza</span>
+                                <span className="font-bold text-neutral-800">{vehicleStats.breakdown.cleanliness.toFixed(1)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Conforto</span>
+                                <span className="font-bold text-neutral-800">{vehicleStats.breakdown.comfort.toFixed(1)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 2. Serviço do Operador */}
+                          {providerStats && (
+                            <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 space-y-1.5">
+                              <div className="flex items-center justify-between pb-1 border-b border-neutral-200/60">
+                                <div className="flex items-center gap-1.5 font-bold text-neutral-900 text-xs">
+                                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Serviço do Operador</span>
+                                </div>
+                                <div className="flex items-center gap-0.5 font-black text-amber-600 text-xs">
+                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                  <span>{providerStats.rating.toFixed(1)}</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1 text-[11px] text-neutral-600">
+                                <div className="flex justify-between">
+                                  <span>Atendimento ao Cliente</span>
+                                  <span className="font-bold text-neutral-800">{providerStats.breakdown.customerService.toFixed(1)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Pontualidade</span>
+                                  <span className="font-bold text-neutral-800">{providerStats.breakdown.punctuality.toFixed(1)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Button: Avaliar Viatura e Serviço */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReviewingVehicle(selectedVehicle);
+                            setIsReviewModalOpen(true);
+                          }}
+                          className="w-full h-10 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Star className="w-3.5 h-3.5 text-orange-600" />
+                          <span>Avaliar Viatura e Serviço</span>
+                        </button>
+
+                        {/* Recent Reviews List from Single Dataset */}
+                        <div className="space-y-2 pt-1">
+                          <h4 className="text-[11px] font-black uppercase tracking-wider text-neutral-500">
+                            Avaliações de Clientes ({vehicleReviews.length})
+                          </h4>
+
+                          {vehicleReviews.length === 0 ? (
+                            <div className="py-4 text-center text-xs text-neutral-500 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
+                              Ainda não há avaliações para esta viatura. Seja o primeiro a partilhar a sua experiência!
+                            </div>
+                          ) : (
+                            vehicleReviews.map((rev) => (
+                              <div
+                                key={rev.id}
+                                className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200/70 space-y-1"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-neutral-900 text-xs">{rev.userName}</span>
+                                    {rev.userCity && (
+                                      <span className="text-[10px] text-neutral-500">· {rev.userCity}</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-neutral-400">{rev.date}</span>
+                                </div>
+
+                                <div className="flex items-center gap-3 text-[11px]">
+                                  <div className="flex items-center gap-1 text-amber-600 font-bold">
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                    <span>Viatura: {rev.vehicleRatingAverage.toFixed(1)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-emerald-700 font-bold">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                    <span>Serviço: {rev.providerRatingAverage.toFixed(1)}</span>
+                                  </div>
+                                </div>
+
+                                {rev.comment && (
+                                  <p className="text-xs text-neutral-700 leading-relaxed pt-0.5">
+                                    "{rev.comment}"
+                                  </p>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Actions */}
               <div className="pt-2 flex gap-2">
@@ -951,6 +1179,19 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
         isOpen={isBillingModalOpen}
         onClose={() => setIsBillingModalOpen(false)}
         invoiceData={billingInvoiceData}
+      />
+
+      {/* Car Rental Review Modal */}
+      <CarRentalReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setReviewingVehicle(null);
+        }}
+        vehicle={reviewingVehicle}
+        onReviewSubmitted={() => {
+          setReviewVersion((v) => v + 1);
+        }}
       />
     </div>
   );

@@ -35,6 +35,8 @@ import { contactUnlockService } from '../services/contactUnlockService';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
 import { getDirectionsUrl } from '../utils/geo';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
+import { TourGuideReviewModal } from './TourGuideReviewModal';
+import { tourGuideReviewService } from '../services/tourGuideReviewService';
 
 const getPlaceCategoryShort = (place: TourismPlace) => {
   if (place.category === 'praias_ilhas') {
@@ -150,15 +152,29 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
     about: boolean;
     specialties: boolean;
     verification: boolean;
+    reviews: boolean;
   }>({
     about: false,
     specialties: false,
     verification: false,
+    reviews: true,
   });
 
-  const toggleSection = (key: 'about' | 'specialties' | 'verification') => {
+  const toggleSection = (key: 'about' | 'specialties' | 'verification' | 'reviews') => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // Tourism Review Modal State and Real-Time Subscription
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewingGuide, setReviewingGuide] = useState<TourGuide | null>(null);
+  const [, setReviewVersion] = useState(0);
+
+  React.useEffect(() => {
+    const unsubscribe = tourGuideReviewService.subscribe(() => {
+      setReviewVersion((v) => v + 1);
+    });
+    return unsubscribe;
+  }, []);
 
   const handleStartGuideRegistration = () => {
     setIsVerificationOpen(true);
@@ -750,11 +766,19 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                         </div>
 
                         <div className="flex items-center gap-1.5 text-xs text-neutral-700 font-semibold pt-0.5">
-                          <div className="flex items-center gap-1 text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-md border border-amber-200/60">
-                            <Star className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
-                            <span className="font-extrabold text-[11px]">{guide.rating.toFixed(1)}</span>
-                            <span className="text-[10px] text-amber-600 font-normal">({guide.reviewsCount})</span>
-                          </div>
+                          {(() => {
+                            const stats = tourGuideReviewService.getGuideRatingStats(guide.id, {
+                              rating: guide.rating,
+                              reviewsCount: guide.reviewsCount,
+                            });
+                            return (
+                              <div className="flex items-center gap-1 text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-md border border-amber-200/60">
+                                <Star className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+                                <span className="font-extrabold text-[11px]">{stats.rating.toFixed(1)}</span>
+                                <span className="text-[10px] text-amber-600 font-normal">({stats.reviewsCount})</span>
+                              </div>
+                            );
+                          })()}
                           <span className="text-neutral-500 text-[11px] font-medium">• {guide.experienceYears}a exp</span>
                         </div>
                       </div>
@@ -1327,15 +1351,23 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
               
               {/* Quick Key Metrics Grid (Rating, Exp, Price) */}
               <div className="grid grid-cols-3 gap-2 text-xs">
-                <div className="p-2 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-950 font-bold flex flex-col items-center justify-center text-center shadow-2xs">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
-                    <span className="text-sm font-black">{selectedGuide.rating.toFixed(1)}</span>
-                  </div>
-                  <span className="text-[9.5px] text-amber-700 font-semibold truncate max-w-full">
-                    {selectedGuide.reviewsCount} avaliações
-                  </span>
-                </div>
+                {(() => {
+                  const gStats = tourGuideReviewService.getGuideRatingStats(selectedGuide.id, {
+                    rating: selectedGuide.rating,
+                    reviewsCount: selectedGuide.reviewsCount,
+                  });
+                  return (
+                    <div className="p-2 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-950 font-bold flex flex-col items-center justify-center text-center shadow-2xs">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
+                        <span className="text-sm font-black">{gStats.rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-[9.5px] text-amber-700 font-semibold truncate max-w-full">
+                        {gStats.reviewsCount} avaliações
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 <div className="p-2 rounded-xl bg-neutral-100/90 border border-neutral-200 text-neutral-800 font-bold flex flex-col items-center justify-center text-center shadow-2xs">
                   <div className="flex items-center gap-1">
@@ -1450,6 +1482,138 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Collapsible Reviews & Ratings Section */}
+              {(() => {
+                const guideStats = tourGuideReviewService.getGuideRatingStats(selectedGuide.id, {
+                  rating: selectedGuide.rating,
+                  reviewsCount: selectedGuide.reviewsCount,
+                });
+                const guideReviews = tourGuideReviewService.getReviewsByGuideId(selectedGuide.id);
+
+                return (
+                  <div className="border border-neutral-200/80 rounded-2xl overflow-hidden bg-white">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('reviews')}
+                      className="w-full px-3 py-2.5 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                        <span className="text-[11px] font-black uppercase tracking-wider text-neutral-800">
+                          ⭐⭐⭐⭐⭐ Avaliação Geral
+                        </span>
+                        <span className="text-[10.5px] font-bold text-neutral-500">
+                          ({guideReviews.length})
+                        </span>
+                      </div>
+                      {expandedSections.reviews ? (
+                        <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                      )}
+                    </button>
+
+                    {expandedSections.reviews && (
+                      <div className="px-3 pb-3 pt-2 border-t border-neutral-100 space-y-3 bg-neutral-50/40">
+                        {/* 6 Criteria Breakdown Grid */}
+                        <div className="p-3 bg-white rounded-xl border border-neutral-200 space-y-2">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-neutral-100">
+                            <span className="text-xs font-bold text-neutral-900">
+                              Média Geral do Guia
+                            </span>
+                            <div className="flex items-center gap-1 font-black text-amber-600 text-xs bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              <span>{guideStats.rating.toFixed(1)}</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-neutral-600 pt-0.5">
+                            <div className="flex justify-between">
+                              <span>Comunicação</span>
+                              <span className="font-bold text-neutral-800">{guideStats.breakdown.comunicacao.toFixed(1)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Pontualidade</span>
+                              <span className="font-bold text-neutral-800">{guideStats.breakdown.pontualidade.toFixed(1)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Atendimento</span>
+                              <span className="font-bold text-neutral-800">{guideStats.breakdown.atendimento.toFixed(1)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Organização</span>
+                              <span className="font-bold text-neutral-800">{guideStats.breakdown.organizacao.toFixed(1)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Segurança</span>
+                              <span className="font-bold text-neutral-800">{guideStats.breakdown.seguranca.toFixed(1)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Profissionalismo</span>
+                              <span className="font-bold text-neutral-800">{guideStats.breakdown.profissionalismo.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action button to open review modal */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReviewingGuide(selectedGuide);
+                            setIsReviewModalOpen(true);
+                          }}
+                          className="w-full h-10 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          <span>Avaliar este Guia Turístico</span>
+                        </button>
+
+                        {/* Unified Reviews List */}
+                        <div className="space-y-2 pt-1">
+                          <h4 className="text-[11px] font-black uppercase tracking-wider text-neutral-500">
+                            Comentários & Avaliações ({guideReviews.length})
+                          </h4>
+
+                          {guideReviews.length === 0 ? (
+                            <div className="py-4 text-center text-xs text-neutral-500 bg-white rounded-xl border border-dashed border-neutral-200">
+                              Ainda não há avaliações para este guia. Seja o primeiro a avaliar!
+                            </div>
+                          ) : (
+                            guideReviews.map((rev) => (
+                              <div
+                                key={rev.id}
+                                className="p-2.5 bg-white rounded-xl border border-neutral-200/80 space-y-1"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-neutral-900 text-xs">{rev.userName}</span>
+                                    {rev.userCity && (
+                                      <span className="text-[10px] text-neutral-500">· {rev.userCity}</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-neutral-400">{rev.date}</span>
+                                </div>
+
+                                <div className="flex items-center gap-1 text-[11px] text-amber-600 font-bold">
+                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                  <span>{rev.overallRating.toFixed(1)}</span>
+                                </div>
+
+                                {rev.comment && (
+                                  <p className="text-xs text-neutral-700 leading-relaxed pt-0.5">
+                                    "{rev.comment}"
+                                  </p>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 3. Fixed Bottom Action Bar */}
@@ -1539,6 +1703,19 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           invoiceData={generatedInvoice}
         />
       )}
+
+      {/* Tourism Tour Guide Review Modal */}
+      <TourGuideReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setReviewingGuide(null);
+        }}
+        guide={reviewingGuide}
+        onReviewSubmitted={() => {
+          setReviewVersion((v) => v + 1);
+        }}
+      />
     </div>
   );
 };

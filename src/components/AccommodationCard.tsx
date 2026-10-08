@@ -4,11 +4,13 @@ import {
   Heart, 
   ShieldCheck, 
   MessageCircle, 
-  Crown
+  Crown,
+  Star
 } from 'lucide-react';
 import { Accommodation } from '../types';
 import { formatDistanceShort, getWhatsAppInquiryUrl } from '../utils/geo';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { accommodationReviewService } from '../services/accommodationReviewService';
 import { 
   getPropertyServicesForAccommodation, 
   getRoomFeaturesForAccommodation 
@@ -68,6 +70,19 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
   const minPrice = accommodation.priceEstimate?.approxMin;
   const keyConditions = getKeyConditions(accommodation);
 
+  const [, setReviewVersion] = React.useState(0);
+  React.useEffect(() => {
+    const unsubscribe = accommodationReviewService.subscribe(() => {
+      setReviewVersion((v) => v + 1);
+    });
+    return unsubscribe;
+  }, []);
+
+  const ratingStats = accommodationReviewService.getAccommodationRatingStats(accommodation.id, {
+    rating: accommodation.rating,
+    reviewsCount: accommodation.reviewsCount,
+  });
+
   return (
     <div className={`bg-white rounded-3xl border transition-all overflow-hidden flex flex-col h-full group active:scale-[0.99] touch-manipulation ${
       accommodation.isPremium 
@@ -119,10 +134,17 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           onClick={() => onSelect(accommodation)}
           className="cursor-pointer space-y-1.5"
         >
-          {/* 2. Nome */}
-          <h3 className="font-extrabold text-neutral-900 text-base leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1">
-            {accommodation.name}
-          </h3>
+          {/* 2. Nome e Avaliação Geral */}
+          <div className="flex items-start justify-between gap-1.5">
+            <h3 className="font-extrabold text-neutral-900 text-base leading-snug group-hover:text-emerald-700 transition-colors line-clamp-1 flex-1">
+              {accommodation.name}
+            </h3>
+            <div className="flex items-center gap-1 text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/60 shrink-0">
+              <Star className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+              <span className="font-extrabold text-[11px]">{ratingStats.rating.toFixed(1)}</span>
+              <span className="text-[10px] text-amber-600 font-normal">({ratingStats.reviewsCount})</span>
+            </div>
+          </div>
 
           {/* 6. Verificação */}
           {accommodation.verificationStatus === 'verified_in_person' ? (

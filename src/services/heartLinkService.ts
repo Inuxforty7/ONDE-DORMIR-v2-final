@@ -293,15 +293,28 @@ export const heartLinkService = {
     expiresAt?: string;
     planId?: string;
   } | null): P2PTier | null {
+    // Check authoritative monthly plan tier first
+    try {
+      const authRaw = localStorage.getItem('onde_dormir_hl_access_state');
+      if (authRaw) {
+        const parsed = JSON.parse(authRaw);
+        if (parsed.activeMonthlyPlan && parsed.activeMonthlyPlan.expiresAt) {
+          if (new Date(parsed.activeMonthlyPlan.expiresAt).getTime() > Date.now()) {
+            return parsed.activeMonthlyPlan.tier || 'heart';
+          }
+        }
+      }
+    } catch {}
+
     if (!visibility || !visibility.isUnlocked) return null;
     if (visibility.expiresAt) {
       const exp = new Date(visibility.expiresAt).getTime();
       if (exp <= Date.now()) return null;
     }
 
-    if (visibility.planId === 'vis_30d') return 'king';
-    if (visibility.planId === 'vis_7d') return 'diamond';
-    if (visibility.planId === 'vis_24h') return 'heart';
+    if (visibility.planId === 'vis_30d' || visibility.planId === 'monthly_1000mt') return 'king';
+    if (visibility.planId === 'vis_7d' || visibility.planId === 'monthly_250mt') return 'diamond';
+    if (visibility.planId === 'vis_24h' || visibility.planId === 'monthly_100mt') return 'heart';
 
     return 'heart';
   },

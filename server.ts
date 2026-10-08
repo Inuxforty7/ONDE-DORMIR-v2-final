@@ -1112,7 +1112,311 @@ app.post('/api/contacts/unlock', (req: Request, res: Response) => {
   });
 });
 
-// 10. LOVE SHOP & RENT-A-CAR ORDER PROCESSING
+// ============================================================================
+// HEARTLINK AUTHORITATIVE CONTACT UNLOCK & SUBSCRIPTIONS
+// ============================================================================
+
+export type HeartLinkPlanType = 'contact_20mt' | 'access_50mt' | 'monthly_100mt' | 'monthly_250mt' | 'monthly_1000mt';
+
+interface HeartLinkAuthoritativePayment {
+  id: string;
+  planId: HeartLinkPlanType;
+  targetContactId?: string;
+  targetContactName?: string;
+  amount: number;
+  currency: string;
+  paymentMethod: 'MPESA' | 'EMOLA';
+  phoneNumber: string;
+  reference: string;
+  status: 'PROCESSING' | 'CONFIRMED' | 'FAILED';
+  createdAt: string;
+  confirmedAt?: string;
+  expiresAt?: string;
+}
+
+interface HeartLinkAuthoritativeState {
+  activeMonthlyPlan: {
+    planId: 'monthly_100mt' | 'monthly_250mt' | 'monthly_1000mt';
+    tier: 'heart' | 'diamond' | 'king';
+    amount: number;
+    activatedAt: string;
+    expiresAt: string;
+    reference: string;
+  } | null;
+  access24h: {
+    activatedAt: string;
+    expiresAt: string;
+    reference: string;
+  } | null;
+  unlockedSpecificContacts: Set<string>;
+}
+
+const heartLinkPaymentsStore = new Map<string, HeartLinkAuthoritativePayment>();
+const heartLinkState: HeartLinkAuthoritativeState = {
+  activeMonthlyPlan: null,
+  access24h: null,
+  unlockedSpecificContacts: new Set<string>(),
+};
+
+interface HeartLinkNotificationItem {
+  id: string;
+  contactId: string;
+  contactName: string;
+  contactPhoto?: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
+const heartLinkNotificationsStore: HeartLinkNotificationItem[] = [];
+
+function cleanHeartLinkExpiredState() {
+  const currentTime = Date.now();
+  if (heartLinkState.access24h && new Date(heartLinkState.access24h.expiresAt).getTime() <= currentTime) {
+    heartLinkState.access24h = null;
+  }
+  if (heartLinkState.activeMonthlyPlan && new Date(heartLinkState.activeMonthlyPlan.expiresAt).getTime() <= currentTime) {
+    heartLinkState.activeMonthlyPlan = null;
+  }
+}
+
+app.get('/api/heartlink/access/status', (_req: Request, res: Response) => {
+  cleanHeartLinkExpiredState();
+  const hasActiveMonthlyPlan = Boolean(heartLinkState.activeMonthlyPlan);
+  const hasActive24hAccess = Boolean(heartLinkState.access24h);
+  const activeTier = heartLinkState.activeMonthlyPlan ? heartLinkState.activeMonthlyPlan.tier : null;
+  const canContactAll = hasActiveMonthlyPlan || hasActive24hAccess;
+
+  res.json({
+    success: true,
+    data: {
+      hasActiveMonthlyPlan,
+      activeMonthlyPlan: heartLinkState.activeMonthlyPlan,
+      activeTier,
+      hasActive24hAccess,
+      access24hExpiresAt: heartLinkState.access24h?.expiresAt || null,
+      unlockedContactIds: Array.from(heartLinkState.unlockedSpecificContacts),
+      canContactAll,
+    },
+  });
+});
+
+app.get('/api/heartlink/access/check/:contactId', (req: Request, res: Response) => {
+  cleanHeartLinkExpiredState();
+  const { contactId } = req.params;
+
+  let isAllowed = false;
+  let scope: 'monthly_plan' | '24h_pass' | 'single_contact' | 'none' = 'none';
+
+  if (heartLinkState.activeMonthlyPlan) {
+    isAllowed = true;
+    scope = 'monthly_plan';
+  } else if (heartLinkState.access24h) {
+    isAllowed = true;
+    scope = '24h_pass';
+  } else if (heartLinkState.unlockedSpecificContacts.has(contactId)) {
+    isAllowed = true;
+    scope = 'single_contact';
+  }
+
+  res.json({
+    success: true,
+    data: {
+      isAllowed,
+      scope,
+      contactId,
+      activeTier: heartLinkState.activeMonthlyPlan?.tier || null,
+    },
+  });
+});
+
+app.post('/api/heartlink/payments/initiate', rateLimit(60000, 15), (req: Request, res: Response) => {
+  const { planId, targetContactId, targetContactName, amount, phoneNumber, paymentMethod } = req.body;
+
+  const validPlans = ['contact_20mt', 'access_50mt', 'monthly_100mt', 'monthly_250mt', 'monthly_1000mt'];
+  if (!validPlans.includes(planId)) {
+    return res.status(400).json({ success: false, error: 'Plano inválido.' });
+  }
+
+  const expectedAmounts: Record<string, number> = {
+    contact_20mt: 20,
+    access_50mt: 50,
+    monthly_100mt: 100,
+    monthly_250mt: 250,
+    monthly_1000mt: 1000,
+  };
+
+  const planAmount = expectedAmounts[planId];
+  if (amount && Number(amount) !== planAmount) {
+    return res.status(400).json({ success: false, error: 'Montante divergente do plano selecionado.' });
+  }
+
+  if (planId === 'contact_20mt' && !targetContactId) {
+    return res.status(400).json({ success: false, error: 'Identificador do contacto obrigatório para este plano.' });
+  }
+
+  const cleanPhone = (phoneNumber || '').replace(/\D/g, '');
+  if (cleanPhone.length < 8) {
+    return res.status(400).json({ success: false, error: 'Número de telefone M-Pesa / E-Mola inválido.' });
+  }
+
+  const paymentId = `hl_pay_${crypto.randomUUID().slice(0, 10)}`;
+  const reference = `HL-${Date.now().toString().slice(-6)}-${crypto.randomInt(10, 99)}`;
+
+  const payment: HeartLinkAuthoritativePayment = {
+    id: paymentId,
+    planId,
+    targetContactId,
+    targetContactName,
+    amount: planAmount,
+    currency: 'MZN',
+    paymentMethod: paymentMethod === 'EMOLA' ? 'EMOLA' : 'MPESA',
+    phoneNumber: cleanPhone,
+    reference,
+    status: 'PROCESSING',
+    createdAt: new Date().toISOString(),
+  };
+
+  heartLinkPaymentsStore.set(paymentId, payment);
+
+  res.json({
+    success: true,
+    data: {
+      paymentId,
+      reference,
+      status: 'PROCESSING',
+      amount: planAmount,
+      currency: 'MZN',
+      planId,
+      targetContactId,
+      instructions: `Confirme o débito de ${planAmount} MT no seu telemóvel via ${payment.paymentMethod}.`,
+    },
+  });
+});
+
+app.post('/api/heartlink/payments/confirm', (req: Request, res: Response) => {
+  const { paymentId } = req.body;
+  if (!paymentId) {
+    return res.status(400).json({ success: false, error: 'paymentId é obrigatório.' });
+  }
+
+  const payment = heartLinkPaymentsStore.get(paymentId);
+  if (!payment) {
+    return res.status(404).json({ success: false, error: 'Pagamento não encontrado.' });
+  }
+
+  const nowTime = Date.now();
+  const confirmedAt = new Date(nowTime).toISOString();
+  payment.status = 'CONFIRMED';
+  payment.confirmedAt = confirmedAt;
+
+  let expiresAt: string | undefined;
+
+  if (payment.planId === 'contact_20mt') {
+    if (payment.targetContactId) {
+      heartLinkState.unlockedSpecificContacts.add(payment.targetContactId);
+      unlockedContactsStore.add(payment.targetContactId);
+    }
+  } else if (payment.planId === 'access_50mt') {
+    const exp24h = new Date(nowTime + 24 * 60 * 60 * 1000).toISOString();
+    expiresAt = exp24h;
+    payment.expiresAt = exp24h;
+    heartLinkState.access24h = {
+      activatedAt: confirmedAt,
+      expiresAt: exp24h,
+      reference: payment.reference,
+    };
+  } else if (payment.planId === 'monthly_100mt') {
+    const exp30d = new Date(nowTime + 30 * 24 * 60 * 60 * 1000).toISOString();
+    expiresAt = exp30d;
+    payment.expiresAt = exp30d;
+    heartLinkState.activeMonthlyPlan = {
+      planId: 'monthly_100mt',
+      tier: 'heart',
+      amount: 100,
+      activatedAt: confirmedAt,
+      expiresAt: exp30d,
+      reference: payment.reference,
+    };
+  } else if (payment.planId === 'monthly_250mt') {
+    const exp30d = new Date(nowTime + 30 * 24 * 60 * 60 * 1000).toISOString();
+    expiresAt = exp30d;
+    payment.expiresAt = exp30d;
+    heartLinkState.activeMonthlyPlan = {
+      planId: 'monthly_250mt',
+      tier: 'diamond',
+      amount: 250,
+      activatedAt: confirmedAt,
+      expiresAt: exp30d,
+      reference: payment.reference,
+    };
+  } else if (payment.planId === 'monthly_1000mt') {
+    const exp30d = new Date(nowTime + 30 * 24 * 60 * 60 * 1000).toISOString();
+    expiresAt = exp30d;
+    payment.expiresAt = exp30d;
+    heartLinkState.activeMonthlyPlan = {
+      planId: 'monthly_1000mt',
+      tier: 'king',
+      amount: 1000,
+      activatedAt: confirmedAt,
+      expiresAt: exp30d,
+      reference: payment.reference,
+    };
+  }
+
+  auditLogsStore.unshift({
+    id: crypto.randomUUID(),
+    actorId: payment.phoneNumber,
+    actorRole: 'USER',
+    action: 'HEARTLINK_PAYMENT_CONFIRMED',
+    resourceType: 'HEARTLINK_CONTACT_ACCESS',
+    resourceId: payment.targetContactId || payment.planId,
+    newState: { planId: payment.planId, amount: payment.amount, reference: payment.reference, expiresAt },
+    createdAt: confirmedAt,
+  });
+
+  res.json({
+    success: true,
+    data: {
+      paymentId: payment.id,
+      status: 'CONFIRMED',
+      planId: payment.planId,
+      targetContactId: payment.targetContactId,
+      reference: payment.reference,
+      amount: payment.amount,
+      confirmedAt,
+      expiresAt,
+      activeTier: heartLinkState.activeMonthlyPlan?.tier || null,
+    },
+    message: 'Pagamento confirmado com sucesso!',
+  });
+});
+
+app.post('/api/heartlink/notifications', (req: Request, res: Response) => {
+  const { contactId, contactName, contactPhoto } = req.body;
+  if (!contactName) {
+    return res.status(400).json({ success: false, error: 'contactName é obrigatório.' });
+  }
+
+  const notifId = `hl_notif_${Date.now()}_${crypto.randomInt(100, 999)}`;
+  const message = `${contactName} quer conversar consigo no HeartLink.`;
+  const notif: HeartLinkNotificationItem = {
+    id: notifId,
+    contactId: contactId || `hl_${Date.now()}`,
+    contactName,
+    contactPhoto,
+    message,
+    timestamp: new Date().toISOString(),
+    read: false,
+  };
+
+  heartLinkNotificationsStore.unshift(notif);
+
+  res.json({ success: true, data: notif });
+});
+
+app.get('/api/heartlink/notifications', (_req: Request, res: Response) => {
+  res.json({ success: true, data: heartLinkNotificationsStore });
+});
 app.post('/api/loveshop/orders', (req: Request, res: Response) => {
   const { clientName, clientPhone, deliveryProvince, deliveryAddress, items, totalAmount, notes } = req.body;
 
@@ -1194,6 +1498,526 @@ app.post('/api/rentacar/requests', (req: Request, res: Response) => {
     success: true,
     data: rentalReq,
     message: 'Pedido de aluguer enviado com sucesso para a frota!',
+  });
+});
+
+// Rent-a-Car Review System
+interface CarRentalReviewRecord {
+  id: string;
+  vehicleId: string;
+  vehicleModel: string;
+  providerId: string;
+  providerName: string;
+  userName: string;
+  userCity: string;
+  date: string;
+  ratings: {
+    vehicleCondition: number;
+    cleanliness: number;
+    comfort: number;
+    customerService: number;
+    punctuality: number;
+  };
+  vehicleRatingAverage: number;
+  providerRatingAverage: number;
+  comment?: string;
+  verifiedRental: boolean;
+  createdAt: number;
+}
+
+const carRentalReviewsStore: CarRentalReviewRecord[] = [
+  {
+    id: 'rev-cr-1',
+    vehicleId: 'car-1',
+    vehicleModel: 'Toyota Land Cruiser Prado 4x4',
+    providerId: 'owner-demo-1',
+    providerName: 'Armando C. Guebuza (Rentals)',
+    userName: 'Nelson Mabunda',
+    userCity: 'Maputo',
+    date: 'Há 2 dias',
+    ratings: {
+      vehicleCondition: 5,
+      cleanliness: 5,
+      comfort: 5,
+      customerService: 5,
+      punctuality: 5,
+    },
+    vehicleRatingAverage: 5.0,
+    providerRatingAverage: 5.0,
+    comment: 'Viatura impecável para a viagem à Ponta do Ouro. Entrega pontual no local combinado.',
+    verifiedRental: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 48,
+  },
+  {
+    id: 'rev-cr-2',
+    vehicleId: 'car-1',
+    vehicleModel: 'Toyota Land Cruiser Prado 4x4',
+    providerId: 'owner-demo-1',
+    providerName: 'Armando C. Guebuza (Rentals)',
+    userName: 'Sara Tembe',
+    userCity: 'Matola',
+    date: 'Há 5 dias',
+    ratings: {
+      vehicleCondition: 5,
+      cleanliness: 4,
+      comfort: 5,
+      customerService: 5,
+      punctuality: 4,
+    },
+    vehicleRatingAverage: 4.7,
+    providerRatingAverage: 4.5,
+    comment: 'Muito confortável e segura para toda a família.',
+    verifiedRental: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 120,
+  },
+  {
+    id: 'rev-cr-3',
+    vehicleId: 'car-4',
+    vehicleModel: 'Toyota Corolla Quest Sedan',
+    providerId: 'owner-corolla-maputo',
+    providerName: 'Maputo Rent Car Lda',
+    userName: 'Eusébio Mondlane',
+    userCity: 'Maputo',
+    date: 'Há 1 semana',
+    ratings: {
+      vehicleCondition: 4,
+      cleanliness: 5,
+      comfort: 4,
+      customerService: 5,
+      punctuality: 5,
+    },
+    vehicleRatingAverage: 4.3,
+    providerRatingAverage: 5.0,
+    comment: 'Económico e ideal para deslocações na baixa e reuniões.',
+    verifiedRental: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 168,
+  },
+  {
+    id: 'rev-cr-4',
+    vehicleId: 'car-3',
+    vehicleModel: 'Toyota Hilux Double Cab 4WD Safari',
+    providerId: 'owner-vilankulo-safari',
+    providerName: 'Bazaruto Car Rentals',
+    userName: 'Cláudio Nhantumbo',
+    userCity: 'Vilankulo',
+    date: 'Há 4 dias',
+    ratings: {
+      vehicleCondition: 5,
+      cleanliness: 5,
+      comfort: 4,
+      customerService: 5,
+      punctuality: 5,
+    },
+    vehicleRatingAverage: 4.7,
+    providerRatingAverage: 5.0,
+    comment: 'Carrinha forte para as picadas de Vilankulo e praias.',
+    verifiedRental: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 96,
+  },
+  {
+    id: 'rev-cr-5',
+    vehicleId: 'fleet-v1',
+    vehicleModel: 'Toyota Land Cruiser Prado VX 4x4',
+    providerId: 'owner-demo-1',
+    providerName: 'Armando C. Guebuza (Rentals)',
+    userName: 'Fátima Ibraimo',
+    userCity: 'Maputo',
+    date: 'Há 3 dias',
+    ratings: {
+      vehicleCondition: 5,
+      cleanliness: 5,
+      comfort: 5,
+      customerService: 5,
+      punctuality: 5,
+    },
+    vehicleRatingAverage: 5.0,
+    providerRatingAverage: 5.0,
+    comment: 'Serviço de excelência e viatura como nova.',
+    verifiedRental: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 72,
+  },
+];
+
+app.get('/api/rentacar/reviews', (req: Request, res: Response) => {
+  const { vehicleId, providerId } = req.query;
+  let list = carRentalReviewsStore;
+
+  if (typeof vehicleId === 'string' && vehicleId) {
+    list = list.filter((r) => r.vehicleId === vehicleId);
+  } else if (typeof providerId === 'string' && providerId) {
+    const term = providerId.toLowerCase().trim();
+    list = list.filter(
+      (r) =>
+        r.providerId.toLowerCase().trim() === term ||
+        r.providerName.toLowerCase().trim() === term
+    );
+  }
+
+  res.json({ success: true, data: list });
+});
+
+app.post('/api/rentacar/reviews', (req: Request, res: Response) => {
+  const { vehicleId, vehicleModel, providerId, providerName, userName, userCity, ratings, comment } = req.body;
+
+  if (!userName || typeof userName !== 'string' || !userName.trim()) {
+    return res.status(400).json({ success: false, error: 'O nome é obrigatório para submeter a avaliação.' });
+  }
+
+  if (
+    !ratings ||
+    typeof ratings.vehicleCondition !== 'number' ||
+    typeof ratings.cleanliness !== 'number' ||
+    typeof ratings.comfort !== 'number' ||
+    typeof ratings.customerService !== 'number' ||
+    typeof ratings.punctuality !== 'number'
+  ) {
+    return res.status(400).json({ success: false, error: 'Todos os 5 critérios de avaliação por estrelas são obrigatórios.' });
+  }
+
+  // Vehicle Condition + Cleanliness + Comfort -> affect ONLY the individual vehicle rating
+  const vehicleRatingAverage = Number(
+    ((ratings.vehicleCondition + ratings.cleanliness + ratings.comfort) / 3).toFixed(1)
+  );
+
+  // Customer Service + Punctuality -> affect ONLY the rental provider/company rating
+  const providerRatingAverage = Number(
+    ((ratings.customerService + ratings.punctuality) / 2).toFixed(1)
+  );
+
+  const newReview: CarRentalReviewRecord = {
+    id: `rev-cr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    vehicleId: String(vehicleId || 'car-generic'),
+    vehicleModel: String(vehicleModel || 'Viatura'),
+    providerId: String(providerId || 'owner-generic'),
+    providerName: String(providerName || 'Operador de Aluguer'),
+    userName: userName.trim(),
+    userCity: typeof userCity === 'string' && userCity.trim() ? userCity.trim() : 'Maputo',
+    date: 'Hoje',
+    ratings: {
+      vehicleCondition: Math.max(1, Math.min(5, ratings.vehicleCondition)),
+      cleanliness: Math.max(1, Math.min(5, ratings.cleanliness)),
+      comfort: Math.max(1, Math.min(5, ratings.comfort)),
+      customerService: Math.max(1, Math.min(5, ratings.customerService)),
+      punctuality: Math.max(1, Math.min(5, ratings.punctuality)),
+    },
+    vehicleRatingAverage,
+    providerRatingAverage,
+    comment: typeof comment === 'string' && comment.trim() ? comment.trim() : undefined,
+    verifiedRental: true,
+    createdAt: Date.now(),
+  };
+
+  carRentalReviewsStore.unshift(newReview);
+
+  res.status(201).json({
+    success: true,
+    data: newReview,
+    message: 'Avaliação submetida com sucesso.',
+  });
+});
+
+// Tourism & Tour Guide Review System
+interface TourGuideReviewRecord {
+  id: string;
+  guideId: string;
+  guideName: string;
+  userName: string;
+  userCity?: string;
+  date: string;
+  ratings: {
+    comunicacao: number;
+    pontualidade: number;
+    atendimento: number;
+    organizacao: number;
+    seguranca: number;
+    profissionalismo: number;
+  };
+  overallRating: number;
+  comment?: string;
+  createdAt: number;
+}
+
+const tourGuideReviewsStore: TourGuideReviewRecord[] = [
+  {
+    id: 'rev-tg-1',
+    guideId: 'guide-iverca-mafalala',
+    guideName: 'Associação IVERCA (Guias Comunitários da Mafalala)',
+    userName: 'Nelson Mabunda',
+    userCity: 'Maputo',
+    date: 'Há 2 dias',
+    ratings: {
+      comunicacao: 5,
+      pontualidade: 5,
+      atendimento: 5,
+      organizacao: 5,
+      seguranca: 5,
+      profissionalismo: 5,
+    },
+    overallRating: 5.0,
+    comment: 'Experiência cultural inesquecível no Museu Comunitário e nas ruas da Mafalala. Explicação histórica profunda e segurança impecável.',
+    createdAt: Date.now() - 1000 * 60 * 60 * 48,
+  },
+  {
+    id: 'rev-tg-2',
+    guideId: 'guide-iverca-mafalala',
+    guideName: 'Associação IVERCA (Guias Comunitários da Mafalala)',
+    userName: 'Sara Tembe',
+    userCity: 'Matola',
+    date: 'Há 5 dias',
+    ratings: {
+      comunicacao: 5,
+      pontualidade: 5,
+      atendimento: 5,
+      organizacao: 5,
+      seguranca: 5,
+      profissionalismo: 5,
+    },
+    overallRating: 5.0,
+    comment: 'Guias atenciosos, excelente organização do grupo e pontualidade exemplar.',
+    createdAt: Date.now() - 1000 * 60 * 60 * 120,
+  },
+  {
+    id: 'rev-tg-3',
+    guideId: 'guide-ilha-blue',
+    guideName: 'Ilha Blue Island Safaris',
+    userName: 'Dra. Elsa Manjate',
+    userCity: 'Maputo',
+    date: 'Há 3 dias',
+    ratings: {
+      comunicacao: 5,
+      pontualidade: 5,
+      atendimento: 5,
+      organizacao: 5,
+      seguranca: 5,
+      profissionalismo: 5,
+    },
+    overallRating: 5.0,
+    comment: 'Passeio de dhow à vela maravilhoso até Goa Island. Equipa muito profissional e segurança marítima nota 10.',
+    createdAt: Date.now() - 1000 * 60 * 60 * 72,
+  },
+];
+
+app.get('/api/tourism/reviews', (req: Request, res: Response) => {
+  const { guideId } = req.query;
+  let list = tourGuideReviewsStore;
+
+  if (typeof guideId === 'string' && guideId) {
+    list = list.filter((r) => r.guideId === guideId);
+  }
+
+  res.json({ success: true, data: list });
+});
+
+app.post('/api/tourism/reviews', (req: Request, res: Response) => {
+  const { guideId, guideName, userName, userCity, ratings, comment } = req.body;
+
+  if (!userName || typeof userName !== 'string' || !userName.trim()) {
+    return res.status(400).json({ success: false, error: 'O nome é obrigatório para submeter a avaliação.' });
+  }
+
+  if (
+    !ratings ||
+    typeof ratings.comunicacao !== 'number' ||
+    typeof ratings.pontualidade !== 'number' ||
+    typeof ratings.atendimento !== 'number' ||
+    typeof ratings.organizacao !== 'number' ||
+    typeof ratings.seguranca !== 'number' ||
+    typeof ratings.profissionalismo !== 'number'
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: 'Todos os 6 critérios de avaliação por estrelas são obrigatórios.',
+    });
+  }
+
+  // All 6 criteria contribute to the overall rating of the individual tour guide
+  const overallRating = Number(
+    (
+      (ratings.comunicacao +
+        ratings.pontualidade +
+        ratings.atendimento +
+        ratings.organizacao +
+        ratings.seguranca +
+        ratings.profissionalismo) /
+      6
+    ).toFixed(1)
+  );
+
+  const newReview: TourGuideReviewRecord = {
+    id: `rev-tg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    guideId: String(guideId || 'guide-generic'),
+    guideName: String(guideName || 'Guia Turístico'),
+    userName: userName.trim(),
+    userCity: typeof userCity === 'string' && userCity.trim() ? userCity.trim() : undefined,
+    date: 'Hoje',
+    ratings: {
+      comunicacao: Math.max(1, Math.min(5, ratings.comunicacao)),
+      pontualidade: Math.max(1, Math.min(5, ratings.pontualidade)),
+      atendimento: Math.max(1, Math.min(5, ratings.atendimento)),
+      organizacao: Math.max(1, Math.min(5, ratings.organizacao)),
+      seguranca: Math.max(1, Math.min(5, ratings.seguranca)),
+      profissionalismo: Math.max(1, Math.min(5, ratings.profissionalismo)),
+    },
+    overallRating,
+    comment: typeof comment === 'string' && comment.trim() ? comment.trim() : undefined,
+    createdAt: Date.now(),
+  };
+
+  tourGuideReviewsStore.unshift(newReview);
+
+  res.status(201).json({
+    success: true,
+    data: newReview,
+    message: 'Avaliação submetida com sucesso.',
+  });
+});
+
+// Onde Dormir (Hotels, Pensions & Guest Houses) Review System
+interface AccommodationReviewRecord {
+  id: string;
+  accommodationId: string;
+  accommodationName: string;
+  userName: string;
+  userCity?: string;
+  date: string;
+  ratings: {
+    conforto: number;
+    limpeza: number;
+    atendimento: number;
+    localizacao: number;
+    seguranca: number;
+  };
+  overallRating: number;
+  comment?: string;
+  createdAt: number;
+}
+
+const accommodationReviewsStore: AccommodationReviewRecord[] = [
+  {
+    id: 'rev-acc-1',
+    accommodationId: 'moz-martins',
+    accommodationName: 'Pensão Martins',
+    userName: 'Nelson Mabunda',
+    userCity: 'Maputo',
+    date: 'Há 2 dias',
+    ratings: {
+      conforto: 5,
+      limpeza: 5,
+      atendimento: 5,
+      localizacao: 5,
+      seguranca: 5,
+    },
+    overallRating: 5.0,
+    comment: 'Excelente acolhimento e quartos muito limpos. A localização no centro facilita deslocações e reuniões de trabalho.',
+    createdAt: Date.now() - 1000 * 60 * 60 * 48,
+  },
+  {
+    id: 'rev-acc-2',
+    accommodationId: 'moz-martins',
+    accommodationName: 'Pensão Martins',
+    userName: 'Sara Tembe',
+    userCity: 'Matola',
+    date: 'Há 5 dias',
+    ratings: {
+      conforto: 4,
+      limpeza: 5,
+      atendimento: 5,
+      localizacao: 5,
+      seguranca: 4,
+    },
+    overallRating: 4.6,
+    comment: 'Piscina refrescante e ambiente tranquilo. Pequeno-almoço saboroso.',
+    createdAt: Date.now() - 1000 * 60 * 60 * 120,
+  },
+  {
+    id: 'rev-acc-3',
+    accommodationId: 'moz-guesthouse-1109',
+    accommodationName: 'Guesthouse 1109',
+    userName: 'Dra. Elsa Manjate',
+    userCity: 'Maputo',
+    date: 'Há 3 dias',
+    ratings: {
+      conforto: 5,
+      limpeza: 5,
+      atendimento: 5,
+      localizacao: 5,
+      seguranca: 5,
+    },
+    overallRating: 5.0,
+    comment: 'Jardim espetacular na Polana e recepção muito acolhedora. Quarto super confortável.',
+    createdAt: Date.now() - 1000 * 60 * 60 * 72,
+  },
+];
+
+app.get('/api/accommodations/reviews', (req: Request, res: Response) => {
+  const { accommodationId } = req.query;
+  let list = accommodationReviewsStore;
+
+  if (typeof accommodationId === 'string' && accommodationId) {
+    list = list.filter((r) => r.accommodationId === accommodationId);
+  }
+
+  res.json({ success: true, data: list });
+});
+
+app.post('/api/accommodations/reviews', (req: Request, res: Response) => {
+  const { accommodationId, accommodationName, userName, userCity, ratings, comment } = req.body;
+
+  if (!userName || typeof userName !== 'string' || !userName.trim()) {
+    return res.status(400).json({ success: false, error: 'O nome é obrigatório para submeter a avaliação.' });
+  }
+
+  if (
+    !ratings ||
+    typeof ratings.conforto !== 'number' ||
+    typeof ratings.limpeza !== 'number' ||
+    typeof ratings.atendimento !== 'number' ||
+    typeof ratings.localizacao !== 'number' ||
+    typeof ratings.seguranca !== 'number'
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: 'Todos os 5 critérios de avaliação por estrelas são obrigatórios.',
+    });
+  }
+
+  // All 5 criteria contribute to the overall rating of the specific accommodation
+  const overallRating = Number(
+    (
+      (ratings.conforto +
+        ratings.limpeza +
+        ratings.atendimento +
+        ratings.localizacao +
+        ratings.seguranca) /
+      5
+    ).toFixed(1)
+  );
+
+  const newReview: AccommodationReviewRecord = {
+    id: `rev-acc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    accommodationId: String(accommodationId || 'acc-generic'),
+    accommodationName: String(accommodationName || 'Alojamento'),
+    userName: userName.trim(),
+    userCity: typeof userCity === 'string' && userCity.trim() ? userCity.trim() : undefined,
+    date: 'Hoje',
+    ratings: {
+      conforto: Math.max(1, Math.min(5, ratings.conforto)),
+      limpeza: Math.max(1, Math.min(5, ratings.limpeza)),
+      atendimento: Math.max(1, Math.min(5, ratings.atendimento)),
+      localizacao: Math.max(1, Math.min(5, ratings.localizacao)),
+      seguranca: Math.max(1, Math.min(5, ratings.seguranca)),
+    },
+    overallRating,
+    comment: typeof comment === 'string' && comment.trim() ? comment.trim() : undefined,
+    createdAt: Date.now(),
+  };
+
+  accommodationReviewsStore.unshift(newReview);
+
+  res.status(201).json({
+    success: true,
+    data: newReview,
+    message: 'Avaliação submetida com sucesso.',
   });
 });
 

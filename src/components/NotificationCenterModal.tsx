@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ContactAttemptNotification } from '../types/contactUnlock';
 import { contactUnlockService } from '../services/contactUnlockService';
+import { HeartLinkVisibilityModal } from './HeartLinkVisibilityModal';
 
 interface NotificationCenterModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
   const [notifications, setNotifications] = useState<ContactAttemptNotification[]>(() =>
     contactUnlockService.getNotifications()
   );
+  const [heartLinkModalTarget, setHeartLinkModalTarget] = useState<any | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -46,8 +48,18 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
   if (!isOpen) return null;
 
-  const handleUnlock = (targetId: string) => {
-    contactUnlockService.unlockContact(targetId);
+  const handleUnlock = (notif: ContactAttemptNotification) => {
+    if (notif.module === 'heartlink') {
+      setHeartLinkModalTarget({
+        id: notif.targetId,
+        name: notif.targetName,
+        photo: notif.targetPhoto || '',
+        city: 'Moçambique',
+        province: 'Moçambique',
+      });
+      return;
+    }
+    contactUnlockService.unlockContact(notif.targetId);
     setNotifications(contactUnlockService.getNotifications());
   };
 
@@ -161,12 +173,18 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                           </span>
                         </div>
 
-                        {/* Exact Slogan Pattern Requested by User: "Tem X pessoas interessadas em falar consigo..." */}
-                        <h4 className="font-black text-sm text-neutral-900 mt-1 leading-snug">
-                          {notif.interestedCount > 1
-                            ? `Tem ${notif.interestedCount} pessoas interessadas em falar consigo...`
-                            : 'Tem 1 cliente interessado em falar consigo...'}
-                        </h4>
+                        {/* Notification Title */}
+                        {notif.module === 'heartlink' ? (
+                          <h4 className="font-black text-sm text-neutral-900 mt-1 leading-snug">
+                            {notif.targetName} quer conversar consigo no HeartLink.
+                          </h4>
+                        ) : (
+                          <h4 className="font-black text-sm text-neutral-900 mt-1 leading-snug">
+                            {notif.interestedCount > 1
+                              ? `Tem ${notif.interestedCount} pessoas interessadas em falar consigo...`
+                              : 'Tem 1 cliente interessado em falar consigo...'}
+                          </h4>
+                        )}
 
                         <p className="text-xs text-neutral-600 mt-0.5 truncate">
                           Sobre: <strong>{notif.targetName}</strong>
@@ -191,11 +209,11 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
 
                     {!isUnlocked && (
                       <button
-                        onClick={() => handleUnlock(notif.targetId)}
+                        onClick={() => handleUnlock(notif)}
                         className="h-8.5 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                        <span>Desbloquear (1.000 MT)</span>
+                        <span>{notif.module === 'heartlink' ? 'Desbloquear Contacto' : 'Desbloquear (1.000 MT)'}</span>
                       </button>
                     )}
                   </div>
@@ -227,6 +245,19 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           </button>
         </div>
       </div>
+
+      {heartLinkModalTarget && (
+        <HeartLinkVisibilityModal
+          isOpen={Boolean(heartLinkModalTarget)}
+          onClose={() => setHeartLinkModalTarget(null)}
+          targetProfile={heartLinkModalTarget}
+          onSuccessUnlock={() => {
+            contactUnlockService.unlockContact(heartLinkModalTarget.id);
+            setNotifications(contactUnlockService.getNotifications());
+            setHeartLinkModalTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 };

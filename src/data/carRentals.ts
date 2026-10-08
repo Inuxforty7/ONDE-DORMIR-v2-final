@@ -27,6 +27,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258842112233',
     verified: true,
     featured: true,
+    ownerId: 'owner-demo-1',
+    ownerName: 'Armando C. Guebuza (Rentals)',
     description: 'Ideal para viagens até à Ponta do Ouro, Bilene ou deslocações executivas em Maputo. Tração 4x4 integral e ar condicionado duplo.'
   },
   {
@@ -53,6 +55,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258847778899',
     verified: true,
     featured: false,
+    ownerId: 'owner-corolla-maputo',
+    ownerName: 'Maputo Rent Car Lda',
     description: 'Perfeito para reuniões de trabalho, deslocações urbanas em Maputo e Matola, e transfers do Aeroporto Internacional de Mavalane.'
   },
   {
@@ -78,6 +82,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258848881122',
     verified: true,
     featured: false,
+    ownerId: 'owner-demo-1',
+    ownerName: 'Armando C. Guebuza (Rentals)',
     description: 'Robusta e económica para serviços comerciais, logística e deslocações em Maputo Província.'
   },
 
@@ -100,6 +106,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258845556677',
     verified: true,
     featured: true,
+    ownerId: 'owner-vilankulo-safari',
+    ownerName: 'Bazaruto Car Rentals',
     description: 'A carrinha mais fiável para as estradas de areia e transfers de barco para o Arquipélago de Bazaruto em Vilankulo.'
   },
   {
@@ -120,6 +128,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258843990022',
     verified: true,
     featured: true,
+    ownerId: 'owner-tofo-wheels',
+    ownerName: 'Tofo Wheels & Safaris',
     description: 'Excelente para explorar a Praia do Tofo, Barra e dunas de Inhambane com máxima agilidade e baixo consumo.'
   },
   {
@@ -140,6 +150,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258843445566',
     verified: true,
     featured: false,
+    ownerId: 'owner-inhambane-transfers',
+    ownerName: 'Inhambane Coast Transfers',
     description: 'Espaço e conforto para famílias em férias nas praias de Inhambane, Tofinho e Maxixe.'
   },
 
@@ -162,6 +174,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258843334455',
     verified: true,
     featured: true,
+    ownerId: 'owner-gorongosa-rentals',
+    ownerName: 'Gorongosa Express Car Rentals',
     description: 'Excelente para viagens em família até ao Parque Nacional da Gorongosa e litoral centro.'
   },
 
@@ -184,6 +198,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258849990011',
     verified: true,
     featured: true,
+    ownerId: 'owner-nampula-ilha',
+    ownerName: 'Nampula & Ilha Transportes',
     description: 'Viatura alta e potente para ligações entre Nampula, Nacala e a histórica Ilha de Moçambique.'
   },
 
@@ -206,6 +222,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258841122334',
     verified: true,
     featured: true,
+    ownerId: 'owner-pemba-fleet',
+    ownerName: 'Cabo Delgado Fleet Solutions',
     description: 'Perfeito para deslocações executivas e turismo pela Baía de Pemba e Praia de Wimbe.'
   },
 
@@ -228,6 +246,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258846677889',
     verified: true,
     featured: false,
+    ownerId: 'owner-zambeze-4x4',
+    ownerName: 'Zambeze 4x4 Rentals',
     description: 'Ar condicionado potente e suspensão reforçada para o clima quente e estradas da província de Tete.'
   },
 
@@ -250,6 +270,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258843112244',
     verified: true,
     featured: true,
+    ownerId: 'owner-bilene-cars',
+    ownerName: 'Bilene Lagoon Cars',
     description: 'Ideal para passeios em redor da Lagoa Uembje e resorts da Praia do Bilene.'
   }
 ];

@@ -1,99 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
   Sparkles, 
   Check, 
-  ShieldCheck, 
-  Eye, 
-  EyeOff, 
-  Clock, 
-  Smartphone, 
   CheckCircle2, 
-  AlertCircle,
-  Zap,
-  Star,
-  Flame,
-  ArrowRight,
-  Phone,
-  MessageSquare,
-  Lock,
-  FileText
+  Clock, 
+  ArrowRight, 
+  Phone, 
+  MessageSquare, 
+  FileText,
+  User,
+  ShieldCheck,
+  MapPin,
+  Lock
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { P2PGreenHeartIcon, P2PBlueDiamondIcon, P2PGoldenCrownIcon } from './HeartLinkP2PIcons';
 import { TermsModal } from './TermsModal';
 import { BillingInvoiceModal, BillingInvoiceData } from './BillingInvoiceModal';
-
-export interface VisibilityPlan {
-  id: 'vis_24h' | 'vis_7d' | 'vis_30d';
-  name: string;
-  durationLabel: string;
-  durationHours: number;
-  priceMt: number;
-  description: string;
-  badge?: string;
-  isPopular?: boolean;
-  popularLabel?: string;
-  features: string[];
-}
-
-export const VISIBILITY_PLANS: VisibilityPlan[] = [
-  {
-    id: 'vis_24h',
-    name: '♥️ CORAÇÃO',
-    durationLabel: '24 Horas',
-    durationHours: 24,
-    priceMt: 100,
-    description: 'Acesso a contactos directos e grupo P2P ♥️',
-    badge: '100 MT',
-    features: [
-      '20 mensagens por dia',
-      'Participação em grupos',
-      'Contactos básicos'
-    ]
-  },
-  {
-    id: 'vis_7d',
-    name: '💎 DIAMANTE',
-    durationLabel: '7 Dias',
-    durationHours: 168,
-    priceMt: 250,
-    description: 'Acesso prioritário e mensagens ilimitadas no Chat P2P',
-    badge: '250 MT',
-    isPopular: true,
-    popularLabel: 'mais escolhido pelos utilizadores',
-    features: [
-      'Mensagens ilimitadas',
-      'Perfil destacado',
-      'Prioridade nas pesquisas',
-      'Selo Diamante 💎'
-    ]
-  },
-  {
-    id: 'vis_30d',
-    name: '👑 VIP',
-    durationLabel: '30 Dias (VIP)',
-    durationHours: 720,
-    priceMt: 1000,
-    description: 'Acesso exclusivo total com máximo destaque e suporte prioritário',
-    badge: '1000 MT',
-    features: [
-      'Tudo do Diamante',
-      'Grupo VIP exclusivo',
-      'Perfil no topo das pesquisas',
-      'Selo VIP 👑',
-      'Máximo destaque e visibilidade',
-      'Suporte prioritário'
-    ]
-  }
-];
+import { 
+  heartLinkAccessService, 
+  HEARTLINK_ALL_PLANS, 
+  HeartLinkPlanId, 
+  HeartLinkPlanConfig 
+} from '../services/heartLinkAccessService';
+import { HeartLinkProfile } from '../types';
 
 export interface UserVisibilityData {
   mode: 'anonymous' | 'public_showcase';
   isUnlocked: boolean;
-  planId?: 'vis_24h' | 'vis_7d' | 'vis_30d';
+  planId?: string;
   planName?: string;
-  expiresAt?: string; // ISO string
+  expiresAt?: string;
   unlockedAt?: string;
   paymentPhone?: string;
   paymentMethod?: 'mpesa' | 'emola';
@@ -102,33 +40,74 @@ export interface UserVisibilityData {
 interface HeartLinkVisibilityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentVisibility: UserVisibilityData;
-  onSaveVisibility: (updated: UserVisibilityData) => void;
+  targetProfile?: HeartLinkProfile | null;
+  onSuccessUnlock?: (scope: 'single' | '24h' | 'monthly', contactId?: string) => void;
   userPhone?: string;
-  initialPlanId?: 'vis_24h' | 'vis_7d' | 'vis_30d';
+  initialPlanId?: HeartLinkPlanId | 'vis_24h' | 'vis_7d' | 'vis_30d';
+  currentVisibility?: UserVisibilityData;
+  onSaveVisibility?: (updated: UserVisibilityData) => void;
 }
 
 export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> = ({
   isOpen,
   onClose,
+  targetProfile,
+  onSuccessUnlock,
+  userPhone = '',
+  initialPlanId,
   currentVisibility,
   onSaveVisibility,
-  userPhone = '',
-  initialPlanId
 }) => {
-  const [selectedPlanId, setSelectedPlanId] = useState<'vis_24h' | 'vis_7d' | 'vis_30d'>(
-    initialPlanId || currentVisibility.planId || 'vis_24h'
+  const [accessState, setAccessState] = useState(() => heartLinkAccessService.getAccessStatus());
+
+  useEffect(() => {
+    const unsub = heartLinkAccessService.subscribe(() => {
+      setAccessState(heartLinkAccessService.getAccessStatus());
+    });
+    return unsub;
+  }, []);
+
+  const hasActiveMonthly = accessState.hasActiveMonthlyPlan;
+
+  // Filter available options according to rule:
+  // "If the user already has an active 100, 250 or 1000 MT plan, do not show the 20 MT or 50 MT offers.
+  // If the user has no active plan, show the contact-unlock options."
+  const availablePlans = useMemo(() => {
+    if (hasActiveMonthly) {
+      return HEARTLINK_ALL_PLANS.filter((p) => p.type === 'monthly');
+    }
+    if (!targetProfile) {
+      return HEARTLINK_ALL_PLANS.filter((p) => p.id !== 'contact_20mt');
+    }
+    return HEARTLINK_ALL_PLANS;
+  }, [hasActiveMonthly, targetProfile]);
+
+  const mapInitialId = (id?: string): HeartLinkPlanId => {
+    if (id === 'vis_24h') return 'monthly_100mt';
+    if (id === 'vis_7d') return 'monthly_250mt';
+    if (id === 'vis_30d') return 'monthly_1000mt';
+    if (id && HEARTLINK_ALL_PLANS.some((p) => p.id === id)) return id as HeartLinkPlanId;
+    if (targetProfile && !hasActiveMonthly) return 'contact_20mt';
+    return 'monthly_100mt';
+  };
+
+  const [selectedPlanId, setSelectedPlanId] = useState<HeartLinkPlanId>(() =>
+    mapInitialId(initialPlanId)
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialPlanId) {
-      setSelectedPlanId(initialPlanId);
+      setSelectedPlanId(mapInitialId(initialPlanId));
+    } else if (targetProfile && !hasActiveMonthly) {
+      setSelectedPlanId('contact_20mt');
+    } else if (availablePlans.length > 0 && !availablePlans.some((p) => p.id === selectedPlanId)) {
+      setSelectedPlanId(availablePlans[0].id);
     }
-  }, [initialPlanId]);
+  }, [initialPlanId, targetProfile, hasActiveMonthly, availablePlans]);
 
   const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'emola'>('mpesa');
   const [phoneNumber, setPhoneNumber] = useState(
-    userPhone ? userPhone.replace('+258', '').replace(/\s+/g, '') : '841234567'
+    userPhone ? userPhone.replace('+258', '').replace(/\D/g, '') : '841234567'
   );
   const [step, setStep] = useState<'select_plan' | 'payment_processing' | 'success'>('select_plan');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -139,83 +118,119 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
 
   if (!isOpen) return null;
 
-  const selectedPlan = VISIBILITY_PLANS.find((p) => p.id === selectedPlanId) || VISIBILITY_PLANS[1];
+  const selectedPlan: HeartLinkPlanConfig =
+    availablePlans.find((p) => p.id === selectedPlanId) ||
+    availablePlans[0] ||
+    HEARTLINK_ALL_PLANS[0];
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    if (!selectedPlan || isProcessing) return;
     setIsProcessing(true);
     setStep('payment_processing');
 
-    // Simulate real M-Pesa / E-Mola push STK confirmation
-    setTimeout(() => {
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + selectedPlan.durationHours * 60 * 60 * 1000).toISOString();
-
-      const newVisibility: UserVisibilityData = {
-        mode: 'public_showcase',
-        isUnlocked: true,
+    try {
+      const res = await heartLinkAccessService.initiateAndConfirmPayment({
         planId: selectedPlan.id,
-        planName: selectedPlan.name,
-        expiresAt: expiresAt,
-        unlockedAt: now.toISOString(),
-        paymentPhone: phoneNumber,
-        paymentMethod: paymentMethod
-      };
+        targetContactId: targetProfile?.id,
+        targetContactName: targetProfile?.name,
+        amount: selectedPlan.priceMt,
+        phoneNumber: phoneNumber.trim(),
+        paymentMethod,
+      });
 
-      // Prepare official billing invoice
-      const invoiceNum = `INV-HL-${Math.floor(100000 + Math.random() * 900000)}`;
-      const invoiceData: BillingInvoiceData = {
-        invoiceNumber: invoiceNum,
-        issueDate: new Date().toLocaleDateString('pt-MZ'),
-        dueDate: new Date(now.getTime() + selectedPlan.durationHours * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
-        status: 'PAID',
-        moduleType: 'general',
-        serviceTitle: `HeartLink • Acesso a Contactos (${selectedPlan.name})`,
-        serviceDescription: `Subscrição de Acesso a Contactos HeartLink (${selectedPlan.name})`,
-        clientName: `Utilizador HeartLink (+258 ${phoneNumber})`,
-        clientNuitOrBi: 'Consumidor Final (18+)',
-        clientPhone: `+258 ${phoneNumber}`,
-        clientProvince: 'Moçambique',
-        clientCity: 'Moçambique',
-        itemDetails: [
-          {
-            description: `Ativação de Acesso a Contactos (${selectedPlan.name}) • HeartLink`,
-            quantity: 1,
-            unitPriceMzn: selectedPlan.priceMt,
-            totalMzn: selectedPlan.priceMt,
-          },
-        ],
-        subtotalMzn: selectedPlan.priceMt,
-        ivaRate: 0,
-        ivaAmountMzn: 0,
-        totalMzn: selectedPlan.priceMt,
-        paymentMethod: paymentMethod === 'mpesa' ? 'M-Pesa' : 'e-Mola',
-        transactionReference: `TX-HL-${Math.floor(10000000 + Math.random() * 90000000)}`,
-      };
+      if (res.success) {
+        const tx = res.transaction;
+        const now = new Date();
 
-      setGeneratedInvoice(invoiceData);
-      onSaveVisibility(newVisibility);
+        const invoiceNum = `INV-HL-${Math.floor(100000 + Math.random() * 900000)}`;
+        const invoiceData: BillingInvoiceData = {
+          invoiceNumber: invoiceNum,
+          issueDate: now.toLocaleDateString('pt-MZ'),
+          dueDate: now.toLocaleDateString('pt-MZ'),
+          status: 'PAID',
+          moduleType: 'general',
+          serviceTitle: `HeartLink • Acesso a Contacto (${selectedPlan.name})`,
+          serviceDescription: `Desbloqueio e Acesso a Contacto HeartLink - ${selectedPlan.name}${targetProfile ? ` (${targetProfile.name})` : ''}`,
+          clientName: `Utilizador HeartLink (+258 ${phoneNumber})`,
+          clientNuitOrBi: 'Consumidor Final (18+)',
+          clientPhone: `+258 ${phoneNumber}`,
+          clientProvince: 'Moçambique',
+          clientCity: 'Moçambique',
+          itemDetails: [
+            {
+              description: `Acesso a Contacto: ${selectedPlan.name}`,
+              quantity: 1,
+              unitPriceMzn: selectedPlan.priceMt,
+              totalMzn: selectedPlan.priceMt,
+            },
+          ],
+          subtotalMzn: selectedPlan.priceMt,
+          ivaRate: 0,
+          ivaAmountMzn: 0,
+          totalMzn: selectedPlan.priceMt,
+          paymentMethod: paymentMethod === 'mpesa' ? 'M-Pesa' : 'e-Mola',
+          transactionReference: tx.reference,
+        };
+
+        setGeneratedInvoice(invoiceData);
+
+        if (onSuccessUnlock) {
+          onSuccessUnlock(selectedPlan.type, targetProfile?.id);
+        }
+
+        if (onSaveVisibility) {
+          onSaveVisibility({
+            mode: 'public_showcase',
+            isUnlocked: true,
+            planId: selectedPlan.id,
+            planName: selectedPlan.name,
+            expiresAt: tx.expiresAt,
+            unlockedAt: tx.createdAt,
+            paymentPhone: phoneNumber,
+            paymentMethod,
+          });
+        }
+
+        setIsProcessing(false);
+        setStep('success');
+      } else {
+        setIsProcessing(false);
+        setStep('select_plan');
+      }
+    } catch (e) {
       setIsProcessing(false);
-      setStep('success');
-    }, 2400);
+      setStep('select_plan');
+    }
+  };
+
+  const getPlanIcon = (plan: HeartLinkPlanConfig) => {
+    if (plan.tier === 'king') return <P2PGoldenCrownIcon className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />;
+    if (plan.tier === 'diamond') return <P2PBlueDiamondIcon className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />;
+    if (plan.tier === 'heart') return <P2PGreenHeartIcon className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />;
+    if (plan.id === 'contact_20mt') return <User className="w-6 h-6 text-rose-600 shrink-0" />;
+    return <Clock className="w-6 h-6 text-amber-600 shrink-0" />;
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150">
+      <div 
+        className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-neutral-200 relative my-auto animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-3.5 sm:p-5 relative overflow-hidden shrink-0">
+        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-3.5 sm:p-4 relative overflow-hidden shrink-0">
           <div className="flex items-center justify-between gap-2 relative z-10">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0 shadow-inner">
-                <HeartLinkTwoHeartsIcon className="w-6 h-6 sm:w-7 sm:h-7" variant="white" showStitches={true} />
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shrink-0 shadow-inner">
+                <HeartLinkTwoHeartsIcon className="w-6 h-6" variant="white" showStitches={true} />
               </div>
               <div className="min-w-0">
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-md inline-block whitespace-nowrap">
-                  CHAT P2P HEARTLINK
+                <span className="text-[9.5px] font-black uppercase tracking-wider bg-black/20 text-amber-300 px-2 py-0.5 rounded-md inline-block">
+                  CONTACTOS HEARTLINK
                 </span>
-                <h2 className="text-sm sm:text-lg font-black tracking-tight mt-0.5 truncate leading-tight">
-                  Desbloquear Chat P2P
+                <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5 truncate leading-tight">
+                  {targetProfile ? `Contactar ${targetProfile.name}` : 'Desbloquear Contacto'}
                 </h2>
               </div>
             </div>
@@ -230,68 +245,80 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         </div>
 
         {/* Modal Body */}
-        <div className="p-3.5 sm:p-5 space-y-3.5 max-h-[80vh] overflow-y-auto">
+        <div className="p-3.5 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
 
           {/* STEP 1: SELECT PLAN */}
           {step === 'select_plan' && (
             <>
-              {/* Informative Banner */}
-              <div className="bg-rose-50/90 border border-rose-200/90 rounded-2xl p-3 sm:p-3.5 space-y-2">
-                <div className="flex items-center gap-2.5">
-                  <MessageSquare className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
-                  <p className="font-bold text-rose-900 leading-relaxed text-[11.5px] sm:text-xs min-w-0 flex-1">
-                    Acesso às salas de conversa P2P e contactos diretos.
-                  </p>
-                </div>
-
-                {/* If user currently has active P2P plan */}
-                {currentVisibility.isUnlocked && (
-                  <div className="pt-2 border-t border-rose-200/70 flex items-center gap-1.5 text-xs">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="text-rose-900 font-bold truncate">Plano Ativo: {currentVisibility.planName || 'Chat P2P'}</span>
+              {/* Target Profile Card (if contacting a specific user) */}
+              {targetProfile && (
+                <div className="bg-rose-50/80 border border-rose-200/90 rounded-2xl p-3 flex items-center gap-3">
+                  {targetProfile.photo ? (
+                    <img
+                      src={targetProfile.photo}
+                      alt={targetProfile.name}
+                      className="w-12 h-12 rounded-xl object-cover object-top border border-rose-200 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-rose-200 text-rose-800 flex items-center justify-center font-bold text-sm shrink-0">
+                      {targetProfile.name.slice(0, 2)}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-extrabold text-sm text-neutral-900 truncate">
+                      {targetProfile.name}, {targetProfile.age}
+                    </div>
+                    <div className="text-[11px] text-neutral-600 flex items-center gap-1 truncate">
+                      <MapPin className="w-3 h-3 text-rose-600 shrink-0" />
+                      <span>{targetProfile.city}, {targetProfile.province}</span>
+                    </div>
+                    <div className="text-[10.5px] text-rose-700 font-semibold mt-0.5">
+                      Para iniciar a conversa e ver os contactos, selecione uma das opções abaixo:
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* 3 Packages Cards */}
+              {/* Informative notification if user has active plan */}
+              {hasActiveMonthly && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Já possui o plano <strong>{accessState.activeMonthlyPlan?.planId === 'monthly_1000mt' ? 'VIP 👑' : accessState.activeMonthlyPlan?.planId === 'monthly_250mt' ? 'Diamante 💎' : 'Coração ♥️'}</strong> ativo.
+                  </span>
+                </div>
+              )}
+
+              {/* Options List */}
               <div className="space-y-2">
-                <label className="text-[11px] sm:text-xs font-black text-neutral-800 uppercase tracking-wide block">
-                  ESCOLHA O SEU PLANO:
+                <label className="text-[11px] font-black text-neutral-800 uppercase tracking-wide block">
+                  OPÇÕES DE ACESSO AO CONTACTO:
                 </label>
 
-                <div className="grid grid-cols-1 gap-2 sm:gap-2.5">
-                  {VISIBILITY_PLANS.map((plan) => {
+                <div className="grid grid-cols-1 gap-2">
+                  {availablePlans.map((plan) => {
                     const isSelected = selectedPlanId === plan.id;
-                    const IconComponent =
-                      plan.id === 'vis_24h'
-                        ? P2PGreenHeartIcon
-                        : plan.id === 'vis_7d'
-                        ? P2PBlueDiamondIcon
-                        : P2PGoldenCrownIcon;
 
                     return (
                       <div
                         key={plan.id}
                         onClick={() => setSelectedPlanId(plan.id)}
-                        className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-2 ${
+                        className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-1.5 ${
                           isSelected
                             ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-600/20'
                             : 'border-neutral-200 hover:border-neutral-300 bg-white'
                         }`}
                       >
-                        {/* Top Header: Icon, Title & Price */}
                         <div className="flex items-center justify-between gap-2 pr-6">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <IconComponent className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 filter drop-shadow-xs" />
-                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                              <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight whitespace-nowrap">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            {getPlanIcon(plan)}
+                            <div className="min-w-0">
+                              <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight block truncate">
                                 {plan.name}
                               </span>
-                              {plan.popularLabel && (
-                                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-400 text-amber-950 border border-amber-500/30 whitespace-nowrap">
-                                  ⭐ {plan.popularLabel}
-                                </span>
-                              )}
+                              <span className="text-[10px] text-neutral-500 font-medium block">
+                                {plan.durationLabel}
+                              </span>
                             </div>
                           </div>
 
@@ -302,19 +329,19 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                           </div>
                         </div>
 
-                        {/* Bulleted Feature List */}
-                        <div className="pt-2 border-t border-neutral-200/80 grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5 text-xs text-neutral-800">
+                        {/* Bulleted features */}
+                        <div className="pt-1.5 border-t border-neutral-200/70 grid grid-cols-1 gap-1 text-xs">
                           {plan.features.map((feat, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5 font-bold text-[10.5px] sm:text-[11px]">
-                              <span className="text-emerald-600 font-extrabold text-xs shrink-0">✅</span>
-                              <span className="text-neutral-800 leading-tight">{feat}</span>
+                            <div key={idx} className="flex items-center gap-1.5 text-[10.5px] text-neutral-700">
+                              <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                              <span className="leading-tight">{feat}</span>
                             </div>
                           ))}
                         </div>
 
                         {isSelected && (
-                          <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
-                            <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
+                          <div className="absolute top-3 right-3 w-4.5 h-4.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
                           </div>
                         )}
                       </div>
@@ -332,7 +359,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('mpesa')}
-                    className={`h-11 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
+                    className={`h-10 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
                       paymentMethod === 'mpesa'
                         ? 'border-red-600 bg-red-50 text-red-700 shadow-2xs'
                         : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
@@ -345,7 +372,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('emola')}
-                    className={`h-11 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
+                    className={`h-10 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer transition-all ${
                       paymentMethod === 'emola'
                         ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-2xs'
                         : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
@@ -357,7 +384,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 </div>
               </div>
 
-              {/* Phone number input for M-Pesa / E-Mola */}
+              {/* Phone number input */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-neutral-700 block">
                   Número de Celular para Débito ({paymentMethod === 'mpesa' ? '84/85' : '86/87'}) *
@@ -375,11 +402,11 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   />
                 </div>
                 <p className="text-[10.5px] text-neutral-500">
-                  Irá receber um pedido USSD no ecrã do seu telemóvel para inserir o seu PIN com total segurança.
+                  Irá receber a confirmação no telemóvel para validar o pagamento com PIN seguro.
                 </p>
               </div>
 
-              {/* Terms Acceptance Checkbox */}
+              {/* Terms Acceptance */}
               <div className="pt-0.5">
                 <label className="flex items-start gap-2.5 cursor-pointer p-2.5 rounded-xl border border-neutral-200 bg-neutral-50/60 hover:bg-neutral-50 transition-colors">
                   <input
@@ -400,7 +427,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                     >
                       Termos Gerais
                     </button>{' '}
-                    <span>do Onde Dormir Moçambique (Cláusula 11 - HeartLink).</span>
+                    <span>do HeartLink.</span>
                   </div>
                 </label>
               </div>
@@ -417,31 +444,27 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 <button
                   type="button"
                   onClick={handleConfirmPayment}
-                  disabled={phoneNumber.length < 8 || !agreedToTerms}
+                  disabled={phoneNumber.length < 8 || !agreedToTerms || isProcessing}
                   className="flex-1 h-11 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-98 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
-                  <span>Pagar {selectedPlan.priceMt} MT e Ativar</span>
+                  <span>Confirmar Pagamento ({selectedPlan.priceMt} MT)</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </>
           )}
 
-          {/* STEP 2: PROCESSING SIMULATION */}
+          {/* STEP 2: PROCESSING */}
           {step === 'payment_processing' && (
             <div className="py-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-rose-100 border-4 border-rose-500 border-t-transparent animate-spin mx-auto" />
+              <div className="w-14 h-14 rounded-full bg-rose-100 border-4 border-rose-500 border-t-transparent animate-spin mx-auto" />
               <div className="space-y-1">
                 <h3 className="text-base font-black text-neutral-900">
-                  A Enviar Notificação {paymentMethod === 'mpesa' ? 'M-Pesa' : 'E-Mola'}...
+                  A Processar Pagamento...
                 </h3>
                 <p className="text-xs text-neutral-600 max-w-xs mx-auto">
-                  Por favor, confirme no seu telemóvel (+258 {phoneNumber}) o débito de <strong>{selectedPlan.priceMt} MT</strong> para ativar o <strong>{selectedPlan.name}</strong>.
+                  Por favor, confirme no seu telemóvel (+258 {phoneNumber}) o débito de <strong>{selectedPlan.priceMt} MT</strong>.
                 </p>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold">
-                <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
-                <span>Aguardando introdução do PIN no celular...</span>
               </div>
             </div>
           )}
@@ -454,17 +477,17 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
               </div>
               <div className="space-y-1">
                 <h3 className="text-lg font-black text-neutral-900">
-                  Chat P2P Ativado com Sucesso! ✨
+                  Contacto Desbloqueado com Sucesso! ✨
                 </h3>
                 <p className="text-xs text-neutral-600 max-w-sm mx-auto leading-relaxed">
-                  O seu acesso ao Chat P2P e contactos diretos está agora ativo.
+                  O contacto está agora disponível para mensagens directas.
                 </p>
               </div>
 
               <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-950 font-bold space-y-1">
-                <div>Plano Ativo: {selectedPlan.name} ({selectedPlan.durationLabel})</div>
+                <div>Acesso Ativo: {selectedPlan.name}</div>
                 <div className="text-[11px] text-emerald-800 font-medium">
-                  Estado: Contacto disponível
+                  Estado: Disponível para conversar
                 </div>
               </div>
 
@@ -476,7 +499,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                     className="w-full h-11 bg-amber-400 hover:bg-amber-300 text-neutral-950 font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all"
                   >
                     <FileText className="w-4 h-4" />
-                    <span>Ver Fatura Oficial & Recibo (Bill)</span>
+                    <span>Ver Recibo Oficial (Bill)</span>
                   </button>
                 )}
 
@@ -485,7 +508,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                   onClick={onClose}
                   className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 active:scale-98 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
                 >
-                  <span>Concluir</span>
+                  <span>Concluir e Conversar</span>
                   <Check className="w-4 h-4" />
                 </button>
               </div>
@@ -495,7 +518,6 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
         </div>
       </div>
 
-      {/* Official Terms and Conditions Modal */}
       <TermsModal
         isOpen={isTermsModalOpen}
         onClose={() => setIsTermsModalOpen(false)}
@@ -503,10 +525,9 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
           setAgreedToTerms(true);
           setIsTermsModalOpen(false);
         }}
-        contextText="Para ativar acesso a contactos no HeartLink, confirme a leitura e aceitação dos Termos Gerais (Adultos 18+)."
+        contextText="Para desbloquear contactos no HeartLink, confirme a leitura e aceitação dos Termos Gerais (Adultos 18+)."
       />
 
-      {/* Official Billing & Invoice Modal */}
       {generatedInvoice && (
         <BillingInvoiceModal
           isOpen={isInvoiceOpen}
