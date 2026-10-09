@@ -19,6 +19,22 @@ export interface VerifyOtpResponse {
   user: AuthUser;
 }
 
+export interface DocumentAnalysisResult {
+  isValidDocument: boolean;
+  docTypeDetected: string;
+  extractedFields: {
+    fullName?: string;
+    docNumber?: string;
+    birthDate?: string;
+    expiryDate?: string;
+    nationality?: string;
+  };
+  confidenceScore: number;
+  verificationState: 'SUBMITTED' | 'PROCESSING' | 'NEEDS_REVIEW' | 'VERIFIED' | 'REJECTED';
+  warnings: string[];
+  message?: string;
+}
+
 export interface SubmitVerificationPayload {
   fullName: string;
   biNumber: string;
@@ -39,6 +55,17 @@ export interface SubmitVerificationPayload {
 }
 
 class VerificationService {
+  /**
+   * Performs server-side file content validation, document detection, and OCR field extraction
+   */
+  public async analyzeDocument(payload: {
+    dataUrl?: string;
+    imageUrl?: string;
+    expectedDocType?: string;
+  }): Promise<ApiResponse<DocumentAnalysisResult>> {
+    return apiClient.post<DocumentAnalysisResult>('/verification/analyze-document', payload);
+  }
+
   /**
    * Request OTP code to be sent to a phone number
    */

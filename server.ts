@@ -19,6 +19,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { GoogleGenAI } from '@google/genai';
 import { INITIAL_ACCOMMODATIONS } from './src/data/accommodations.js';
 import { UserRole } from './src/types/rbac.js';
 import { PropertyStatus, VerificationLevel, ReportStatus } from './src/types/database.js';
@@ -30,6 +31,75 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const IS_DEMO_MODE = process.env.DEMO_MODE !== 'false';
+
+// Initialize Gemini Client for Server-Side Document & Vision Analysis
+let googleGenAI: GoogleGenAI | null = null;
+if (process.env.GEMINI_API_KEY) {
+  googleGenAI = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
+}
+
+/**
+ * FILE CONTENT & MAGIC NUMBER VALIDATION
+ * Validates actual binary signature bytes instead of trusting file extensions alone.
+ */
+interface FileValidationResult {
+  valid: boolean;
+  detectedMime?: string;
+  error?: string;
+}
+
+function validateFileHeader(buffer: Buffer, declaredMime?: string): FileValidationResult {
+  if (!buffer || buffer.length === 0) {
+    return { valid: false, error: 'O ficheiro enviado está completamente vazio.' };
+  }
+
+  if (buffer.length < 4) {
+    return { valid: false, error: 'Tamanho de ficheiro insuficiente para validação binária de estrutura.' };
+  }
+
+  // Check Magic Bytes
+  const isJpeg = buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+  const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+  const isPdf = buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
+  const isGif = buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46;
+  const isWebp = buffer.length >= 12 && 
+                 buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+                 buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50;
+
+  let detectedMime: string | undefined;
+  if (isJpeg) detectedMime = 'image/jpeg';
+  else if (isPng) detectedMime = 'image/png';
+  else if (isWebp) detectedMime = 'image/webp';
+  else if (isPdf) detectedMime = 'application/pdf';
+  else if (isGif) detectedMime = 'image/gif';
+
+  if (!detectedMime) {
+    return {
+      valid: false,
+      error: 'Assinatura binária de ficheiro inválida ou não reconhecida. O ficheiro não é uma imagem (JPG/PNG/WebP) ou PDF válido.',
+    };
+  }
+
+  if (declaredMime && declaredMime.toLowerCase() !== detectedMime.toLowerCase()) {
+    const normDeclared = declaredMime.replace('jpg', 'jpeg').toLowerCase();
+    const normDetected = detectedMime.replace('jpg', 'jpeg').toLowerCase();
+    if (normDeclared !== normDetected && !normDeclared.includes('octet-stream')) {
+      return {
+        valid: false,
+        error: `Incompatibilidade de formato: a extensão declarada (${declaredMime}) não corresponde ao tipo real binário do ficheiro (${detectedMime}).`,
+      };
+    }
+  }
+
+  return { valid: true, detectedMime };
+}
 
 // Ensure persistent uploads storage directory exists
 const UPLOADS_DIR = path.resolve(__dirname, 'uploads');
@@ -136,7 +206,7 @@ interface VerificationRecord {
   driverLicenseUrl?: string;
   livenessPassed: boolean;
   livenessScore: number;
-  status: 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED';
+  status: 'SUBMITTED' | 'PROCESSING' | 'NEEDS_REVIEW' | 'VERIFIED' | 'REJECTED';
   submittedAt: string;
   reviewedAt?: string;
 }
@@ -379,10 +449,16 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.post('/api/platform-owner/auth', rateLimit(60000, 5), (req: Request, res: Response) => {
   const { masterPasscode, phoneNumber } = req.body;
 
-  // Master credentials for Platform Owner (Aguia Solucoes / Onde Dormir Platform Owner)
-  // Default secure access key: "aguia2026" or "ondedormir2026"
-  const validPasscodes = ['aguia2026', 'ondedormir2026', 'admin84', '2026'];
-  const isMasterKeyValid = typeof masterPasscode === 'string' && validPasscodes.includes(masterPasscode.trim().toLowerCase());
+  // Master credentials for Platform Owner from environment variable
+  const envPasscode = process.env.PLATFORM_OWNER_PASSCODE;
+  if (!envPasscode) {
+    return res.status(503).json({
+      success: false,
+      error: 'Autenticação do Proprietário não configurada. Defina PLATFORM_OWNER_PASSCODE no servidor.',
+    });
+  }
+
+  const isMasterKeyValid = typeof masterPasscode === 'string' && masterPasscode.trim() === envPasscode.trim();
 
   if (!isMasterKeyValid) {
     return res.status(401).json({
@@ -530,7 +606,7 @@ app.get('/api/platform-owner/metrics', authenticateToken, requireRole(['PLATFORM
 
   // Pending Approvals and Verifications
   const pendingPropertiesList = propertiesCatalog.filter((p) => p.verificationStatus === 'unverified' || (p as any).isPendingVerification);
-  const pendingVerificationsList = Array.from(verificationRequestsStore.values()).filter((v) => v.status === 'UNDER_REVIEW');
+  const pendingVerificationsList = Array.from(verificationRequestsStore.values()).filter((v) => v.status === 'NEEDS_REVIEW' || v.status === 'SUBMITTED');
 
   res.json({
     success: true,
@@ -631,7 +707,7 @@ app.post('/api/auth/otp/send', rateLimit(60000, 5), (req: Request, res: Response
   const { phoneNumber } = req.body;
 
   if (!phoneNumber || typeof phoneNumber !== 'string' || phoneNumber.length < 8) {
-    return res.status(400).json({ success: false, error: 'Número de telefone moçambicano inválido.' });
+    return res.status(400).json({ success: false, error: 'Número de telefone inválido. Introduza um número com pelo menos 8 dígitos com indicativo do país.' });
   }
 
   const code = crypto.randomInt(100000, 999999).toString();
@@ -925,7 +1001,200 @@ app.post('/api/properties', (req: Request, res: Response) => {
   });
 });
 
-// 8. VERIFICATION STATE MACHINE
+// 8. VERIFICATION STATE MACHINE & DOCUMENT ANALYSIS
+app.post('/api/verification/analyze-document', async (req: Request, res: Response) => {
+  try {
+    const { dataUrl, imageUrl, expectedDocType = 'BILHETE_IDENTIDADE' } = req.body;
+
+    let base64Data: string | null = null;
+    let mimeType = 'image/jpeg';
+
+    if (dataUrl && typeof dataUrl === 'string') {
+      const matches = dataUrl.match(/^data:([a-zA-Z0-9\/+.-]+);base64,(.+)$/);
+      if (matches) {
+        mimeType = matches[1];
+        base64Data = matches[2];
+      } else {
+        base64Data = dataUrl;
+      }
+    } else if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
+      const fileName = path.basename(imageUrl);
+      const filePath = path.join(UPLOADS_DIR, fileName);
+      if (fs.existsSync(filePath)) {
+        const fileBuffer = fs.readFileSync(filePath);
+        base64Data = fileBuffer.toString('base64');
+        const ext = path.extname(fileName).toLowerCase();
+        if (ext === '.png') mimeType = 'image/png';
+        else if (ext === '.webp') mimeType = 'image/webp';
+        else if (ext === '.pdf') mimeType = 'application/pdf';
+      }
+    }
+
+    if (!base64Data) {
+      return res.status(400).json({
+        success: false,
+        verificationState: 'REJECTED',
+        error: 'Nenhum ficheiro ou URL de documento foi fornecido para análise.',
+      });
+    }
+
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // 1. FILE VALIDATION: Binary signature & Magic Bytes
+    const fileVal = validateFileHeader(buffer, mimeType);
+    if (!fileVal.valid) {
+      return res.status(400).json({
+        success: false,
+        verificationState: 'REJECTED',
+        error: fileVal.error || 'Ficheiro corrompido ou formato inválido.',
+      });
+    }
+
+    if (buffer.length < 5 * 1024) {
+      return res.status(400).json({
+        success: false,
+        verificationState: 'REJECTED',
+        error: 'A imagem enviada é demasiado pequena ou com resolução insuficiente para leitura de documento oficial.',
+      });
+    }
+
+    // 2. DOCUMENT DETECTION & DATA EXTRACTION using Gemini Vision OCR
+    let isValidDocument = true;
+    let docTypeDetected = expectedDocType;
+    let confidenceScore = 0.85;
+    let rejectionReason: string | undefined = undefined;
+    let extractedFields: {
+      fullName?: string;
+      docNumber?: string;
+      birthDate?: string;
+      expiryDate?: string;
+      nationality?: string;
+    } = {};
+    let warnings: string[] = [];
+
+    if (googleGenAI) {
+      try {
+        const prompt = `Analise detalhadamente esta imagem submetida para verificação de identidade em Moçambique.
+Tipo de documento esperado: ${expectedDocType} (Bilhete de Identidade / BI Moçambicano, Passaporte ou Carta de Condução).
+
+INSTRUÇÕES DE SEGURANÇA E ESTRUTURA:
+1. Verifique se a imagem contém um DOCUMENTO DE IDENTIFICAÇÃO OFICIAL E LEGÍVEL (BI de Moçambique, Passaporte ou Carta de Condução).
+2. REJEITE EXPLICITAMENTE (isValidDocument: false) se for:
+   - Uma fotografia de objeto, viatura, animal, paisagem, selfie simples sem documento, meme, captura de ecrã não relacionada ou imagem em branco/ilegível.
+   - Um ficheiro sem a estrutura física e texto de um documento oficial (falta foto do titular, falta texto oficial, falta brasão/cabeçalho como "REPÚBLICA DE MOÇAMBIQUE" ou "PASSAPORTE").
+3. Se for um documento válido, extraia os campos de texto visíveis:
+   - fullName: Nome completo
+   - docNumber: Número do BI (ex: 12 dígitos + 1 letra, ex: 110100456789M) ou número do Passaporte/Carta
+   - birthDate: Data de nascimento (AAAA-MM-DD ou DD/MM/AAAA)
+   - expiryDate: Data de validade
+   - nationality: Nacionalidade (ex: Moçambicana)
+   - docTypeDetected: Tipo detetado ('BILHETE_IDENTIDADE', 'PASSAPORTE', 'CARTA_CONDUCAO', 'OUTRO', 'NAO_DOCUMENTO')
+
+Responda ESTRITAMENTE num objeto JSON válido com a estrutura:
+{
+  "isValidDocument": boolean,
+  "docTypeDetected": string,
+  "rejectionReason": string or null,
+  "confidenceScore": number,
+  "extractedFields": {
+    "fullName": string or null,
+    "docNumber": string or null,
+    "birthDate": string or null,
+    "expiryDate": string or null,
+    "nationality": string or null
+  },
+  "warnings": Array<string>
+}`;
+
+        const response = await googleGenAI.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: {
+            parts: [
+              {
+                inlineData: {
+                  mimeType: mimeType || 'image/jpeg',
+                  data: base64Data,
+                },
+              },
+              { text: prompt },
+            ],
+          },
+          config: {
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const textOutput = response.text;
+        if (textOutput) {
+          try {
+            const parsed = JSON.parse(textOutput);
+            isValidDocument = Boolean(parsed.isValidDocument);
+            docTypeDetected = parsed.docTypeDetected || expectedDocType;
+            rejectionReason = parsed.rejectionReason || undefined;
+            confidenceScore = Number(parsed.confidenceScore) || 0.85;
+            if (parsed.extractedFields) {
+              extractedFields = {
+                fullName: parsed.extractedFields.fullName || undefined,
+                docNumber: parsed.extractedFields.docNumber || undefined,
+                birthDate: parsed.extractedFields.birthDate || undefined,
+                expiryDate: parsed.extractedFields.expiryDate || undefined,
+                nationality: parsed.extractedFields.nationality || undefined,
+              };
+            }
+            if (Array.isArray(parsed.warnings)) {
+              warnings = parsed.warnings;
+            }
+          } catch (e) {
+            console.warn('[Gemini Parse Warning]', e);
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('[Gemini AI Document Analysis Error]', geminiErr);
+        warnings.push('Análise avançada por IA indisponível temporariamente. Validação de estrutura binária concluída.');
+      }
+    } else {
+      warnings.push('Validação binária de ficheiro concluída. O documento aguarda auditoria técnica.');
+    }
+
+    if (!isValidDocument || docTypeDetected === 'NAO_DOCUMENTO') {
+      return res.status(400).json({
+        success: false,
+        verificationState: 'REJECTED',
+        error: rejectionReason || 'A imagem enviada não foi reconhecida como um documento de identificação válido. Envie uma foto legível e enquadrada do seu documento oficial.',
+        data: {
+          isValidDocument: false,
+          docTypeDetected,
+          confidenceScore,
+          warnings,
+        },
+      });
+    }
+
+    // Return successful document structure detection and extracted OCR fields
+    // NOTE: Verification state is set to 'NEEDS_REVIEW' (NEVER 'VERIFIED' automatically!)
+    return res.json({
+      success: true,
+      data: {
+        isValidDocument: true,
+        docTypeDetected,
+        extractedFields,
+        confidenceScore,
+        verificationState: 'NEEDS_REVIEW',
+        warnings,
+        message: 'Estrutura do documento e dados OCR analisados com sucesso. O registo permanecerá em estado PENDENTE DE REVISÃO (NEEDS_REVIEW) para auditoria final.',
+      },
+    });
+
+  } catch (err: any) {
+    console.error('[Document Analysis Error]', err);
+    return res.status(500).json({
+      success: false,
+      verificationState: 'REJECTED',
+      error: 'Erro interno ao processar a análise do documento.',
+    });
+  }
+});
+
 app.post('/api/verification/request', (req: Request, res: Response) => {
   const { 
     fullName, 
@@ -968,19 +1237,20 @@ app.post('/api/verification/request', (req: Request, res: Response) => {
   const effectiveTargetId = targetId || `usr_${crypto.randomUUID().slice(0, 8)}`;
 
   const existingReview = Array.from(verificationRequestsStore.values()).find(
-    (r) => r.targetId === effectiveTargetId && r.status === 'UNDER_REVIEW'
+    (r) => r.targetId === effectiveTargetId && (r.status === 'NEEDS_REVIEW' || r.status === 'SUBMITTED')
   );
 
   if (existingReview) {
     return res.status(409).json({
       success: false,
-      error: 'Já existe um pedido de verificação em análise para esta entidade.',
+      error: 'Já existe um pedido de verificação em análise técnica para esta entidade.',
     });
   }
 
   const requestId = `ver_${crypto.randomUUID().slice(0, 8)}`;
-  const isApproved = Boolean(livenessPassed) && (livenessScore || 1) >= 0.8;
 
+  // CRITICAL SECURITY RULE: A successful upload or OCR result must NEVER automatically mark a document as VERIFIED!
+  // Document status is set to NEEDS_REVIEW upon submission.
   const record: VerificationRecord = {
     id: requestId,
     userId: (req as any).user?.userId || 'usr_guest',
@@ -998,17 +1268,11 @@ app.post('/api/verification/request', (req: Request, res: Response) => {
     driverLicenseUrl,
     livenessPassed: Boolean(livenessPassed),
     livenessScore: livenessScore || 0.95,
-    status: isApproved ? 'VERIFIED' : 'UNDER_REVIEW',
+    status: 'NEEDS_REVIEW',
     submittedAt: new Date().toISOString(),
   };
 
   verificationRequestsStore.set(requestId, record);
-
-  const prop = propertiesCatalog.find((p) => p.id === effectiveTargetId);
-  if (prop && isApproved) {
-    prop.verificationStatus = 'verified';
-    prop.verificationLevel = 'VERIFIED';
-  }
 
   auditLogsStore.unshift({
     id: crypto.randomUUID(),
@@ -1026,9 +1290,7 @@ app.post('/api/verification/request', (req: Request, res: Response) => {
     data: {
       requestId,
       status: record.status,
-      message: isApproved
-        ? 'Identidade biométrica verificada com sucesso!'
-        : 'Dossiê submetido. A auditoria técnica responderá em breve.',
+      message: 'Dossiê e documentos submetidos com sucesso. O seu processo encontra-se em estado PENDENTE DE AUDITORIA TÉCNICA (NEEDS_REVIEW).',
     },
   });
 });
@@ -1099,49 +1361,12 @@ app.post('/api/payments/initiate', rateLimit(60000, 10), (req: Request, res: Res
   });
 });
 
-app.post('/api/payments/confirm', (req: Request, res: Response) => {
-  const { paymentId } = req.body;
-
-  const payment = paymentsStore.get(paymentId);
-  if (!payment) {
-    return res.status(404).json({ success: false, error: 'Registo de pagamento não encontrado.' });
-  }
-
-  if (payment.status === 'CONFIRMED') {
-    return res.json({
-      success: true,
-      data: { paymentId, status: 'CONFIRMED', alreadyConfirmed: true },
-      message: 'Pagamento já havia sido confirmado.',
-    });
-  }
-
-  payment.status = 'CONFIRMED';
-  payment.confirmedAt = new Date().toISOString();
-
-  if (payment.targetType === 'CONTACT_UNLOCK') {
-    unlockedContactsStore.add(payment.targetId);
-  }
-
-  auditLogsStore.unshift({
-    id: crypto.randomUUID(),
-    actorId: payment.phoneNumber,
-    actorRole: 'USER',
-    action: 'PAYMENT_CONFIRMED',
-    resourceType: payment.targetType,
-    resourceId: payment.targetId,
-    newState: { amount: payment.amount, reference: payment.reference },
-    createdAt: new Date().toISOString(),
-  });
-
-  res.json({
-    success: true,
-    data: {
-      paymentId,
-      status: 'CONFIRMED',
-      targetId: payment.targetId,
-      reference: payment.reference,
-    },
-    message: 'Pagamento confirmado com sucesso!',
+app.post('/api/payments/confirm', (_req: Request, res: Response) => {
+  // BLOQUEADO: Confirmação manual de pagamento desativada por segurança.
+  // A confirmação só é aceite mediante callback/webhook autenticado do provedor de pagamentos (e2Payments).
+  return res.status(403).json({
+    success: false,
+    error: 'Confirmação manual desativada. Aguarde a validação automática do débito pelo provedor M-Pesa / e-Mola.',
   });
 });
 
@@ -1154,16 +1379,12 @@ app.get('/api/contacts/status/:targetId', (req: Request, res: Response) => {
   });
 });
 
-app.post('/api/contacts/unlock', (req: Request, res: Response) => {
-  const { targetId } = req.body;
-  if (!targetId) {
-    return res.status(400).json({ success: false, error: 'targetId é obrigatório.' });
-  }
-  unlockedContactsStore.add(targetId);
-  res.json({
-    success: true,
-    data: { targetId, isUnlocked: true },
-    message: 'Contacto desbloqueado com sucesso.',
+app.post('/api/contacts/unlock', (_req: Request, res: Response) => {
+  // BLOQUEADO: Desbloqueio manual desativado por segurança.
+  // O acesso a contactos só pode ser liberado após confirmação oficial de pagamento via provedor (M-Pesa / e-Mola).
+  return res.status(403).json({
+    success: false,
+    error: 'Desbloqueio manual desativado. O acesso requer confirmação real de pagamento pelo provedor (e2Payments / M-Pesa / e-Mola).',
   });
 });
 
@@ -1348,101 +1569,12 @@ app.post('/api/heartlink/payments/initiate', rateLimit(60000, 15), (req: Request
   });
 });
 
-app.post('/api/heartlink/payments/confirm', (req: Request, res: Response) => {
-  const { paymentId } = req.body;
-  if (!paymentId) {
-    return res.status(400).json({ success: false, error: 'paymentId é obrigatório.' });
-  }
-
-  const payment = heartLinkPaymentsStore.get(paymentId);
-  if (!payment) {
-    return res.status(404).json({ success: false, error: 'Pagamento não encontrado.' });
-  }
-
-  const nowTime = Date.now();
-  const confirmedAt = new Date(nowTime).toISOString();
-  payment.status = 'CONFIRMED';
-  payment.confirmedAt = confirmedAt;
-
-  let expiresAt: string | undefined;
-
-  if (payment.planId === 'contact_20mt') {
-    if (payment.targetContactId) {
-      heartLinkState.unlockedSpecificContacts.add(payment.targetContactId);
-      unlockedContactsStore.add(payment.targetContactId);
-    }
-  } else if (payment.planId === 'access_50mt') {
-    const exp24h = new Date(nowTime + 24 * 60 * 60 * 1000).toISOString();
-    expiresAt = exp24h;
-    payment.expiresAt = exp24h;
-    heartLinkState.access24h = {
-      activatedAt: confirmedAt,
-      expiresAt: exp24h,
-      reference: payment.reference,
-    };
-  } else if (payment.planId === 'monthly_100mt') {
-    const exp30d = new Date(nowTime + 30 * 24 * 60 * 60 * 1000).toISOString();
-    expiresAt = exp30d;
-    payment.expiresAt = exp30d;
-    heartLinkState.activeMonthlyPlan = {
-      planId: 'monthly_100mt',
-      tier: 'heart',
-      amount: 100,
-      activatedAt: confirmedAt,
-      expiresAt: exp30d,
-      reference: payment.reference,
-    };
-  } else if (payment.planId === 'monthly_250mt') {
-    const exp30d = new Date(nowTime + 30 * 24 * 60 * 60 * 1000).toISOString();
-    expiresAt = exp30d;
-    payment.expiresAt = exp30d;
-    heartLinkState.activeMonthlyPlan = {
-      planId: 'monthly_250mt',
-      tier: 'diamond',
-      amount: 250,
-      activatedAt: confirmedAt,
-      expiresAt: exp30d,
-      reference: payment.reference,
-    };
-  } else if (payment.planId === 'monthly_1000mt') {
-    const exp30d = new Date(nowTime + 30 * 24 * 60 * 60 * 1000).toISOString();
-    expiresAt = exp30d;
-    payment.expiresAt = exp30d;
-    heartLinkState.activeMonthlyPlan = {
-      planId: 'monthly_1000mt',
-      tier: 'king',
-      amount: 1000,
-      activatedAt: confirmedAt,
-      expiresAt: exp30d,
-      reference: payment.reference,
-    };
-  }
-
-  auditLogsStore.unshift({
-    id: crypto.randomUUID(),
-    actorId: payment.phoneNumber,
-    actorRole: 'USER',
-    action: 'HEARTLINK_PAYMENT_CONFIRMED',
-    resourceType: 'HEARTLINK_CONTACT_ACCESS',
-    resourceId: payment.targetContactId || payment.planId,
-    newState: { planId: payment.planId, amount: payment.amount, reference: payment.reference, expiresAt },
-    createdAt: confirmedAt,
-  });
-
-  res.json({
-    success: true,
-    data: {
-      paymentId: payment.id,
-      status: 'CONFIRMED',
-      planId: payment.planId,
-      targetContactId: payment.targetContactId,
-      reference: payment.reference,
-      amount: payment.amount,
-      confirmedAt,
-      expiresAt,
-      activeTier: heartLinkState.activeMonthlyPlan?.tier || null,
-    },
-    message: 'Pagamento confirmado com sucesso!',
+app.post('/api/heartlink/payments/confirm', (_req: Request, res: Response) => {
+  // BLOQUEADO: Confirmação manual de plano HeartLink desativada por segurança.
+  // Apenas callbacks/webhooks autenticados do provedor e2Payments podem confirmar o recebimento e liberar o acesso.
+  return res.status(403).json({
+    success: false,
+    error: 'Confirmação manual desativada. O plano só é ativado após confirmação oficial do provedor M-Pesa / e-Mola.',
   });
 });
 
@@ -2200,6 +2332,15 @@ app.post('/api/upload', (req: Request, res: Response) => {
 
   try {
     const buffer = Buffer.from(base64Data, 'base64');
+
+    // 1. FILE VALIDATION: Validate actual binary signature bytes / magic numbers
+    const headerValidation = validateFileHeader(buffer, mime);
+    if (!headerValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: headerValidation.error || 'Conteúdo do ficheiro inválido ou corrompido.',
+      });
+    }
 
     if (buffer.length > maxBytes) {
       return res.status(413).json({

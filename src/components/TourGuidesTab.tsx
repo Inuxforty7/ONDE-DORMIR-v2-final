@@ -22,7 +22,10 @@ import {
   Waves, 
   Palmtree, 
   Calendar,
-  DollarSign
+  DollarSign,
+  ShieldAlert,
+  Flag,
+  Lock
 } from 'lucide-react';
 import { TourGuide, TourismPlace, TourismExperience, UserLocationState } from '../types';
 import { INITIAL_TOUR_GUIDES } from '../data/tourGuides';
@@ -37,6 +40,9 @@ import { getDirectionsUrl } from '../utils/geo';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 import { TourGuideReviewModal } from './TourGuideReviewModal';
 import { tourGuideReviewService } from '../services/tourGuideReviewService';
+import { tourismVerificationService } from '../services/tourismVerificationService';
+import { TouristPhoneVerificationModal } from './TouristPhoneVerificationModal';
+import { TourismReportModal } from './TourismReportModal';
 // Slot pronto para a nova imagem hero do Turismo
 // import heroCoastalBg from '../assets/images/mozambique_coastal_hero_bg_1790583006189.jpg';
 // import { TourGuideHeroGraphic } from './TourGuideHeroGraphic';
@@ -172,12 +178,84 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   const [reviewingGuide, setReviewingGuide] = useState<TourGuide | null>(null);
   const [, setReviewVersion] = useState(0);
 
+  // Tourist Contact Verification & Safety (Report/Block) States
+  const [isTouristVerificationOpen, setIsTouristVerificationOpen] = useState(false);
+  const [pendingContactItem, setPendingContactItem] = useState<{ id: string; name: string; phone: string; whatsapp?: string } | null>(null);
+  const [pendingContactType, setPendingContactType] = useState<'whatsapp' | 'call' | null>(null);
+
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportingTarget, setReportingTarget] = useState<{ id: string; type: 'guide' | 'experience' | 'place'; name: string } | null>(null);
+  const [blockedVersion, setBlockedVersion] = useState(0);
+
   React.useEffect(() => {
-    const unsubscribe = tourGuideReviewService.subscribe(() => {
+    const unsubReviews = tourGuideReviewService.subscribe(() => {
       setReviewVersion((v) => v + 1);
     });
-    return unsubscribe;
+    const unsubSafety = tourismVerificationService.subscribe(() => {
+      setBlockedVersion((v) => v + 1);
+    });
+    return () => {
+      unsubReviews();
+      unsubSafety();
+    };
   }, []);
+
+  const initiateTouristContact = (
+    item: { id: string; name: string; phone: string; whatsapp?: string; isContactUnlocked?: boolean },
+    contactType: 'whatsapp' | 'call',
+    e?: React.MouseEvent
+  ) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Check contact unlock / attempt
+    const allowed = contactUnlockService.triggerContactAttempt(
+      {
+        id: item.id,
+        name: item.name,
+        phone: item.phone,
+        whatsapp: item.whatsapp,
+        module: 'guide',
+        moduleLabel: 'Turismo',
+        unlockFee: 1000,
+      },
+      item.isContactUnlocked
+    );
+    if (!allowed) return;
+
+    // Check tourist phone SMS OTP verification
+    if (!tourismVerificationService.isTouristPhoneVerified()) {
+      setPendingContactItem(item);
+      setPendingContactType(contactType);
+      setIsTouristVerificationOpen(true);
+      return;
+    }
+
+    executeTouristContact(item, contactType);
+  };
+
+  const executeTouristContact = (
+    item: { name: string; phone: string; whatsapp?: string },
+    contactType: 'whatsapp' | 'call'
+  ) => {
+    const touristV = tourismVerificationService.getTouristVerification();
+    const consentText = touristV?.consentSharePhone && touristV.phoneNumber
+      ? ` (Contacto do Turista: ${touristV.phoneNumber})`
+      : '';
+
+    if (contactType === 'whatsapp') {
+      const cleanWhatsapp = (item.whatsapp || item.phone).replace(/\D/g, '');
+      const msg = encodeURIComponent(
+        `Olá ${item.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de solicitar informações/reserva${consentText}.`
+      );
+      window.open(`https://wa.me/${cleanWhatsapp}?text=${msg}`, '_blank');
+    } else {
+      const cleanPhone = item.phone.replace(/\s+/g, '');
+      window.location.href = `tel:${cleanPhone}`;
+    }
+  };
 
   const handleStartGuideRegistration = () => {
     setIsVerificationOpen(true);
@@ -207,6 +285,8 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
   // 1. Filtered Places
   const filteredPlaces = useMemo(() => {
     return places.filter((p) => {
+      if (tourismVerificationService.isItemBlocked(p.id)) return false;
+
       // Province filter
       if (selectedProvince !== 'all') {
         const placeProv = (p.province || '').toLowerCase();
@@ -246,11 +326,13 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
       return true;
     });
-  }, [places, selectedProvince, searchQuery, selectedPlaceCategory, verifiedOnly, highRatingOnly]);
+  }, [places, selectedProvince, searchQuery, selectedPlaceCategory, verifiedOnly, highRatingOnly, blockedVersion]);
 
   // 2. Filtered Experiences
   const filteredExperiences = useMemo(() => {
     return experiences.filter((exp) => {
+      if (tourismVerificationService.isItemBlocked(exp.id)) return false;
+
       // Province filter
       if (selectedProvince !== 'all') {
         const expProv = (exp.province || '').toLowerCase();
@@ -290,11 +372,13 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
       return true;
     });
-  }, [experiences, selectedProvince, searchQuery, selectedExpCategory, verifiedOnly, highRatingOnly]);
+  }, [experiences, selectedProvince, searchQuery, selectedExpCategory, verifiedOnly, highRatingOnly, blockedVersion]);
 
   // 3. Filtered Guides
   const filteredGuides = useMemo(() => {
     return guides.filter((g) => {
+      if (tourismVerificationService.isItemBlocked(g.id)) return false;
+
       // Province filter
       if (selectedProvince !== 'all') {
         const guideProv = (g.province || '').toLowerCase();
@@ -341,14 +425,14 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
       return true;
     });
-  }, [guides, selectedProvince, searchQuery, selectedGuideSpecialty, verifiedOnly, highRatingOnly]);
+  }, [guides, selectedProvince, searchQuery, selectedGuideSpecialty, verifiedOnly, highRatingOnly, blockedVersion]);
 
   const handleVerificationComplete = (dossier: VerificationDossier) => {
     setVerifiedDossier(dossier);
     
-    // Register the guide with the verified biometric data
+    // Register the guide profile for platform review (requires admin approval for Verified Guide status)
     const newG: TourGuide = {
-      id: `guide-verified-${Date.now()}`,
+      id: `guide-submitted-${Date.now()}`,
       name: dossier.fullName,
       age: 28,
       photo: dossier.biometricSelfiePhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
@@ -356,15 +440,15 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
       province: dossier.province,
       specialties: ['Passeios Personalizados & Ecoturismo', 'City Tour Histórico'],
       languages: ['Português', 'Inglês', 'Línguas Locais'],
-      experienceYears: 4,
+      experienceYears: 1,
       phone: dossier.phone,
-      whatsapp: dossier.whatsapp.replace(/\D/g, ''),
-      verified: true,
+      whatsapp: (dossier.whatsapp || dossier.phone).replace(/\D/g, ''),
+      verified: false, // Requires platform/admin approval
       rating: 5.0,
       reviewsCount: 1,
-      bio: `Guia turístico credenciado e verificado com BI (${dossier.biNumber.slice(0, 4)}****). Atendimento seguro e profissional para turistas em ${dossier.city}.`,
+      bio: `Guia turístico em processo de verificação oficial. Perfil submetido para validação da plataforma.`,
       ratePerDay: 2500,
-      featured: true
+      featured: false
     };
 
     // Prepare Official Billing Invoice
@@ -844,64 +928,37 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <a
-                        href={`tel:${guide.phone}`}
+                      <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          const allowed = contactUnlockService.triggerContactAttempt(
-                            {
-                              id: guide.id,
-                              name: guide.name,
-                              photo: guide.photo,
-                              phone: guide.phone,
-                              whatsapp: guide.whatsapp,
-                              module: 'guide',
-                              moduleLabel: 'Guia Turístico',
-                              unlockFee: 1000,
-                            },
-                            guide.isContactUnlocked
-                          );
-                          if (!allowed) {
-                            e.preventDefault();
-                          }
+                          setReportingTarget({ id: guide.id, type: 'guide', name: guide.name });
+                          setIsReportModalOpen(true);
                         }}
+                        className="h-9 w-9 rounded-xl bg-neutral-100 hover:bg-rose-50 text-neutral-500 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer border border-neutral-200/70 shrink-0"
+                        title="Denunciar ou Bloquear Guia"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => initiateTouristContact(guide, 'call', e)}
                         className="h-9 px-2.5 sm:px-3 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all touch-manipulation cursor-pointer border border-neutral-200/70"
                         title="Ligar"
                       >
                         <Phone className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Ligar</span>
-                      </a>
+                      </button>
 
-                      <a
-                        href={`https://wa.me/${guide.whatsapp}?text=${encodeURIComponent(
-                          `Olá ${guide.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de agendar uma excursão em ${guide.city}.`
-                        )}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const allowed = contactUnlockService.triggerContactAttempt(
-                            {
-                              id: guide.id,
-                              name: guide.name,
-                              photo: guide.photo,
-                              phone: guide.phone,
-                              whatsapp: guide.whatsapp,
-                              module: 'guide',
-                              moduleLabel: 'Guia Turístico',
-                              unlockFee: 1000,
-                            },
-                            guide.isContactUnlocked
-                          );
-                          if (!allowed) {
-                            e.preventDefault();
-                          }
-                        }}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={(e) => initiateTouristContact(guide, 'whatsapp', e)}
                         className="h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs touch-manipulation cursor-pointer"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-white" />
                         <span>WhatsApp</span>
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1094,32 +1151,14 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
                           </div>
                         </div>
 
-                        <a
-                          href={`https://wa.me/${g.whatsapp}?text=${encodeURIComponent(
-                            `Olá ${g.name}! Gostaria de agendar uma visita guiada para *${selectedPlace.name}* (${selectedPlace.city}).`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            contactUnlockService.triggerContactAttempt(
-                              {
-                                id: g.id,
-                                name: g.name,
-                                photo: g.photo,
-                                phone: g.phone,
-                                whatsapp: g.whatsapp,
-                                module: 'guide',
-                                moduleLabel: 'Turismo - Lugar',
-                                unlockFee: 1000,
-                              },
-                              g.isContactUnlocked
-                            );
-                          }}
-                          className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                        <button
+                          type="button"
+                          onClick={(e) => initiateTouristContact(g, 'whatsapp', e)}
+                          className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors shadow-xs cursor-pointer"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                           <span>WhatsApp</span>
-                        </a>
+                        </button>
                       </div>
                     ))}
                 </div>
@@ -1285,34 +1324,32 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             </div>
 
             <div className="p-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between gap-2 shrink-0">
-              <a
-                href={selectedExperience.guideWhatsapp ? `https://wa.me/${selectedExperience.guideWhatsapp}?text=${encodeURIComponent(
-                  `Olá ${selectedExperience.guideName || 'Guia'}! Gostaria de agendar a experiência *${selectedExperience.title}* no Turismo Moçambique.`
-                )}` : '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  if (selectedExperience.guideId) {
-                    contactUnlockService.triggerContactAttempt(
-                      {
-                        id: selectedExperience.guideId,
-                        name: selectedExperience.guideName || selectedExperience.title,
-                        photo: selectedExperience.photo,
-                        phone: '',
-                        whatsapp: selectedExperience.guideWhatsapp,
-                        module: 'guide',
-                        moduleLabel: 'Turismo - Experiência',
-                        unlockFee: 1000,
-                      },
-                      false
-                    );
-                  }
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReportingTarget({ id: selectedExperience.id, type: 'experience', name: selectedExperience.title });
+                  setIsReportModalOpen(true);
                 }}
-                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all shadow-md"
+                className="h-11 w-11 rounded-xl bg-neutral-100 hover:bg-rose-50 text-neutral-500 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer border border-neutral-200/80 shrink-0"
+                title="Denunciar ou Bloquear Experiência"
+              >
+                <ShieldAlert className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => initiateTouristContact({
+                  id: selectedExperience.guideId || selectedExperience.id,
+                  name: selectedExperience.guideName || selectedExperience.title,
+                  phone: selectedExperience.guideWhatsapp || '',
+                  whatsapp: selectedExperience.guideWhatsapp,
+                }, 'whatsapp', e)}
+                className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
                 <span>Contactar Guia no WhatsApp</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -1632,61 +1669,36 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
             {/* 3. Fixed Bottom Action Bar */}
             <div className="p-3 border-t border-neutral-100 bg-neutral-50 flex items-center gap-2 shrink-0">
-              <a
-                href={`tel:${selectedGuide.phone}`}
+              <button
+                type="button"
                 onClick={(e) => {
-                  const allowed = contactUnlockService.triggerContactAttempt(
-                    {
-                      id: selectedGuide.id,
-                      name: selectedGuide.name,
-                      photo: selectedGuide.photo,
-                      phone: selectedGuide.phone,
-                      whatsapp: selectedGuide.whatsapp,
-                      module: 'guide',
-                      moduleLabel: 'Guia Turístico',
-                      unlockFee: 1000,
-                    },
-                    selectedGuide.isContactUnlocked
-                  );
-                  if (!allowed) {
-                    e.preventDefault();
-                  }
+                  e.stopPropagation();
+                  setReportingTarget({ id: selectedGuide.id, type: 'guide', name: selectedGuide.name });
+                  setIsReportModalOpen(true);
                 }}
+                className="h-10 w-10 rounded-xl bg-white hover:bg-rose-50 text-neutral-500 hover:text-rose-700 border border-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+                title="Denunciar ou Bloquear Guia"
+              >
+                <ShieldAlert className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => initiateTouristContact(selectedGuide, 'call', e)}
                 className="h-10 px-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs touch-manipulation"
               >
                 <Phone className="w-3.5 h-3.5 text-neutral-700" />
                 <span>Ligar</span>
-              </a>
+              </button>
 
-              <a
-                href={`https://wa.me/${selectedGuide.whatsapp}?text=${encodeURIComponent(
-                  `Olá ${selectedGuide.name}! Encontrei o seu perfil no Turismo Moçambique e gostaria de agendar uma excursão em ${selectedGuide.city}.`
-                )}`}
-                onClick={(e) => {
-                  const allowed = contactUnlockService.triggerContactAttempt(
-                    {
-                      id: selectedGuide.id,
-                      name: selectedGuide.name,
-                      photo: selectedGuide.photo,
-                      phone: selectedGuide.phone,
-                      whatsapp: selectedGuide.whatsapp,
-                      module: 'guide',
-                      moduleLabel: 'Guia Turístico',
-                      unlockFee: 1000,
-                    },
-                    selectedGuide.isContactUnlocked
-                  );
-                  if (!allowed) {
-                    e.preventDefault();
-                  }
-                }}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={(e) => initiateTouristContact(selectedGuide, 'whatsapp', e)}
                 className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer touch-manipulation"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
                 <span>Contactar no WhatsApp</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -1730,6 +1742,41 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
           setReviewVersion((v) => v + 1);
         }}
       />
+
+      {/* Tourist SMS Phone Verification Modal */}
+      <TouristPhoneVerificationModal
+        isOpen={isTouristVerificationOpen}
+        onClose={() => {
+          setIsTouristVerificationOpen(false);
+          setPendingContactItem(null);
+          setPendingContactType(null);
+        }}
+        targetName={pendingContactItem?.name}
+        onVerified={() => {
+          if (pendingContactItem && pendingContactType) {
+            executeTouristContact(pendingContactItem, pendingContactType);
+            setPendingContactItem(null);
+            setPendingContactType(null);
+          }
+        }}
+      />
+
+      {/* Tourism Safety Report and Block Modal */}
+      {reportingTarget && (
+        <TourismReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => {
+            setIsReportModalOpen(false);
+            setReportingTarget(null);
+          }}
+          targetId={reportingTarget.id}
+          targetType={reportingTarget.type}
+          targetName={reportingTarget.name}
+          onReported={() => {
+            setBlockedVersion((v) => v + 1);
+          }}
+        />
+      )}
     </div>
   );
 };

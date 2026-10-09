@@ -213,8 +213,10 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                 {inv.invoiceNumber}
               </span>
               <div className="mt-1.5 flex sm:justify-end items-center gap-1.5">
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-2xs">
-                  <CheckCircle2 className="w-3 h-3" /> {inv.status === 'PAID' ? 'LIQUIDADA / PAGA' : 'EMITIDA'}
+                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs ${
+                  inv.status === 'PAID' ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'
+                }`}>
+                  <CheckCircle2 className="w-3 h-3" /> {inv.status === 'PAID' ? 'LIQUIDADA / PAGA' : 'PENDENTE DE PAGAMENTO'}
                 </span>
               </div>
             </div>

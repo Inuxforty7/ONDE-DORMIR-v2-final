@@ -27,57 +27,50 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
   onClose,
   onUnlockedSuccess,
 }) => {
-  const [isSimulatingUnlock, setIsSimulatingUnlock] = useState(false);
-  const [unlockedSuccess, setUnlockedSuccess] = useState(false);
+  const [isRequestingUnlock, setIsRequestingUnlock] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [generatedInvoice, setGeneratedInvoice] = useState<BillingInvoiceData | null>(null);
 
   if (!isOpen || !target) return null;
 
-  const handleSimulateUnlock = () => {
-    setIsSimulatingUnlock(true);
-    setTimeout(() => {
-      contactUnlockService.unlockContact(target.id);
-      setIsSimulatingUnlock(false);
-      setUnlockedSuccess(true);
+  const handleRequestUnlock = async () => {
+    setIsRequestingUnlock(true);
 
-      const fee = target.unlockFee || 1000;
-      const invoiceNum = `INV-FT-${Math.floor(100000 + Math.random() * 900000)}`;
-      const inv: BillingInvoiceData = {
-        invoiceNumber: invoiceNum,
-        issueDate: new Date().toLocaleDateString('pt-MZ'),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
-        status: 'PAID',
-        moduleType: 'general',
-        serviceTitle: `Desbloqueio de Contacto • ${target.moduleLabel}`,
-        serviceDescription: `Subscrição Mensal de Ativação do Contacto Directo WhatsApp / Chamada (${target.name})`,
-        clientName: `${target.name} (Proprietário)`,
-        clientNuitOrBi: '400123890',
-        clientPhone: target.phone || target.whatsapp || '+258 84 123 4567',
-        clientProvince: 'Moçambique',
-        clientCity: 'Moçambique',
-        itemDetails: [
-          {
-            description: `Ativação de Contacto Directo (${target.name} • ${target.moduleLabel})`,
-            quantity: 1,
-            unitPriceMzn: fee,
-            totalMzn: fee,
-          },
-        ],
-        subtotalMzn: fee,
-        ivaRate: 0,
-        ivaAmountMzn: 0,
-        totalMzn: fee,
-        paymentMethod: 'M-Pesa',
-        transactionReference: `TX-MZ-${Math.floor(10000000 + Math.random() * 90000000)}`,
-      };
+    const fee = target.unlockFee || 1000;
+    const invoiceNum = `INV-FT-${Math.floor(100000 + Math.random() * 900000)}`;
+    const inv: BillingInvoiceData = {
+      invoiceNumber: invoiceNum,
+      issueDate: new Date().toLocaleDateString('pt-MZ'),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-MZ'),
+      status: 'PENDING',
+      moduleType: 'general',
+      serviceTitle: `Desbloqueio de Contacto • ${target.moduleLabel}`,
+      serviceDescription: `Subscrição Mensal de Ativação do Contacto Directo WhatsApp / Chamada (${target.name})`,
+      clientName: `${target.name} (Proprietário)`,
+      clientNuitOrBi: '400123890',
+      clientPhone: target.phone || target.whatsapp || '+258 84 123 4567',
+      clientProvince: 'Moçambique',
+      clientCity: 'Moçambique',
+      itemDetails: [
+        {
+          description: `Ativação de Contacto Directo (${target.name} • ${target.moduleLabel})`,
+          quantity: 1,
+          unitPriceMzn: fee,
+          totalMzn: fee,
+        },
+      ],
+      subtotalMzn: fee,
+      ivaRate: 0,
+      ivaAmountMzn: 0,
+      totalMzn: fee,
+      paymentMethod: 'M-Pesa',
+      transactionReference: `TX-MZ-${Math.floor(10000000 + Math.random() * 90000000)}`,
+    };
 
-      setGeneratedInvoice(inv);
-
-      if (onUnlockedSuccess) {
-        onUnlockedSuccess(target.id);
-      }
-    }, 900);
+    setGeneratedInvoice(inv);
+    setIsRequestingUnlock(false);
+    setPendingConfirmation(true);
   };
 
   return (
@@ -164,13 +157,16 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
             </div>
           </div>
 
-          {/* Success State when Unlocked */}
-          {unlockedSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-2 text-xs text-emerald-900 font-bold animate-in fade-in">
+          {/* Pending Confirmation State */}
+          {pendingConfirmation && (
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl space-y-2 text-xs text-amber-900 font-bold animate-in fade-in">
               <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Acesso a contactos ativado com sucesso! Contacto disponível.</span>
+                <CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" />
+                <span>Pedido de subscrição registado. A aguardar confirmação de pagamento do provedor.</span>
               </div>
+              <p className="text-[11px] text-amber-800 font-normal">
+                Por regras de segurança, o contacto direto será liberado assim que o pagamento via M-Pesa / e-Mola for autenticado e confirmado.
+              </p>
               {generatedInvoice && (
                 <button
                   type="button"
@@ -178,7 +174,7 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
                   className="w-full h-10 bg-amber-400 hover:bg-amber-300 text-neutral-950 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   <FileText className="w-4 h-4" />
-                  <span>Ver Fatura Oficial & Recibo (Bill)</span>
+                  <span>Ver Fatura Pro-Forma (Pendente)</span>
                 </button>
               )}
             </div>
@@ -186,17 +182,17 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
 
           {/* Action Buttons */}
           <div className="pt-2 space-y-2">
-            {!unlockedSuccess ? (
+            {!pendingConfirmation ? (
               <button
-                onClick={handleSimulateUnlock}
-                disabled={isSimulatingUnlock}
+                onClick={handleRequestUnlock}
+                disabled={isRequestingUnlock}
                 className="w-full h-11 px-4 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50 touch-manipulation"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" />
                 <span>
-                  {isSimulatingUnlock 
-                    ? 'A ativar taxa de contacto...' 
-                    : `Ativar Acesso a Contactos (${target.unlockFee || 1000} MT / Fatura)`}
+                  {isRequestingUnlock 
+                    ? 'A processar pedido...' 
+                    : `Solicitar Acesso a Contactos (${target.unlockFee || 1000} MT / Fatura)`}
                 </span>
               </button>
             ) : null}
@@ -205,7 +201,7 @@ export const ContactLockedNoticeModal: React.FC<ContactLockedNoticeModalProps> =
               onClick={onClose}
               className="w-full h-10 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs rounded-2xl transition-colors cursor-pointer"
             >
-              {unlockedSuccess ? 'Concluir' : 'Compreendido, fechar aviso'}
+              {pendingConfirmation ? 'Concluir' : 'Compreendido, fechar aviso'}
             </button>
           </div>
 

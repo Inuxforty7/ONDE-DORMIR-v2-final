@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Car, 
   MapPin, 
@@ -30,7 +30,9 @@ import {
   FileText,
   Clock,
   Home,
-  Star
+  Star,
+  ShieldAlert,
+  QrCode
 } from 'lucide-react';
 import { CarRental, UserLocationState, CarOwnerFleetAccount } from '../types';
 import { INITIAL_CAR_RENTALS } from '../data/carRentals';
@@ -44,6 +46,10 @@ import { contactUnlockService } from '../services/contactUnlockService';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 import { CarRentalReviewModal } from './CarRentalReviewModal';
 import { carRentalReviewService } from '../services/carRentalReviewService';
+import { authService, AuthUser } from '../services/authService';
+import { renterVerificationService, RenterProfile } from '../services/renterVerificationService';
+import { PhoneAuthModal } from './PhoneAuthModal';
+import { ClientRentalCredentialModal } from './ClientRentalCredentialModal';
 
 interface RentACarTabProps {
   onBackToHome?: () => void;
@@ -152,14 +158,30 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
     return unsubscribe;
   }, []);
   
-  // KYC / Verification State for Client vs Owner
+  // User Authentication & Renter Verification States
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(authService.getCurrentUser());
+  const [renterProfile, setRenterProfile] = useState<RenterProfile | null>(() => 
+    renterVerificationService.getRenterProfile()
+  );
+  const [isPhoneAuthOpen, setIsPhoneAuthOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [verificationRole, setVerificationRole] = useState<'client' | 'car_owner'>('client');
   const [pendingVehicleAction, setPendingVehicleAction] = useState<CarRental | null>(null);
-  const [verifiedDossier, setVerifiedDossier] = useState<VerificationDossier | null>(() => {
-    const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [pendingActionType, setPendingActionType] = useState<'whatsapp' | 'call' | null>(null);
+  const [isCredentialModalOpen, setIsCredentialModalOpen] = useState(false);
+  const [statusAlertMsg, setStatusAlertMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubAuth = authService.subscribe((u) => setCurrentUser(u));
+    const handleRenterStatus = (e: any) => {
+      setRenterProfile(e.detail || renterVerificationService.getRenterProfile());
+    };
+    window.addEventListener('onde-dormir-renter-status-changed', handleRenterStatus);
+    return () => {
+      unsubAuth();
+      window.removeEventListener('onde-dormir-renter-status-changed', handleRenterStatus);
+    };
+  }, []);
 
   // Photo gallery and billing modal states
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
@@ -278,20 +300,56 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
       localStorage.setItem('onde_dormir_owner_fleet', JSON.stringify(updatedFleet));
       setIsFleetManagerOpen(true);
     } else {
-      setVerifiedDossier(dossier);
-      if (pendingVehicleAction) {
-        const v = pendingVehicleAction;
+      // Renter Identity Verification (Sanitized & Masked for privacy protection)
+      const maskedBi = dossier.biNumber.length >= 6
+        ? `${dossier.biNumber.slice(0, 4)}****${dossier.biNumber.slice(-2)}`
+        : dossier.biNumber;
+
+      const newRenterProfile: RenterProfile = {
+        userId: authService.getCurrentUser()?.id || `usr_${Date.now()}`,
+        fullName: dossier.fullName,
+        phone: dossier.phone,
+        maskedBiNumber: maskedBi,
+        driverLicenseNumber: dossier.driverLicenseNumber || undefined,
+        status: 'VERIFIED',
+        verifiedAt: dossier.verifiedAt || new Date().toISOString(),
+        verificationCode: renterVerificationService.generateVerificationCode(dossier.biNumber),
+      };
+
+      renterVerificationService.saveRenterProfile(newRenterProfile);
+      setRenterProfile(newRenterProfile);
+
+      if (pendingVehicleAction && pendingActionType) {
+        executeVerifiedContact(pendingVehicleAction, pendingActionType);
         setPendingVehicleAction(null);
-        const text = encodeURIComponent(
-          `Olá! Sou o locatário ${dossier.fullName} (BI: ${dossier.biNumber.slice(0, 4)}**** - Identidade e Carta de Condução Verificadas no Onde Dormir Moçambique). Gostaria de alugar a viatura ${v.model} em ${v.city}.`
-        );
-        window.open(`https://wa.me/${v.whatsapp}?text=${text}`, '_blank');
+        setPendingActionType(null);
       }
     }
   };
 
-  const handleBookVehicle = (car: CarRental, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const executeVerifiedContact = (car: CarRental, actionType: 'whatsapp' | 'call') => {
+    const profile = renterVerificationService.getRenterProfile();
+    if (!profile || profile.status !== 'VERIFIED') return;
+
+    if (actionType === 'whatsapp') {
+      const text = renterVerificationService.formatRenterContactMessage({
+        renterProfile: profile,
+        carModel: car.model,
+        carCity: car.city,
+      });
+      const cleanWhatsapp = (car.whatsapp || car.phone).replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanWhatsapp}?text=${text}`, '_blank');
+    } else if (actionType === 'call') {
+      const cleanPhone = car.phone.replace(/\s+/g, '');
+      window.location.href = `tel:${cleanPhone}`;
+    }
+  };
+
+  const initiateContactFlow = (car: CarRental, actionType: 'whatsapp' | 'call', e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
     const allowed = contactUnlockService.triggerContactAttempt(
       {
@@ -306,19 +364,58 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
       },
       car.isContactUnlocked
     );
-    if (!allowed) {
+    if (!allowed) return;
+
+    setPendingVehicleAction(car);
+    setPendingActionType(actionType);
+
+    // Step 1: Require Account Authentication
+    if (!authService.isAuthenticated()) {
+      setIsPhoneAuthOpen(true);
       return;
     }
 
-    if (!verifiedDossier) {
-      setPendingVehicleAction(car);
+    // Step 2: Require Renter Identity Verification
+    const currentRenter = renterVerificationService.getRenterProfile();
+    if (!currentRenter || currentRenter.status === 'UNVERIFIED' || currentRenter.status === 'REJECTED') {
       setVerificationRole('client');
       setIsVerificationOpen(true);
-    } else {
-      const text = encodeURIComponent(
-        `Olá! Sou o locatário ${verifiedDossier.fullName} (BI: ${verifiedDossier.biNumber.slice(0, 4)}**** - Identidade Verificada no Onde Dormir Moçambique). Gostaria de alugar a viatura ${car.model} em ${car.city}.`
-      );
-      window.open(`https://wa.me/${car.whatsapp}?text=${text}`, '_blank');
+      return;
+    }
+
+    if (currentRenter.status === 'PENDING') {
+      setStatusAlertMsg('A sua verificação de locatário está em análise técnica. Por favor aguarde a validação.');
+      setTimeout(() => setStatusAlertMsg(null), 4000);
+      return;
+    }
+
+    if (currentRenter.status === 'VERIFIED') {
+      executeVerifiedContact(car, actionType);
+    }
+  };
+
+  const handleBookVehicle = (car: CarRental, e?: React.MouseEvent) => {
+    initiateContactFlow(car, 'whatsapp', e);
+  };
+
+  const handleCallDriver = (car: CarRental, e?: React.MouseEvent) => {
+    initiateContactFlow(car, 'call', e);
+  };
+
+  const handlePhoneAuthSuccess = (user: AuthUser) => {
+    setCurrentUser(user);
+    const currentRenter = renterVerificationService.getRenterProfile();
+
+    if (!currentRenter || currentRenter.status === 'UNVERIFIED' || currentRenter.status === 'REJECTED') {
+      setVerificationRole('client');
+      setIsVerificationOpen(true);
+    } else if (currentRenter.status === 'PENDING') {
+      setStatusAlertMsg('A sua verificação de locatário está em análise técnica. Por favor aguarde a validação.');
+      setTimeout(() => setStatusAlertMsg(null), 4000);
+    } else if (currentRenter.status === 'VERIFIED' && pendingVehicleAction && pendingActionType) {
+      executeVerifiedContact(pendingVehicleAction, pendingActionType);
+      setPendingVehicleAction(null);
+      setPendingActionType(null);
     }
   };
 
@@ -371,16 +468,39 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             Frotas e proprietários verificados.
           </p>
 
-          {/* Botão de Ação Alinhado e Compacto */}
-          <div className="pt-0.5 sm:pt-1">
+          {/* Botões de Ação Alinhados e Compactos */}
+          <div className="pt-0.5 sm:pt-1 flex items-center gap-1.5 flex-wrap">
             <button
               type="button"
               onClick={handleOpenOwnerFleet}
-              className="h-6.5 sm:h-8 px-2.5 sm:px-4 bg-white text-orange-950 hover:bg-orange-50 active:scale-95 font-black text-[10px] sm:text-xs rounded-lg sm:rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer touch-manipulation shrink-0"
+              className="h-6.5 sm:h-8 px-2.5 sm:px-3.5 bg-white text-orange-950 hover:bg-orange-50 active:scale-95 font-black text-[10px] sm:text-xs rounded-lg sm:rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer touch-manipulation shrink-0"
             >
               <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-600" />
-              <span>+ Anunciar Viatura</span>
+              <span>Anunciar Viatura</span>
             </button>
+
+            {renterProfile && renterProfile.status === 'VERIFIED' ? (
+              <button
+                type="button"
+                onClick={() => setIsCredentialModalOpen(true)}
+                className="h-6.5 sm:h-8 px-2.5 sm:px-3 bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white font-extrabold text-[10px] sm:text-xs rounded-lg sm:rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer touch-manipulation shrink-0"
+              >
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>Locatário: {renterProfile.fullName.split(' ')[0]}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setVerificationRole('client');
+                  setIsVerificationOpen(true);
+                }}
+                className="h-6.5 sm:h-8 px-2.5 sm:px-3 bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white font-extrabold text-[10px] sm:text-xs rounded-lg sm:rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer touch-manipulation shrink-0"
+              >
+                <Users className="w-3 h-3 text-amber-300" />
+                <span>Registo de Locatário</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -590,33 +710,15 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
                 </span>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <a
-                    href={`tel:${car.phone.replace(/\s+/g, '')}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const allowed = contactUnlockService.triggerContactAttempt(
-                        {
-                          id: car.id,
-                          name: car.model,
-                          photo: car.photo,
-                          phone: car.phone,
-                          whatsapp: car.whatsapp,
-                          module: 'car',
-                          moduleLabel: 'Rent-a-Car',
-                          unlockFee: 1000,
-                        },
-                        car.isContactUnlocked
-                      );
-                      if (!allowed) {
-                        e.preventDefault();
-                      }
-                    }}
+                  <button
+                    type="button"
+                    onClick={(e) => handleCallDriver(car, e)}
                     className="h-9 px-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 active:scale-95 text-neutral-800 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer touch-manipulation"
-                    title="Ligar para o proprietário"
+                    title={renterProfile ? `Ligar com Código ${renterProfile.verificationCode}` : 'Ligar (Requer Verificação de Locatário)'}
                   >
                     <Phone className="w-3.5 h-3.5 text-neutral-700" />
                     <span>Ligar</span>
-                  </a>
+                  </button>
 
                   <button
                     onClick={(e) => handleBookVehicle(car, e)}
@@ -1017,31 +1119,15 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
               {/* Actions */}
               <div className="pt-2 flex gap-2">
-                <a
-                  href={`tel:${selectedVehicle.phone}`}
-                  onClick={(e) => {
-                    const allowed = contactUnlockService.triggerContactAttempt(
-                      {
-                        id: selectedVehicle.id,
-                        name: selectedVehicle.model,
-                        photo: selectedVehicle.photo,
-                        phone: selectedVehicle.phone,
-                        whatsapp: selectedVehicle.whatsapp,
-                        module: 'car',
-                        moduleLabel: 'Rent-a-Car',
-                        unlockFee: 1000,
-                      },
-                      selectedVehicle.isContactUnlocked
-                    );
-                    if (!allowed) {
-                      e.preventDefault();
-                    }
-                  }}
+                <button
+                  type="button"
+                  onClick={(e) => handleCallDriver(selectedVehicle, e)}
                   className="flex-1 h-11 rounded-xl bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title={renterProfile ? `Ligar com Código ${renterProfile.verificationCode}` : 'Ligar (Requer Verificação de Locatário)'}
                 >
                   <Phone className="w-3.5 h-3.5" />
                   <span>Ligar Direto</span>
-                </a>
+                </button>
 
                 <button
                   onClick={() => handleBookVehicle(selectedVehicle)}
@@ -1099,6 +1185,34 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
           setReviewVersion((v) => v + 1);
         }}
       />
+
+      {/* Phone Auth Modal for Account Authentication */}
+      <PhoneAuthModal
+        isOpen={isPhoneAuthOpen}
+        onClose={() => setIsPhoneAuthOpen(false)}
+        onAuthSuccess={handlePhoneAuthSuccess}
+      />
+
+      {/* Renter Digital Credential Pass Modal */}
+      {renterProfile && (
+        <ClientRentalCredentialModal
+          isOpen={isCredentialModalOpen}
+          onClose={() => setIsCredentialModalOpen(false)}
+          profile={renterProfile}
+          onEditProfile={() => {
+            setVerificationRole('client');
+            setIsVerificationOpen(true);
+          }}
+        />
+      )}
+
+      {/* Toast Alert Notification */}
+      {statusAlertMsg && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-neutral-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 border border-neutral-700 animate-in fade-in slide-in-from-top-2">
+          <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>{statusAlertMsg}</span>
+        </div>
+      )}
     </div>
   );
 };

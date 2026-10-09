@@ -59,8 +59,22 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       });
       return;
     }
-    contactUnlockService.unlockContact(notif.targetId);
-    setNotifications(contactUnlockService.getNotifications());
+    // Desbloqueio direto bloqueado sem pagamento: despachar evento para abrir modal oficial de subscrição
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('onde-dormir-contact-locked', {
+          detail: {
+            id: notif.targetId,
+            name: notif.targetName,
+            photo: notif.targetPhoto,
+            module: notif.module,
+            moduleLabel: notif.moduleLabel,
+            unlockFee: notif.unlockFee || 1000,
+          },
+        })
+      );
+    }
+    onClose();
   };
 
   const handleClear = () => {
@@ -213,7 +227,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                         className="h-8.5 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                        <span>{notif.module === 'heartlink' ? 'Desbloquear Contacto (20 MT)' : 'Desbloquear (1.000 MT)'}</span>
+                        <span>{notif.module === 'heartlink' ? 'Desbloquear Contacto' : 'Desbloquear (1.000 MT)'}</span>
                       </button>
                     )}
                   </div>
@@ -251,7 +265,6 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
           isOpen={Boolean(heartLinkModalTarget)}
           onClose={() => setHeartLinkModalTarget(null)}
           targetProfile={heartLinkModalTarget}
-          initialPlanId="contact_20mt"
           onSuccessUnlock={() => {
             contactUnlockService.unlockContact(heartLinkModalTarget.id);
             setNotifications(contactUnlockService.getNotifications());

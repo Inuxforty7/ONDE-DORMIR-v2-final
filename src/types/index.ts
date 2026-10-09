@@ -442,6 +442,26 @@ export interface CarOwnerFleetAccount {
   vehicles: CarRental[];
 }
 
+export interface ClientRentalProfile {
+  clientId: string;
+  fullName: string;
+  biNumber: string;
+  phone: string;
+  phoneSmsVerified: boolean; // Confirmação mandatória por SMS OTP (Pilar 1)
+  whatsapp?: string;
+  province: string;
+  city: string;
+  driverLicenseNumber?: string;
+  driverLicenseCategory?: string;
+  biometricSelfiePhoto?: string;
+  verifiedAt: string;
+  otpVerifiedAt?: string;
+  verificationCode: string; // Ex: LOC-MZ-8924
+  securityHash: string;
+  status: 'VERIFIED' | 'PENDING' | 'REJECTED';
+  safetyScore: number; // 100%
+}
+
 // Strictly restricted to two legitimate social objectives in compliance with Mozambican law:
 // Amizade & Companheirismo | Matrimónio & Relacionamento Sério
 export type HeartLinkIntention = 'amizade' | 'matrimonio';

@@ -178,9 +178,14 @@ class ContactUnlockService {
   }
 
   /**
-   * Desbloqueia o contacto de uma entidade (simulação de pagamento/ativação de taxa)
+   * Desbloqueia o contacto de uma entidade APENAS após confirmação estrita do provedor
+   * Bloqueia qualquer desbloqueio direto ou não autorizado
    */
-  public unlockContact(targetId: string): void {
+  public unlockContact(targetId: string, isAuthoritativeConfirmed: boolean = false): boolean {
+    if (!isAuthoritativeConfirmed) {
+      console.warn(`[Security] Tentativa de desbloqueio rejeitada para targetId=${targetId}: requer liquidação confirmada pelo provedor.`);
+      return false;
+    }
     const unlockedIds = this.getUnlockedIds();
     unlockedIds.add(targetId);
     this.saveUnlockedIds(unlockedIds);
@@ -193,6 +198,7 @@ class ContactUnlockService {
       return n;
     });
     this.saveNotifications(list);
+    return true;
   }
 
   public getUnreadCount(): number {

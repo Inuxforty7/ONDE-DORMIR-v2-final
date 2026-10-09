@@ -33,7 +33,6 @@ export const E2PaymentsSetupModal: React.FC<E2PaymentsSetupModalProps> = ({
 }) => {
   const [config, setConfig] = useState<E2PaymentsConfig>(e2paymentsService.getConfig());
   const [clientId, setClientId] = useState(config.clientId);
-  const [clientSecret, setClientSecret] = useState(config.clientSecret);
   const [walletId, setWalletId] = useState(config.walletId);
   const [isSandbox, setIsSandbox] = useState(config.isSandbox);
   const [isSaved, setIsSaved] = useState(false);
@@ -52,7 +51,6 @@ export const E2PaymentsSetupModal: React.FC<E2PaymentsSetupModalProps> = ({
     const current = e2paymentsService.getConfig();
     setConfig(current);
     setClientId(current.clientId);
-    setClientSecret(current.clientSecret);
     setWalletId(current.walletId);
     setIsSandbox(current.isSandbox);
   }, [isOpen]);
@@ -63,7 +61,6 @@ export const E2PaymentsSetupModal: React.FC<E2PaymentsSetupModalProps> = ({
     e.preventDefault();
     e2paymentsService.saveConfig({
       clientId: clientId.trim(),
-      clientSecret: clientSecret.trim(),
       walletId: walletId.trim(),
       isSandbox,
     });
@@ -73,15 +70,12 @@ export const E2PaymentsSetupModal: React.FC<E2PaymentsSetupModalProps> = ({
 
   const handleFillDemoSandbox = () => {
     const demoClientId = 'e2p_demo_client_moz2026';
-    const demoClientSecret = 'e2p_sec_993847291847abcdef88392';
     const demoWalletId = 'wallet_mpesa_maputo_01';
     setClientId(demoClientId);
-    setClientSecret(demoClientSecret);
     setWalletId(demoWalletId);
     setIsSandbox(true);
     e2paymentsService.saveConfig({
       clientId: demoClientId,
-      clientSecret: demoClientSecret,
       walletId: demoWalletId,
       isSandbox: true,
     });
@@ -535,17 +529,14 @@ export const E2PaymentsSetupModal: React.FC<E2PaymentsSetupModalProps> = ({
                     </span>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Client Secret (Chave Secreta)
-                    </label>
-                    <input
-                      type="password"
-                      value={clientSecret}
-                      onChange={(e) => setClientSecret(e.target.value)}
-                      placeholder="••••••••••••••••••••••••"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 text-white placeholder-neutral-500 text-xs font-mono focus:outline-none focus:border-emerald-500"
-                    />
+                  <div className="p-3 bg-neutral-900 border border-emerald-900/60 rounded-xl space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                      <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                      <span>Chave Secreta (E2P_CLIENT_SECRET) Protegida</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 leading-relaxed">
+                      Por conformidade com as regras de segurança, o <code className="text-emerald-300 font-mono">E2P_CLIENT_SECRET</code> é configurado exclusivamente no servidor backend (<code className="text-neutral-300 font-mono">.env / Cloud Run</code>) e nunca é exposto ou guardado no navegador.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

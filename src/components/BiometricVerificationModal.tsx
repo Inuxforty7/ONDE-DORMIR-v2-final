@@ -25,7 +25,7 @@ import {
   Volume2
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
-import { verificationService } from '../services/verificationService';
+import { verificationService, DocumentAnalysisResult } from '../services/verificationService';
 import { uploadService } from '../services/uploadService';
 import { purgeSensitiveVerificationData } from '../utils/privacy';
 
@@ -37,9 +37,12 @@ export interface VerificationDossier {
   whatsapp: string;
   province: string;
   city: string;
+  docType?: 'bi' | 'passport';
+  rentalOption?: 'self_drive' | 'with_driver';
   driverLicenseNumber?: string;
-  biFrontPhoto: string;
-  biBackPhoto: string;
+  biFrontPhoto?: string;
+  biBackPhoto?: string;
+  passportPhoto?: string;
   driverLicensePhoto?: string;
   biometricSelfiePhoto: string;
   purpose: 'rentacar' | 'tourguide' | 'heartlink';
@@ -180,11 +183,19 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
   const [smsError, setSmsError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Documents
+  // Documents & Options
+  const [docType, setDocType] = useState<'bi' | 'passport'>('bi');
+  const [rentalOption, setRentalOption] = useState<'self_drive' | 'with_driver'>('self_drive');
   const [biFrontPhoto, setBiFrontPhoto] = useState<string>('');
   const [biBackPhoto, setBiBackPhoto] = useState<string>('');
+  const [passportPhoto, setPassportPhoto] = useState<string>('');
   const [driverLicensePhoto, setDriverLicensePhoto] = useState<string>('');
   const [biometricSelfiePhoto, setBiometricSelfiePhoto] = useState<string>('');
+
+  // Document Detection, File Signature Validation & OCR Analysis State
+  const [isAnalyzingDoc, setIsAnalyzingDoc] = useState(false);
+  const [docAnalysisError, setDocAnalysisError] = useState<string | null>(null);
+  const [extractedOcrData, setExtractedOcrData] = useState<DocumentAnalysisResult | null>(null);
 
   // Camera & Dynamic Randomized Liveness Challenges State (Pilar 2)
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -376,50 +387,118 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
     }
   };
 
-  // Handle Document Uploads with Real Server Persistence
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'biFront' | 'biBack' | 'license') => {
+  // Handle Document Uploads with File Signature Validation, Document Detection & OCR
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'biFront' | 'biBack' | 'passport' | 'license') => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file size (max 8MB)
-      if (file.size > 8 * 1024 * 1024) {
-        setSmsError('O ficheiro é demasiado grande. O limite máximo é 8MB.');
-        return;
-      }
+    if (!file) return;
 
-      // 1. Instant preview for smooth UX
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (target === 'biFront') setBiFrontPhoto(result);
-        if (target === 'biBack') setBiBackPhoto(result);
-        if (target === 'license') setDriverLicensePhoto(result);
-      };
-      reader.readAsDataURL(file);
+    if (file.size > 8 * 1024 * 1024) {
+      setSmsError('O ficheiro é demasiado grande. O limite máximo é 8MB.');
+      return;
+    }
 
-      // 2. Real upload to backend server
+    setSmsError(null);
+    setDocAnalysisError(null);
+    setIsAnalyzingDoc(true);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+
+      // 1. Upload file to backend server
       try {
         const uploadRes = await uploadService.uploadFile(file, 'document');
-        if (uploadRes.success && uploadRes.data?.url) {
-          const serverUrl = uploadRes.data.url;
-          if (target === 'biFront') setBiFrontPhoto(serverUrl);
-          if (target === 'biBack') setBiBackPhoto(serverUrl);
-          if (target === 'license') setDriverLicensePhoto(serverUrl);
+        if (!uploadRes.success || !uploadRes.data?.url) {
+          setIsAnalyzingDoc(false);
+          setDocAnalysisError(uploadRes.error || 'Falha ao carregar o ficheiro no servidor.');
+          return;
         }
-      } catch (err) {
-        console.warn('[Upload] Servidor offline ou utilizando buffer local', err);
+
+        const serverUrl = uploadRes.data.url;
+        if (target === 'biFront') setBiFrontPhoto(serverUrl);
+        if (target === 'biBack') setBiBackPhoto(serverUrl);
+        if (target === 'passport') {
+          setPassportPhoto(serverUrl);
+          setBiFrontPhoto(serverUrl); // also set biFrontPhoto for main document URL
+        }
+        if (target === 'license') setDriverLicensePhoto(serverUrl);
+
+        // 2. Perform Real Document Detection & OCR Field Extraction on Backend
+        const expectedType = target === 'license' 
+          ? 'CARTA_CONDUCAO' 
+          : target === 'passport' 
+          ? 'PASSAPORTE' 
+          : 'BILHETE_IDENTIDADE';
+
+        const analysisRes = await verificationService.analyzeDocument({
+          dataUrl,
+          imageUrl: serverUrl,
+          expectedDocType: expectedType,
+        });
+
+        setIsAnalyzingDoc(false);
+
+        if (!analysisRes.success || !analysisRes.data?.isValidDocument) {
+          if (target === 'biFront') setBiFrontPhoto('');
+          if (target === 'biBack') setBiBackPhoto('');
+          if (target === 'passport') {
+            setPassportPhoto('');
+            setBiFrontPhoto('');
+          }
+          if (target === 'license') setDriverLicensePhoto('');
+
+          setDocAnalysisError(
+            analysisRes.error ||
+              'O ficheiro enviado não corresponde a um documento de identificação válido. Certifique-se de enviar uma foto legível do seu documento original.'
+          );
+          return;
+        }
+
+        // Valid Document Structure Detected
+        setExtractedOcrData(analysisRes.data);
+
+        // Auto-fill extracted fields if not filled yet
+        const fields = analysisRes.data.extractedFields;
+        if (fields) {
+          if (fields.fullName && (!fullName || fullName.length < 3)) {
+            setFullName(fields.fullName);
+          }
+          if (fields.docNumber && !biNumber) {
+            setBiNumber(fields.docNumber.toUpperCase());
+          }
+          if (fields.birthDate && !birthDate) {
+            setBirthDate(fields.birthDate);
+          }
+        }
+      } catch (err: any) {
+        setIsAnalyzingDoc(false);
+        setDocAnalysisError('Erro ao comunicar com o servidor de análise de documentos.');
       }
-    }
+    };
+
+    reader.readAsDataURL(file);
   };
 
-  // Submit full dossier with the 4 Security Pillars
+  // Submit full dossier with real verification state handling
   const handleSubmitDossier = async () => {
-    if (!fullName.trim() || !biNumber.trim() || !biFrontPhoto || !biBackPhoto) {
-      setSmsError('Dossiê incompleto. Por favor complete os dados antes de submeter.');
+    const hasDoc = docType === 'passport'
+      ? Boolean(passportPhoto || biFrontPhoto)
+      : Boolean(biFrontPhoto && biBackPhoto);
+
+    if (!fullName.trim() || !biNumber.trim() || !hasDoc) {
+      setSmsError('Dossiê incompleto. Por favor complete os dados e carregue os documentos obrigatórios antes de submeter.');
+      return;
+    }
+
+    if (purpose === 'rentacar' && userRole === 'client' && rentalOption === 'self_drive' && !driverLicensePhoto) {
+      setSmsError('Por favor faça o upload da sua Carta de Condução para aluguer com condução própria.');
       return;
     }
 
     setSmsError(null);
     setIsSubmitting(true);
+
+    const isSelfDrive = purpose === 'rentacar' && userRole === 'client' && rentalOption === 'self_drive';
 
     const dossier: VerificationDossier = {
       fullName: fullName.trim(),
@@ -429,20 +508,23 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
       whatsapp: whatsapp || phone,
       province,
       city,
-      driverLicenseNumber: driverLicenseNumber || undefined,
-      biFrontPhoto,
-      biBackPhoto,
-      driverLicensePhoto: driverLicensePhoto || undefined,
+      docType,
+      rentalOption,
+      driverLicenseNumber: isSelfDrive ? (driverLicenseNumber || undefined) : undefined,
+      biFrontPhoto: docType === 'bi' ? biFrontPhoto : (passportPhoto || biFrontPhoto),
+      biBackPhoto: docType === 'bi' ? biBackPhoto : undefined,
+      passportPhoto: docType === 'passport' ? (passportPhoto || biFrontPhoto) : undefined,
+      driverLicensePhoto: isSelfDrive ? (driverLicensePhoto || undefined) : undefined,
       biometricSelfiePhoto: biometricSelfiePhoto || '',
       purpose,
       userRole,
       verifiedAt: new Date().toISOString(),
-      // 4 Pilares Invioláveis
+      // 4 Pilares de Segurança
       isPhoneSmsVerified: isPhoneVerified,
       isLivenessCompleted: true,
       livenessChallengesCompleted: challengePlan.map(c => c.badge),
       isBiPhotoMatched: true,
-      isTeamVerified: true
+      isTeamVerified: false // Real status is pending review (NEEDS_REVIEW)
     };
 
     // Submit directly to authoritative backend verification registry
@@ -549,7 +631,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
         {/* Content Body */}
         <div className="p-5 overflow-y-auto space-y-4 flex-1">
           
-          {/* STEP 1: UPLOAD DOCUMENTS (BI FRENTE E VERSO) */}
+          {/* STEP 1: UPLOAD DOCUMENTS (BI OU PASSAPORTE) */}
           {currentStep === 'docs_upload' && (
             <div className="space-y-4">
               <div>
@@ -557,18 +639,166 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                   Documento de Identificação (BI ou Passaporte)
                 </h3>
                 <p className="text-xs text-neutral-500 mt-0.5">
-                  Anexe o documento de identificação oficial.
+                  Selecione o seu documento oficial e anexe a fotografia nítida.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* BI Frente */}
+              {/* Document Type Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-neutral-800 block">
+                  Tipo de Documento Oficial *
+                </label>
+                <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-100/90 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocType('bi');
+                      setDocAnalysisError(null);
+                      setSmsError(null);
+                    }}
+                    className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      docType === 'bi'
+                        ? 'bg-white text-neutral-900 shadow-xs border border-neutral-200'
+                        : 'text-neutral-500 hover:text-neutral-900'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    <span>BI (Moçambique)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocType('passport');
+                      setDocAnalysisError(null);
+                      setSmsError(null);
+                    }}
+                    className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      docType === 'passport'
+                        ? 'bg-white text-neutral-900 shadow-xs border border-neutral-200'
+                        : 'text-neutral-500 hover:text-neutral-900'
+                    }`}
+                  >
+                    <Compass className="w-4 h-4 text-blue-600" />
+                    <span>Passaporte</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Rental Mode Selector (Self-Drive vs With Driver) */}
+              {purpose === 'rentacar' && userRole === 'client' && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-xs font-extrabold text-neutral-800 block">
+                    Modalidade de Aluguer Desejada *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRentalOption('self_drive');
+                        setSmsError(null);
+                      }}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                        rentalOption === 'self_drive'
+                          ? 'bg-orange-50/90 border-orange-500 ring-2 ring-orange-400/30'
+                          : 'bg-neutral-50 border-neutral-200 hover:bg-neutral-100'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${rentalOption === 'self_drive' ? 'bg-orange-500 text-white' : 'bg-neutral-200 text-neutral-600'}`}>
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-xs text-neutral-900 block">Condução Própria (Self-Drive)</span>
+                        <span className="text-[10px] text-neutral-500 leading-tight block">Carta de condução é obrigatória</span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRentalOption('with_driver');
+                        setSmsError(null);
+                      }}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                        rentalOption === 'with_driver'
+                          ? 'bg-blue-50/90 border-blue-500 ring-2 ring-blue-400/30'
+                          : 'bg-neutral-50 border-neutral-200 hover:bg-neutral-100'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${rentalOption === 'with_driver' ? 'bg-blue-600 text-white' : 'bg-neutral-200 text-neutral-600'}`}>
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-xs text-neutral-900 block">Com Motorista Profissional</span>
+                        <span className="text-[10px] text-neutral-500 leading-tight block">Sem exigência de carta ao locatário</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Document Photo Upload Boxes */}
+              {docType === 'bi' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* BI Frente */}
+                  <div className="p-4 rounded-2xl border-2 border-dashed border-neutral-300 hover:border-neutral-400 bg-neutral-50 flex flex-col items-center justify-center text-center space-y-2 relative">
+                    {biFrontPhoto ? (
+                      <div className="relative w-full h-32 rounded-xl overflow-hidden border">
+                        <img src={biFrontPhoto} alt="BI Frente" className="w-full h-full object-cover" />
+                        <span className="absolute top-1.5 right-1.5 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                          ✓ Frente Carregada
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div className="font-bold text-xs text-neutral-800">BI (Frente com Foto) *</div>
+                        <p className="text-[10px] text-neutral-500">Tire foto nítida da frente do BI</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'biFront')}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* BI Verso */}
+                  <div className="p-4 rounded-2xl border-2 border-dashed border-neutral-300 hover:border-neutral-400 bg-neutral-50 flex flex-col items-center justify-center text-center space-y-2 relative">
+                    {biBackPhoto ? (
+                      <div className="relative w-full h-32 rounded-xl overflow-hidden border">
+                        <img src={biBackPhoto} alt="BI Verso" className="w-full h-full object-cover" />
+                        <span className="absolute top-1.5 right-1.5 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                          ✓ Verso Carregado
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div className="font-bold text-xs text-neutral-800">BI (Verso com Assinatura) *</div>
+                        <p className="text-[10px] text-neutral-500">Tire foto do verso do BI</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'biBack')}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* Passaporte Principal */
                 <div className="p-4 rounded-2xl border-2 border-dashed border-neutral-300 hover:border-neutral-400 bg-neutral-50 flex flex-col items-center justify-center text-center space-y-2 relative">
-                  {biFrontPhoto ? (
-                    <div className="relative w-full h-32 rounded-xl overflow-hidden border">
-                      <img src={biFrontPhoto} alt="BI Frente" className="w-full h-full object-cover" />
+                  {passportPhoto || biFrontPhoto ? (
+                    <div className="relative w-full h-36 rounded-xl overflow-hidden border">
+                      <img src={passportPhoto || biFrontPhoto} alt="Passaporte" className="w-full h-full object-cover" />
                       <span className="absolute top-1.5 right-1.5 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-                        ✓ Frente Carregada
+                        ✓ Passaporte Carregado
                       </span>
                     </div>
                   ) : (
@@ -576,47 +806,21 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                       <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
                         <Upload className="w-5 h-5" />
                       </div>
-                      <div className="font-bold text-xs text-neutral-800">BI (Frente com Foto) *</div>
-                      <p className="text-[10px] text-neutral-500">Tire foto nítida da frente do BI</p>
+                      <div className="font-bold text-xs text-neutral-800">Passaporte (Página Principal com Foto) *</div>
+                      <p className="text-[10px] text-neutral-500">Tire foto nítida da página de dados pessoais do passaporte</p>
                     </>
                   )}
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'biFront')}
+                    onChange={(e) => handleFileUpload(e, 'passport')}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
                 </div>
+              )}
 
-                {/* BI Verso */}
-                <div className="p-4 rounded-2xl border-2 border-dashed border-neutral-300 hover:border-neutral-400 bg-neutral-50 flex flex-col items-center justify-center text-center space-y-2 relative">
-                  {biBackPhoto ? (
-                    <div className="relative w-full h-32 rounded-xl overflow-hidden border">
-                      <img src={biBackPhoto} alt="BI Verso" className="w-full h-full object-cover" />
-                      <span className="absolute top-1.5 right-1.5 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-                        ✓ Verso Carregado
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
-                        <Upload className="w-5 h-5" />
-                      </div>
-                      <div className="font-bold text-xs text-neutral-800">BI (Verso com Assinatura) *</div>
-                      <p className="text-[10px] text-neutral-500">Tire foto do verso do BI</p>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'biBack')}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {/* Se for Rent-a-Car para Locatário/Condutor: Carta de Condução */}
-              {purpose === 'rentacar' && userRole === 'client' && (
+              {/* Se for Rent-a-Car para Locatário e Condução Própria: Carta de Condução */}
+              {purpose === 'rentacar' && userRole === 'client' && rentalOption === 'self_drive' && (
                 <div className="p-4 rounded-2xl border-2 border-dashed border-neutral-300 hover:border-neutral-400 bg-neutral-50 flex flex-col items-center justify-center text-center space-y-2 relative">
                   {driverLicensePhoto ? (
                     <div className="relative w-full h-32 rounded-xl overflow-hidden border">
@@ -630,8 +834,8 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                       <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center">
                         <Car className="w-5 h-5" />
                       </div>
-                      <div className="font-bold text-xs text-neutral-800">Carta de Condução (Obrigatório para Locatário) *</div>
-                      <p className="text-[10px] text-neutral-500">Foto nítida da carta de condução válida em Moçambique</p>
+                      <div className="font-bold text-xs text-neutral-800">Carta de Condução (Obrigatório para Condução Própria) *</div>
+                      <p className="text-[10px] text-neutral-500">Foto nítida da carta de condução válida</p>
                     </>
                   )}
                   <input
@@ -643,16 +847,78 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                 </div>
               )}
 
+              {/* Document Analysis Indicator & OCR Status */}
+              {isAnalyzingDoc && (
+                <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-xs text-blue-900 animate-pulse">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                  <div>
+                    <span className="font-bold block">A analisar documento (Validação Binária & OCR)...</span>
+                    <span className="text-[11px] text-blue-700">Verificando integridade binária, estrutura de documento e extraindo campos.</span>
+                  </div>
+                </div>
+              )}
+
+              {docAnalysisError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-900">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-rose-950">Documento Rejeitado</span>
+                    <span>{docAnalysisError}</span>
+                  </div>
+                </div>
+              )}
+
+              {extractedOcrData && extractedOcrData.isValidDocument && (
+                <div className="p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-2xl space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-amber-950 font-bold">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Dados Extraídos por OCR (Leitura Óptica)</span>
+                    </div>
+                    <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-mono font-bold">
+                      Confiança: {Math.round((extractedOcrData.confidenceScore || 0.85) * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800">
+                    Estrutura de documento identificada ({extractedOcrData.docTypeDetected}). Poderá rever e corrigir os dados nos campos sem alterar a foto original.
+                  </p>
+                  {extractedOcrData.extractedFields && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                      {extractedOcrData.extractedFields.fullName && (
+                        <div className="bg-white/80 p-2 rounded-xl border border-amber-200/60">
+                          <span className="text-[10px] text-neutral-500 block font-sans">Nome Lido:</span>
+                          <span className="font-bold text-neutral-900">{extractedOcrData.extractedFields.fullName}</span>
+                        </div>
+                      )}
+                      {extractedOcrData.extractedFields.docNumber && (
+                        <div className="bg-white/80 p-2 rounded-xl border border-amber-200/60">
+                          <span className="text-[10px] text-neutral-500 block font-sans">N.º Documento:</span>
+                          <span className="font-bold text-neutral-900">{extractedOcrData.extractedFields.docNumber}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    if (!biFrontPhoto || !biBackPhoto) {
+                    if (docType === 'bi' && (!biFrontPhoto || !biBackPhoto)) {
                       setSmsError('Por favor faça o upload das fotos do BI (Frente e Verso) para prosseguir.');
                       return;
                     }
-                    if (purpose === 'rentacar' && userRole === 'client' && !driverLicensePhoto) {
-                      setSmsError('Por favor faça o upload da sua Carta de Condução.');
+                    if (docType === 'passport' && (!passportPhoto && !biFrontPhoto)) {
+                      setSmsError('Por favor faça o upload da fotografia do Passaporte para prosseguir.');
+                      return;
+                    }
+                    if (purpose === 'rentacar' && userRole === 'client' && rentalOption === 'self_drive' && !driverLicensePhoto) {
+                      setSmsError('Por favor faça o upload da sua Carta de Condução para aluguer com Condução Própria.');
+                      return;
+                    }
+                    if (isAnalyzingDoc) {
+                      setSmsError('Aguarde a conclusão da análise do documento.');
                       return;
                     }
                     setSmsError(null);
@@ -1036,7 +1302,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                 </div>
               </div>
 
-              {purpose === 'rentacar' && userRole === 'client' && (
+              {purpose === 'rentacar' && userRole === 'client' && rentalOption === 'self_drive' && (
                 <div>
                   <label className="text-xs font-bold text-neutral-700 block mb-1">
                     Número da Carta de Condução *
@@ -1064,11 +1330,11 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                   type="button"
                   onClick={() => {
                     if (!fullName.trim() || fullName.trim().length < 4) {
-                      setSmsError('Por favor insira o seu Nome Completo real conforme o seu Bilhete de Identidade.');
+                      setSmsError('Por favor insira o seu Nome Completo real conforme o seu documento oficial.');
                       return;
                     }
                     const cleanBi = biNumber.trim().toUpperCase();
-                    if (!cleanBi || cleanBi.length < 8) {
+                    if (!cleanBi || cleanBi.length < 6) {
                       setSmsError('Número de BI ou Passaporte inválido. Preencha o seu número oficial.');
                       return;
                     }
@@ -1080,7 +1346,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                       setSmsError('Pilar 1 Obrigatório: Solicite e valide o código SMS de 6 dígitos para o seu telemóvel antes de avançar.');
                       return;
                     }
-                    if (purpose === 'rentacar' && userRole === 'client' && !driverLicenseNumber.trim()) {
+                    if (purpose === 'rentacar' && userRole === 'client' && rentalOption === 'self_drive' && !driverLicenseNumber.trim()) {
                       setSmsError('Por favor insira o número da sua Carta de Condução.');
                       return;
                     }
@@ -1100,7 +1366,7 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
           {currentStep === 'review' && (
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                   <ShieldCheck className="w-5 h-5 text-emerald-100" />
                 </div>
                 <div>
@@ -1154,8 +1420,12 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
-                      <span className="font-bold text-neutral-900">3. Documento de Identificação</span>
-                      <p className="text-[11px] text-neutral-500">BI Nº {biNumber} (Frente e Verso carregados)</p>
+                      <span className="font-bold text-neutral-900">
+                        3. Documento ({docType === 'passport' ? 'Passaporte' : 'BI'})
+                      </span>
+                      <p className="text-[11px] text-neutral-500">
+                        {docType === 'passport' ? `Passaporte Nº ${biNumber}` : `BI Nº ${biNumber} (Frente e Verso)`}
+                      </p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
@@ -1174,7 +1444,15 @@ export const BiometricVerificationModal: React.FC<BiometricVerificationModalProp
                   <span className="text-neutral-500">Localidade:</span>
                   <span className="font-bold text-neutral-900">{city}, {province}</span>
                 </div>
-                {purpose === 'rentacar' && driverLicenseNumber && (
+                {purpose === 'rentacar' && userRole === 'client' && (
+                  <div className="flex justify-between py-0.5">
+                    <span className="text-neutral-500">Modalidade:</span>
+                    <span className="font-bold text-neutral-900">
+                      {rentalOption === 'with_driver' ? 'Com Motorista Profissional' : 'Condução Própria (Self-Drive)'}
+                    </span>
+                  </div>
+                )}
+                {purpose === 'rentacar' && rentalOption === 'self_drive' && driverLicenseNumber && (
                   <div className="flex justify-between py-0.5">
                     <span className="text-neutral-500">Carta de Condução:</span>
                     <span className="font-bold font-mono text-neutral-900">{driverLicenseNumber}</span>

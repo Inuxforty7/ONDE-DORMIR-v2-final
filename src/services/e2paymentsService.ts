@@ -13,7 +13,6 @@
 
 export interface E2PaymentsConfig {
   clientId: string;
-  clientSecret: string;
   walletId: string;
   isSandbox: boolean;
   registeredPhone?: string;
@@ -60,14 +59,25 @@ class E2PaymentsService {
     try {
       const saved = localStorage.getItem(E2PAYMENTS_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Sanitizar e remover permanentemente qualquer segredo residual do localStorage
+        if ('clientSecret' in parsed) {
+          delete parsed.clientSecret;
+          localStorage.setItem(E2PAYMENTS_STORAGE_KEY, JSON.stringify(parsed));
+        }
+        return {
+          clientId: parsed.clientId || '',
+          walletId: parsed.walletId || '',
+          isSandbox: parsed.isSandbox ?? true,
+          companyName: parsed.companyName || 'Águia Soluções & Serviços - Onde Dormir Moçambique',
+          registeredPhone: parsed.registeredPhone || '+258847282824',
+        };
       }
     } catch {
       // ignore
     }
     return {
       clientId: '',
-      clientSecret: '',
       walletId: '',
       isSandbox: true,
       companyName: 'Águia Soluções & Serviços - Onde Dormir Moçambique',
@@ -80,9 +90,16 @@ class E2PaymentsService {
   }
 
   public saveConfig(newConfig: Partial<E2PaymentsConfig>): void {
-    this.config = { ...this.config, ...newConfig };
+    const sanitized: E2PaymentsConfig = {
+      clientId: (newConfig.clientId ?? this.config.clientId).trim(),
+      walletId: (newConfig.walletId ?? this.config.walletId).trim(),
+      isSandbox: Boolean(newConfig.isSandbox ?? this.config.isSandbox),
+      companyName: newConfig.companyName ?? this.config.companyName,
+      registeredPhone: newConfig.registeredPhone ?? this.config.registeredPhone,
+    };
+    this.config = sanitized;
     try {
-      localStorage.setItem(E2PAYMENTS_STORAGE_KEY, JSON.stringify(this.config));
+      localStorage.setItem(E2PAYMENTS_STORAGE_KEY, JSON.stringify(sanitized));
     } catch {
       // ignore
     }
@@ -90,7 +107,7 @@ class E2PaymentsService {
   }
 
   public isConfigured(): boolean {
-    return Boolean(this.config.clientId && this.config.clientSecret);
+    return Boolean(this.config.clientId);
   }
 
   public subscribe(cb: () => void): () => void {
@@ -99,8 +116,8 @@ class E2PaymentsService {
   }
 
   /**
-   * Dispara um pedido de pagamento via M-Pesa ou e-Mola
-   * No backend ou em simulação guiada local
+   * Dispara um pedido de pagamento via backend seguro (/api/payments/initiate)
+   * Sem expor credenciais no cliente e sem simulações falsas com timeouts
    */
   public async initiatePayment(
     req: E2PaymentsTransactionRequest
@@ -108,23 +125,51 @@ class E2PaymentsService {
     const timestamp = new Date().toISOString();
     const cleanPhone = req.phone.replace(/\D/g, '');
 
-    // Simulação robusta com validação de número de operadora
-    const isMpesa = cleanPhone.startsWith('84') || cleanPhone.startsWith('85') || cleanPhone.endsWith('84') || cleanPhone.endsWith('85');
-    const isEmola = cleanPhone.startsWith('86') || cleanPhone.startsWith('87') || cleanPhone.endsWith('86') || cleanPhone.endsWith('87');
+    try {
+      const res = await fetch('/api/payments/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetType: 'GENERAL_SERVICE',
+          targetId: req.reference,
+          amount: req.amount,
+          paymentMethod: req.method,
+          phoneNumber: cleanPhone,
+        }),
+      });
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          transactionId: `E2P-${Date.now().toString().slice(-8)}`,
-          status: 'PENDING',
-          message: `Pedido enviado via e2Payments (${req.method}). Por favor aprove no telemóvel ${cleanPhone}.`,
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => null);
+        return {
+          success: false,
+          status: 'FAILED',
+          message: errorJson?.error || 'Falha ao iniciar pagamento no servidor.',
           amount: req.amount,
           reference: req.reference,
           timestamp,
-        });
-      }, 700);
-    });
+        };
+      }
+
+      const json = await res.json();
+      return {
+        success: true,
+        transactionId: json.data?.paymentId,
+        status: 'PENDING',
+        message: json.data?.instructions || `Pedido enviado via e2Payments (${req.method}). Aguarde confirmação no telemóvel ${cleanPhone}.`,
+        amount: req.amount,
+        reference: json.data?.reference || req.reference,
+        timestamp,
+      };
+    } catch {
+      return {
+        success: false,
+        status: 'FAILED',
+        message: 'Servidor de pagamentos indisponível. Tente novamente mais tarde.',
+        amount: req.amount,
+        reference: req.reference,
+        timestamp,
+      };
+    }
   }
 }
 
