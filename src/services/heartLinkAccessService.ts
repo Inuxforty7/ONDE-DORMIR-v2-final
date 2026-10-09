@@ -23,79 +23,80 @@ export interface HeartLinkPlanConfig {
 export const HEARTLINK_ALL_PLANS: HeartLinkPlanConfig[] = [
   {
     id: 'contact_20mt',
-    name: 'Desbloquear este contacto',
+    name: 'Desbloquear apenas este contacto',
     priceMt: 20,
-    durationLabel: 'Permanente (Este Contacto)',
+    durationLabel: 'Acesso permanente exclusivo',
     type: 'single',
     badge: '20 MT',
-    description: 'Desbloqueio permanente para conversar e ver contactos deste perfil.',
+    description: 'Desbloqueia permanentemente apenas este contacto específico.',
     features: [
-      'Acesso permanente a este perfil',
-      'Conversas directas no chat',
-      'Acesso ao contacto telefónico / WhatsApp',
+      'Desbloqueia apenas este contacto permanentemente',
+      'Permite troca de mensagens no chat',
+      'Acesso aos detalhes de telefone / WhatsApp',
+      'Não desbloqueia outros contactos',
     ]
   },
   {
     id: 'access_50mt',
     name: 'Acesso 24 Horas',
     priceMt: 50,
-    durationLabel: '24 Horas',
+    durationLabel: 'Válido por 24 horas',
     type: '24h',
     badge: '50 MT',
     description: 'Acesso a mensagens e contactos durante 24 horas.',
     features: [
       'Válido exactamente por 24 horas',
-      'Envio de mensagens directas',
+      'Permite troca de mensagens durante o período',
       'Acesso a contactos elegíveis',
-      'Expiração automática após 24 horas',
+      'Expira automaticamente após 24 horas',
     ]
   },
   {
     id: 'monthly_100mt',
-    name: 'Mensal · Coração ♥️',
+    name: 'Nível Coração ♥️',
     priceMt: 100,
-    durationLabel: '30 Dias (Mensal)',
+    durationLabel: 'Validade de 30 dias',
     type: 'monthly',
     tier: 'heart',
-    badge: '100 MT / mês',
-    description: 'Assinatura mensal com nível Coração ♥️ e mensagens diárias.',
+    badge: '100 MT',
+    description: 'Nível P2P Coração ♥️ com acesso de 30 dias.',
     features: [
-      'Válido por 30 dias',
-      'Activa o nível P2P Coração ♥️',
-      'Mensagens directas no chat',
-      'Contactos básicos disponíveis',
+      'Plano com termo de 30 dias',
+      'Activa o nível P2P correspondente (Coração ♥️)',
+      'Actualiza automaticamente o nível activo',
+      'Expira quando o período termina',
     ]
   },
   {
     id: 'monthly_250mt',
-    name: 'Mensal · Diamante 💎',
+    name: 'Nível Diamante 💎',
     priceMt: 250,
-    durationLabel: '30 Dias (Mensal)',
+    durationLabel: 'Validade de 30 dias',
     type: 'monthly',
     tier: 'diamond',
-    badge: '250 MT / mês',
-    description: 'Assinatura mensal com nível Diamante 💎 e mensagens ilimitadas.',
+    badge: '250 MT',
+    description: 'Nível P2P Diamante 💎 com acesso de 30 dias.',
     features: [
-      'Válido por 30 dias',
-      'Activa o nível P2P Diamante 💎',
-      'Mensagens directas ilimitadas',
-      'Prioridade de resposta no chat',
+      'Plano com termo de 30 dias',
+      'Activa o nível P2P correspondente (Diamante 💎)',
+      'Actualiza automaticamente o nível activo',
+      'Expira quando o período termina',
     ]
   },
   {
     id: 'monthly_1000mt',
-    name: 'Mensal · VIP 👑',
+    name: 'Nível VIP 👑',
     priceMt: 1000,
-    durationLabel: '30 Dias (Mensal VIP)',
+    durationLabel: 'Validade de 30 dias VIP',
     type: 'monthly',
     tier: 'king',
-    badge: '1000 MT / mês',
-    description: 'Assinatura mensal com nível VIP 👑 e acesso exclusivo total.',
+    badge: '1000 MT',
+    description: 'Nível P2P VIP 👑 com acesso total de 30 dias.',
     features: [
-      'Válido por 30 dias',
-      'Activa o nível P2P VIP 👑',
-      'Acesso ilimitado e exclusivo a contactos',
-      'Destaque máximo e suporte prioritário',
+      'Plano VIP com termo de 30 dias',
+      'Activa o nível P2P correspondente (VIP 👑)',
+      'Actualiza automaticamente o nível activo',
+      'Expira quando o período termina',
     ]
   }
 ];
@@ -502,6 +503,7 @@ class HeartLinkAccessService {
     list.unshift(notif);
     try {
       localStorage.setItem(STORAGE_KEY_NOTIFS, JSON.stringify(list));
+      this.notify();
     } catch {}
 
     // Send to server
@@ -530,13 +532,28 @@ class HeartLinkAccessService {
     return notif;
   }
 
+  private defaultInitialNotifications: HeartLinkNotification[] = [
+    {
+      id: 'hl_notif_maria',
+      contactId: 'hl-1',
+      contactName: 'Maria',
+      contactPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      message: 'Maria quer conversar consigo no HeartLink.',
+      timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+      read: false,
+    }
+  ];
+
   public getNotifications(): HeartLinkNotification[] {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_NOTIFS);
-      return raw ? JSON.parse(raw) : [];
+      if (raw) {
+        return JSON.parse(raw);
+      }
     } catch {
-      return [];
+      return this.defaultInitialNotifications;
     }
+    return this.defaultInitialNotifications;
   }
 
   public markNotificationAsRead(id: string): void {
@@ -545,6 +562,7 @@ class HeartLinkAccessService {
     );
     try {
       localStorage.setItem(STORAGE_KEY_NOTIFS, JSON.stringify(list));
+      this.notify();
     } catch {}
   }
 }

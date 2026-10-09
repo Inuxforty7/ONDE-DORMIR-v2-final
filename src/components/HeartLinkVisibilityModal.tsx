@@ -76,18 +76,16 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
     if (hasActiveMonthly) {
       return HEARTLINK_ALL_PLANS.filter((p) => p.type === 'monthly');
     }
-    if (!targetProfile) {
-      return HEARTLINK_ALL_PLANS.filter((p) => p.id !== 'contact_20mt');
-    }
+    // Always include all options (20 MT, 50 MT, 100 MT, 250 MT, 1000 MT) when user has no active plan
     return HEARTLINK_ALL_PLANS;
-  }, [hasActiveMonthly, targetProfile]);
+  }, [hasActiveMonthly]);
 
   const mapInitialId = (id?: string): HeartLinkPlanId => {
     if (id === 'vis_24h') return 'monthly_100mt';
     if (id === 'vis_7d') return 'monthly_250mt';
     if (id === 'vis_30d') return 'monthly_1000mt';
     if (id && HEARTLINK_ALL_PLANS.some((p) => p.id === id)) return id as HeartLinkPlanId;
-    if (targetProfile && !hasActiveMonthly) return 'contact_20mt';
+    if (!hasActiveMonthly) return 'contact_20mt';
     return 'monthly_100mt';
   };
 
@@ -98,7 +96,7 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
   useEffect(() => {
     if (initialPlanId) {
       setSelectedPlanId(mapInitialId(initialPlanId));
-    } else if (targetProfile && !hasActiveMonthly) {
+    } else if (!hasActiveMonthly) {
       setSelectedPlanId('contact_20mt');
     } else if (availablePlans.length > 0 && !availablePlans.some((p) => p.id === selectedPlanId)) {
       setSelectedPlanId(availablePlans[0].id);

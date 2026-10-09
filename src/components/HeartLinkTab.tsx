@@ -57,7 +57,7 @@ import { HeartLinkContactConfigurator } from './HeartLinkContactConfigurator';
 import { getPlatformTenureText } from '../utils/tenure';
 import { contactUnlockService } from '../services/contactUnlockService';
 import { heartLinkService, FriendshipRecord, MarriageRecord, P2PTier, P2PGroupMessage } from '../services/heartLinkService';
-import { heartLinkAccessService, HeartLinkPlanId } from '../services/heartLinkAccessService';
+import { heartLinkAccessService, HeartLinkPlanId, HeartLinkNotification } from '../services/heartLinkAccessService';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
 interface HeartLinkTabProps {
@@ -157,12 +157,49 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
   // Authoritative HeartLink Contact Access state
   const [accessState, setAccessState] = useState(() => heartLinkAccessService.getAccessStatus());
 
+  // Real HeartLink Contact Notifications
+  const [hlNotifications, setHlNotifications] = useState<HeartLinkNotification[]>(() => 
+    heartLinkAccessService.getNotifications()
+  );
+
   React.useEffect(() => {
-    const unsub = heartLinkAccessService.subscribe(() => {
+    const unsubAccess = heartLinkAccessService.subscribe(() => {
       setAccessState(heartLinkAccessService.getAccessStatus());
+      setHlNotifications(heartLinkAccessService.getNotifications());
     });
-    return unsub;
+    return unsubAccess;
   }, []);
+
+  const unreadContactNotif = useMemo(() => {
+    return hlNotifications.find((n) => !n.read) || null;
+  }, [hlNotifications]);
+
+  const handleRespondToNotification = (notif: HeartLinkNotification) => {
+    heartLinkAccessService.markNotificationAsRead(notif.id);
+    const hasPaidPlan = heartLinkAccessService.hasActiveMonthlyPlan() || heartLinkAccessService.canContactUser(notif.contactId);
+    const target = profiles.find((p) => p.id === notif.contactId) || ({
+      id: notif.contactId,
+      name: notif.contactName,
+      photo: notif.contactPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      city: 'Maputo',
+      province: 'Maputo Cidade',
+      gender: 'feminino',
+      age: 26,
+      bio: 'Perfil no HeartLink',
+      intentions: ['namoro_serio'],
+      verified: true,
+      registeredAt: new Date().toISOString(),
+    } as unknown as HeartLinkProfile);
+
+    if (!hasPaidPlan) {
+      setTargetUnlockProfile(target);
+      setPendingAction({ type: 'chat', profile: target });
+      setIsVisibilityModalOpen(true);
+    } else {
+      setSelectedProfile(null);
+      setChatProfile(target);
+    }
+  };
 
   // HeartLink Profile Media State (4 photo slots + 1 video slot)
   const [regMedia, setRegMedia] = useState<HeartLinkMediaState>({
@@ -787,6 +824,52 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       </div>
 
+      {/* Real Contact Attempt Notification Banner: "Maria wants to talk to you on HeartLink" */}
+      {unreadContactNotif && (
+        <div className="bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 text-white p-3 sm:p-3.5 rounded-2xl sm:rounded-3xl shadow-md border border-rose-400/40 flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            {unreadContactNotif.contactPhoto ? (
+              <img
+                src={unreadContactNotif.contactPhoto}
+                alt=""
+                className="w-10 h-10 rounded-2xl object-cover object-top border-2 border-white/60 shadow-xs shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center font-bold text-xs shrink-0 border border-white/30">
+                <Heart className="w-5 h-5 fill-white text-white" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <span className="text-[9.5px] font-black uppercase tracking-wider bg-black/25 text-pink-200 px-2 py-0.5 rounded-md inline-block">
+                Notificação de Contacto
+              </span>
+              <p className="text-xs sm:text-sm font-black text-white truncate mt-0.5">
+                {unreadContactNotif.message || `${unreadContactNotif.contactName} quer conversar consigo no HeartLink.`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleRespondToNotification(unreadContactNotif)}
+              className="h-9 px-3.5 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 rounded-xl text-xs font-black shadow-xs cursor-pointer transition-all flex items-center gap-1.5"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>Desbloquear Contacto</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => heartLinkAccessService.markNotificationAsRead(unreadContactNotif.id)}
+              className="w-8 h-8 rounded-xl bg-black/20 hover:bg-black/30 text-white flex items-center justify-center cursor-pointer transition-colors"
+              title="Dispensar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 2. CHAT P2P Glossy Capsule Section */}
       <div className="bg-white/80 backdrop-blur-xs rounded-2xl sm:rounded-3xl border border-pink-100 p-2.5 sm:p-4 shadow-sm">
         <HeartLinkP2PCapsule
@@ -1321,9 +1404,11 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
               {/* 3. Disponibilidade de Contacto */}
               <HeartLinkContactAvailabilitySection 
                 availability={selectedProfile.contactAvailability} 
-                isContactUnlocked={selectedProfile.id === myProfile?.id ? userVisibility.isUnlocked : contactUnlockService.isContactUnlocked(selectedProfile.id, selectedProfile.isContactUnlocked)}
+                isContactUnlocked={selectedProfile.id === myProfile?.id ? true : heartLinkAccessService.canContactUser(selectedProfile.id)}
                 isOwnProfile={selectedProfile.id === myProfile?.id}
                 onActivateContactAccess={() => {
+                  setTargetUnlockProfile(selectedProfile);
+                  setPendingAction({ type: 'chat', profile: selectedProfile });
                   setIsVisibilityModalOpen(true);
                   setSelectedProfile(null);
                 }}

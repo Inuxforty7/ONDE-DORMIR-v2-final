@@ -17,6 +17,8 @@ import { TermsModal } from './TermsModal';
 import { authService, AuthUser } from '../services/authService';
 import { getPlatformTenureText } from '../utils/tenure';
 import { BillingInvoiceModal } from './BillingInvoiceModal';
+import { E2PaymentsSetupModal } from './E2PaymentsSetupModal';
+import { CreditCard, Sparkles } from 'lucide-react';
 
 interface AccountTabProps {
   onBackToHome?: () => void;
@@ -44,6 +46,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
   const [confirmClear, setConfirmClear] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [isE2PaymentsOpen, setIsE2PaymentsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(authService.getCurrentUser());
 
   useEffect(() => {
@@ -194,6 +197,32 @@ export const AccountTab: React.FC<AccountTabProps> = ({
           </span>
         </button>
 
+        {/* Pagamentos M-Pesa & e-Mola (e2Payments / Conta Grátis) */}
+        <button
+          onClick={() => setIsE2PaymentsOpen(true)}
+          className="w-full p-4 flex items-center justify-between hover:bg-emerald-50/40 active:bg-emerald-100/50 transition-colors text-left cursor-pointer touch-manipulation group"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <CreditCard className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-bold text-neutral-900 group-hover:text-emerald-700 flex items-center gap-1.5">
+                <span>Pagamentos M-Pesa & e-Mola (e2Payments)</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
+                  Grátis
+                </span>
+              </div>
+              <div className="text-xs text-neutral-500 mt-0.5 font-medium">
+                Criar conta grátis no site e2Payments & credenciais API
+              </div>
+            </div>
+          </div>
+          <span className="text-xs text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl shrink-0">
+            Configurar
+          </span>
+        </button>
+
         {/* Clear stored data */}
         <div className="p-4 flex items-center justify-between text-left">
           <div className="flex items-center gap-3.5">
@@ -278,6 +307,12 @@ export const AccountTab: React.FC<AccountTabProps> = ({
       <BillingInvoiceModal
         isOpen={isBillingModalOpen}
         onClose={() => setIsBillingModalOpen(false)}
+      />
+
+      {/* Gateway de Pagamentos e2Payments (Conta Grátis M-Pesa / e-Mola) */}
+      <E2PaymentsSetupModal
+        isOpen={isE2PaymentsOpen}
+        onClose={() => setIsE2PaymentsOpen(false)}
       />
     </div>
   );

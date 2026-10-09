@@ -29,6 +29,8 @@ import {
   Crown
 } from 'lucide-react';
 import { platformOwnerService, PlatformOwnerMetrics } from '../services/platformOwnerService';
+import { e2paymentsService, E2PAYMENTS_OFFICIAL_URLS } from '../services/e2paymentsService';
+import { E2PaymentsSetupModal } from './E2PaymentsSetupModal';
 import { Logo } from './Logo';
 
 interface PlatformOwnerDashboardModalProps {
@@ -49,6 +51,7 @@ export const PlatformOwnerDashboardModal: React.FC<PlatformOwnerDashboardModalPr
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'now' | 'modules' | 'funnel' | 'governance'>('overview');
+  const [isE2PaymentsOpen, setIsE2PaymentsOpen] = useState(false);
 
   const fetchMetrics = async () => {
     setIsLoadingMetrics(true);
@@ -665,6 +668,51 @@ export const PlatformOwnerDashboardModal: React.FC<PlatformOwnerDashboardModalPr
                     </p>
                   </div>
 
+                  {/* e2Payments Direct Gateway Card */}
+                  <div className="p-4 sm:p-5 rounded-3xl bg-neutral-950 border border-emerald-700/60 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                            Gateway e2Payments • M-Pesa & e-Mola
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-black text-white mt-1">
+                          Conta Oficial & API de Recebimentos
+                        </h4>
+                        <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
+                          Crie a sua conta grátis no site e2Payments (Plano Basic) ou configure as credenciais da API para receber valores automáticos.
+                        </p>
+                      </div>
+
+                      <span className="px-2.5 py-1 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold text-xs shrink-0">
+                        Grátis
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsE2PaymentsOpen(true)}
+                        className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-emerald-950/40 flex items-center gap-1.5"
+                      >
+                        <span>Gerir Conta & Chaves API</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+
+                      <a
+                        href={E2PAYMENTS_OFFICIAL_URLS.createAccountFree}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2.5 px-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-emerald-400 text-xs font-bold transition-all border border-neutral-700 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Criar Conta Grátis no Site</span>
+                        <span className="text-[10px]">↗</span>
+                      </a>
+                    </div>
+                  </div>
+
                   {/* Pending Audits & Approvals */}
                   <div className="p-4 rounded-3xl bg-neutral-950 border border-neutral-800 space-y-3">
                     <div className="flex items-center justify-between">
@@ -730,6 +778,11 @@ export const PlatformOwnerDashboardModal: React.FC<PlatformOwnerDashboardModalPr
 
         </div>
       </div>
+
+      <E2PaymentsSetupModal
+        isOpen={isE2PaymentsOpen}
+        onClose={() => setIsE2PaymentsOpen(false)}
+      />
     </div>
   );
 };
