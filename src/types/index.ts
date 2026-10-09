@@ -88,6 +88,16 @@ export interface Accommodation {
   registeredAt?: string;
   platformTenure?: string;
   isContactUnlocked?: boolean;
+  videoUrl?: string;
+  videoDurationSeconds?: number;
+  claimedByOwner?: boolean;
+  acceptedPayments?: string[];
+  reputationMetrics?: {
+    service?: number;
+    cleanliness?: number;
+    recommendationPct?: number;
+    responseTime?: string;
+  };
   // Mandatory Identity & Anti-Fraud Verification
   ownerName?: string;
   ownerPhone?: string;

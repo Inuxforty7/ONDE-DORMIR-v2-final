@@ -37,6 +37,9 @@ import { getDirectionsUrl } from '../utils/geo';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 import { TourGuideReviewModal } from './TourGuideReviewModal';
 import { tourGuideReviewService } from '../services/tourGuideReviewService';
+// Slot pronto para a nova imagem hero do Turismo
+// import heroCoastalBg from '../assets/images/mozambique_coastal_hero_bg_1790583006189.jpg';
+// import { TourGuideHeroGraphic } from './TourGuideHeroGraphic';
 
 const getPlaceCategoryShort = (place: TourismPlace) => {
   if (place.category === 'praias_ilhas') {
@@ -404,39 +407,50 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
 
   return (
     <div className="pb-16 sm:pb-20 pt-1 sm:pt-3 max-w-5xl mx-auto px-2.5 sm:px-4 space-y-2.5 sm:space-y-3.5">
-      {/* Top Banner: TURISMO MOÇAMBIQUE */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-cyan-950 text-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-lg relative overflow-hidden border border-emerald-500/20">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
-              <Compass className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-2xl font-black tracking-tight leading-none">
-                  <span>TURISMO </span>
-                  <span className="text-amber-400">MOÇAMBIQUE</span>
-                </h1>
-              </div>
-              <p className="text-[11px] sm:text-xs text-emerald-100 font-medium mt-0.5">
-                Explore lugares, experiências e encontre quem o pode guiar.
-              </p>
-            </div>
+      {/* Top Banner: TURISMO MOÇAMBIQUE - 16:9 Mobile & Panorâmico */}
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border border-emerald-500/25 bg-neutral-950 aspect-[16/9] sm:aspect-auto sm:min-h-[220px] md:min-h-[240px]">
+        {/* Vídeo Background em Loop */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
+          src="https://res.cloudinary.com/dwlfwnbt0/video/upload/v1791542388/Criar_Anima%C3%A7%C3%A3o_Motion_Loop_Imagem_20261009123429_zifw4j.mp4"
+        />
+
+        {/* Gradiente sutil reforçado apenas no lado esquerdo dos textos; lado direito sem textos continua 100% límpido e visível */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/85 via-black/45 via-55% to-transparent pointer-events-none" />
+
+        {/* Conteúdo no Lado Esquerdo - Alinhado, Agrupado e com Hierarquia Visual */}
+        <div className="relative z-20 p-3 sm:p-5 md:p-6 flex flex-col justify-center items-start text-left h-full max-w-[72%] sm:max-w-md md:max-w-lg gap-1 sm:gap-2">
+          {/* Badge de Visitas Alinhado (Substitui Turismo Oficial) */}
+          <div
+            className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-bold shadow-xs"
+            title="Visitas ao módulo Turismo"
+          >
+            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-300 shrink-0" />
+            <span>{formatVisitCount(getModuleCount('turismo'))} visitas</span>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Real Module Visit Counter */}
-            <div 
-              className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
-              title="Visitas ao módulo Turismo"
-            >
-              <Eye className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-              <span>{formatVisitCount(getModuleCount('turismo'))}</span>
-            </div>
+          {/* Título Principal com Tamanho Reduzido */}
+          <h1 className="text-[14px] sm:text-lg md:text-xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
+            <span>TURISMO </span>
+            <span className="text-[#FACC15]">MOÇAMBIQUE</span>
+          </h1>
 
+          {/* Subtítulo Agrupado e Quebrado */}
+          <p className="text-white/90 text-[10px] sm:text-xs md:text-sm font-medium leading-tight sm:leading-snug drop-shadow-xs">
+            Explore lugares, experiências <br />
+            e encontre quem o pode guiar.
+          </p>
+
+          {/* Botão de Ação Alinhado */}
+          <div className="pt-0.5 sm:pt-1">
             <button
+              type="button"
               onClick={handleStartGuideRegistration}
-              className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              className="h-7.5 sm:h-9.5 px-3.5 sm:px-5 bg-white hover:bg-neutral-50 active:scale-95 text-emerald-950 font-black text-[11px] sm:text-xs rounded-xl sm:rounded-2xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
               <span>+ Registar como Guia</span>

@@ -110,6 +110,15 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
           </div>
         )}
 
+        {/* Badge Vídeo 1 min (Garantia de Autenticidade) */}
+        {accommodation.videoUrl && (
+          <div className="absolute bottom-2.5 left-2.5 pointer-events-none">
+            <span className="flex items-center gap-1 text-[9.5px] font-extrabold bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded-md shadow-xs border border-white/20">
+              <span className="text-amber-400">▶</span> Vídeo 1 min
+            </span>
+          </div>
+        )}
+
         {/* Botão Favorito */}
         <button
           onClick={(e) => {
@@ -146,25 +155,29 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
             </div>
           </div>
 
-          {/* 6. Verificação */}
-          {accommodation.verificationStatus === 'verified_in_person' ? (
-            <div className="flex items-center gap-1 text-xs font-bold text-emerald-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Verificado Presencialmente</span>
-            </div>
-          ) : accommodation.verificationStatus === 'verified' ? (
-            <div className="flex items-center gap-1 text-xs font-bold text-emerald-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Verificado</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 text-xs font-semibold text-neutral-500">
-              <span className="w-2 h-2 rounded-full bg-neutral-300 border border-neutral-400 shrink-0"></span>
-              <span>Não Verificado</span>
-            </div>
-          )}
+          {/* 6. Tipo de Alojamento e Verificação (Alinhados Lado a Lado, Pequenos e Sem Cortes) */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold text-[10.5px] border border-emerald-200/80">
+              {accommodation.type === 'pensao' ? '🏠 Pensão' : accommodation.type === 'guest_house' ? '🏡 Guest House' : '🏘️ Residencial'}
+            </span>
+
+            {accommodation.verificationStatus === 'verified_in_person' ? (
+              <div className="flex items-center gap-1 font-bold text-emerald-700 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Verificado</span>
+              </div>
+            ) : accommodation.verificationStatus === 'verified' ? (
+              <div className="flex items-center gap-1 font-bold text-emerald-700 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Verificado</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-neutral-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 shrink-0"></span>
+                <span>Não Verificado</span>
+              </div>
+            )}
+          </div>
 
           {/* 4. Distância e Localização */}
           <div className="flex items-center gap-1.5 text-xs text-neutral-600 truncate font-medium">
@@ -193,10 +206,22 @@ export const AccommodationCard: React.FC<AccommodationCardProps> = ({
             )}
           </div>
 
-          {/* 5. Condições Principais */}
+          {/* 5. Condições Principais (Pequenos, Alinhados Lado a Lado, Sem Corte) */}
           {keyConditions.length > 0 && (
-            <div className="text-[11.5px] text-neutral-500 font-medium truncate pt-0.5">
-              {keyConditions.join(' · ')}
+            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+              {keyConditions.map((cond, i) => (
+                <span
+                  key={i}
+                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                    cond === 'Quarto Casal'
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200 font-bold'
+                      : 'bg-neutral-100 text-neutral-600 border border-neutral-200/60'
+                  }`}
+                >
+                  {cond === 'Quarto Casal' && <span className="mr-0.5">🛏️</span>}
+                  {cond}
+                </span>
+              ))}
             </div>
           )}
         </div>

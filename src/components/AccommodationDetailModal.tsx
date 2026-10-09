@@ -80,6 +80,7 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
   onOpenPrivacyModal,
 }) => {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
   const [reportState, setReportState] = useState<'idle' | 'reporting' | 'sent'>('idle');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [, setReviewVersion] = useState(0);
@@ -185,48 +186,100 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
 
         {/* Scrollable Body */}
         <div className="overflow-y-auto flex-1 w-full pb-4 sm:pb-6">
-          {/* Gallery view */}
+          {/* Gallery / Video view */}
           <div className="relative bg-neutral-950 aspect-16/10 w-full overflow-hidden">
-            <img
-              src={accommodation.photos[activePhotoIndex] || accommodation.photos[0]}
-              alt={accommodation.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+            {isPlayingVideo && accommodation.videoUrl ? (
+              <video
+                src={accommodation.videoUrl}
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <img
+                  src={accommodation.photos[activePhotoIndex] || accommodation.photos[0]}
+                  alt={accommodation.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+              </>
+            )}
+
+            {/* Video / Photo Switch Button (se tiver vídeo cadastrado) */}
+            {accommodation.videoUrl && (
+              <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsPlayingVideo(!isPlayingVideo)}
+                  className="px-3 py-1 rounded-full bg-black/75 hover:bg-black/90 text-white backdrop-blur-md border border-white/25 text-[11px] font-black shadow-lg flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer touch-manipulation"
+                >
+                  {isPlayingVideo ? (
+                    <>
+                      <span>📷</span>
+                      <span>Ver Fotos ({accommodation.photos.length})</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-amber-400">▶</span>
+                      <span>Ver Vídeo Real (1 min)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* Clean bottom overlay on Photo */}
-            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white pointer-events-none">
-              <div className="flex items-center gap-2">
-                {accommodation.isOpen24h && (
-                  <span className="text-xs font-semibold bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg">
-                    Recepção 24h
-                  </span>
-                )}
-                {accommodation.isPremium && (
-                  <span className="text-xs font-bold bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-lg">
-                    Premium
+            {!isPlayingVideo && (
+              <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white pointer-events-none">
+                <div className="flex items-center gap-2">
+                  {accommodation.isOpen24h && (
+                    <span className="text-xs font-semibold bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg">
+                      Recepção 24h
+                    </span>
+                  )}
+                  {accommodation.isPremium && (
+                    <span className="text-xs font-bold bg-amber-400 text-zinc-950 px-2 py-0.5 rounded-lg">
+                      Premium
+                    </span>
+                  )}
+                </div>
+
+                {accommodation.distanceKm !== undefined && (
+                  <span className="bg-black/60 text-white text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1.5">
+                    <Navigation2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>a {formatDistance(accommodation.distanceKm)}</span>
                   </span>
                 )}
               </div>
-
-              {accommodation.distanceKm !== undefined && (
-                <span className="bg-black/60 text-white text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1.5">
-                  <Navigation2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>a {formatDistance(accommodation.distanceKm)}</span>
-                </span>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Thumbnails if multiple photos */}
-          {accommodation.photos.length > 1 && (
-            <div className="flex gap-2 px-4 py-2 bg-neutral-900 overflow-x-auto no-scrollbar">
+          {/* Thumbnails if multiple photos or video */}
+          {(accommodation.photos.length > 1 || accommodation.videoUrl) && (
+            <div className="flex gap-2 px-4 py-2 bg-neutral-900 overflow-x-auto no-scrollbar items-center">
+              {accommodation.videoUrl && (
+                <button
+                  onClick={() => setIsPlayingVideo(true)}
+                  className={`w-16 h-12 rounded-xl shrink-0 border-2 transition-all cursor-pointer flex flex-col items-center justify-center bg-neutral-800 ${
+                    isPlayingVideo ? 'border-amber-400 bg-neutral-950 scale-105' : 'border-neutral-700 opacity-75 hover:opacity-100'
+                  }`}
+                  title="Reproduzir vídeo real do quarto e instalações"
+                >
+                  <span className="text-amber-400 text-xs font-black">▶ Vídeo</span>
+                  <span className="text-[9px] text-white/70 font-semibold">1 min</span>
+                </button>
+              )}
               {accommodation.photos.map((photo, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActivePhotoIndex(idx)}
+                  onClick={() => {
+                    setIsPlayingVideo(false);
+                    setActivePhotoIndex(idx);
+                  }}
                   className={`w-16 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                    activePhotoIndex === idx ? 'border-emerald-500 scale-105' : 'border-transparent opacity-60 hover:opacity-90'
+                    !isPlayingVideo && activePhotoIndex === idx ? 'border-emerald-500 scale-105' : 'border-transparent opacity-60 hover:opacity-90'
                   }`}
                 >
                   <img src={photo} alt="" className="w-full h-full object-cover" />
@@ -268,6 +321,34 @@ export const AccommodationDetailModal: React.FC<AccommodationDetailModalProps> =
                       Preço não publicado
                     </strong>
                   </div>
+                )}
+              </div>
+
+              {/* Pagamentos Locais Nativos & Métricas de Reputação Rápida */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {/* Métodos de Pagamento Moçambicanos */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Pagamento:</span>
+                  {(accommodation.acceptedPayments || ['M-Pesa', 'e-Mola', 'Numerário']).map((pay) => (
+                    <span
+                      key={pay}
+                      className={`text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
+                        pay === 'M-Pesa'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : pay === 'e-Mola'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                          : 'bg-neutral-50 text-neutral-700 border-neutral-200'
+                      }`}
+                    >
+                      {pay}
+                    </span>
+                  ))}
+                </div>
+
+                {accommodation.reputationMetrics?.responseTime && (
+                  <span className="text-[10.5px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                    ⚡ Resposta {accommodation.reputationMetrics.responseTime}
+                  </span>
                 )}
               </div>
 

@@ -38,6 +38,8 @@ import { ACCOMMODATION_TYPE_LABELS, AMENITIES_CATALOG } from '../utils/amenities
 import { calculateDistanceKm, formatDistance } from '../utils/geo';
 import { useVisitAnalytics, formatVisitCount } from '../services/analyticsService';
 
+const ONDE_DORMIR_HERO_IMAGE = 'https://res.cloudinary.com/dwlfwnbt0/image/upload/v1791543459/Remove_text_and_background_elements_20261009125720_y1txom.jpg';
+
 interface ExploreTabProps {
   accommodations: Accommodation[];
   userLocation: UserLocationState;
@@ -422,28 +424,107 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   return (
     <div className="pb-16 sm:pb-20 pt-1 sm:pt-3 max-w-5xl mx-auto px-2.5 sm:px-4 space-y-2.5 sm:space-y-3.5">
-      {/* Top Brand Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-sky-950 text-white p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-sky-400/20 shadow-md flex items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm sm:text-lg font-black tracking-tight leading-none">
-              <span>ONDE </span>
-              <span className="text-amber-400">DORMIR</span>{' '}
-              <span className="text-sky-300 font-black text-[11px] sm:text-sm tracking-wider uppercase">MOÇAMBIQUE</span>
-            </h2>
-          </div>
-          <p className="text-[10.5px] sm:text-xs text-sky-100 font-medium mt-0.5 sm:mt-1 leading-snug">
-            Pensões, Guest Houses e Residenciais verificadas · Alojamento seguro perto de si.
-          </p>
+      {/* Top Banner: ONDE DORMIR MOÇAMBIQUE - 16:9 Mobile & Panorâmico */}
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border border-emerald-500/25 bg-[#021f16] aspect-[16/9] sm:aspect-auto sm:min-h-[220px] md:min-h-[240px]">
+        {/* 1. Imagem de Alojamento no Fundo */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={ONDE_DORMIR_HERO_IMAGE}
+            alt="Alojamento e pensões em Moçambique"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Natural horizontal gradient overlay - rich emerald-black tone for superior readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#021f16]/95 via-[#021f16]/70 via-50% to-transparent pointer-events-none" />
+          {/* Subtle warm glow overlay to enhance resort dusk ambiance */}
+          <div className="absolute right-0 top-0 w-1/3 h-full bg-gradient-to-l from-amber-500/10 to-transparent pointer-events-none" />
         </div>
 
-        {/* Real Module Visit Counter */}
-        <div 
-          className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
-          title="Visitas ao módulo Onde Dormir"
-        >
-          <Eye className="w-3.5 h-3.5 text-sky-300 shrink-0" />
-          <span>{formatVisitCount(getModuleCount('onde_dormir'))}</span>
+        {/* Conteúdo no Lado Esquerdo - Alinhado, Agrupado e com Hierarquia Visual Harmonizada */}
+        <div className="relative z-20 p-3 sm:p-5 md:p-6 flex flex-col justify-center items-start text-left h-full max-w-[85%] sm:max-w-md md:max-w-lg gap-1 sm:gap-1.5">
+          {/* Badge de Visitas Alinhado */}
+          <div
+            className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-bold shadow-xs"
+            title="Visitas ao módulo Onde Dormir"
+          >
+            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-300 shrink-0" />
+            <span>{formatVisitCount(getModuleCount('onde_dormir'))} visitas</span>
+          </div>
+
+          {/* Título Principal Harmonizado */}
+          <h1 className="text-[14px] sm:text-lg md:text-xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
+            <span>ONDE DORMIR </span>
+            <span className="text-[#FACC15]">MOÇAMBIQUE</span>
+          </h1>
+
+          {/* Subtítulo Agrupado e Quebrado */}
+          <p className="text-white/90 text-[10px] sm:text-xs md:text-sm font-medium leading-tight sm:leading-snug drop-shadow-xs">
+            Pensões e Guest Houses verificadas. <br />
+            Encontre alojamento perto de si.
+          </p>
+
+          {/* Botões de Ação: + Registar sozinho e abaixo os 3 filtros alinhados na mesma linha bem menores */}
+          <div className="pt-0.5 space-y-1 w-full">
+            {/* Linha 1: + Registar como Proprietário Sozinha */}
+            <div>
+              <button
+                type="button"
+                onClick={onOpenRegisterModal}
+                className="h-6 sm:h-7 px-2.5 sm:px-3 bg-white hover:bg-neutral-50 active:scale-95 text-emerald-950 font-black text-[10px] sm:text-[11px] rounded-lg shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer touch-manipulation shrink-0"
+              >
+                <ShieldCheck className="w-3 h-3 text-emerald-700" />
+                <span>+ Registar como Proprietário</span>
+              </button>
+            </div>
+
+            {/* Linha 2: Pensões · Guest Houses · Quarto Casal (Alinhados na mesma linha, bem menores) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto no-scrollbar max-w-full">
+              {/* Quick Filter: Pensões */}
+              <button
+                type="button"
+                onClick={() => setSelectedType(selectedType === 'pensao' ? 'all' : 'pensao')}
+                className={`h-5 sm:h-6 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[8.5px] sm:text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 whitespace-nowrap ${
+                  selectedType === 'pensao'
+                    ? 'bg-[#FACC15] text-neutral-950 font-black shadow-xs border border-amber-300'
+                    : 'bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20'
+                }`}
+                title={selectedType === 'pensao' ? 'Filtro Pensões ativo (clique para limpar)' : 'Filtrar apenas Pensões'}
+              >
+                <Building className="w-2.5 h-2.5" />
+                <span>Pensões</span>
+              </button>
+
+              {/* Quick Filter: Guest Houses */}
+              <button
+                type="button"
+                onClick={() => setSelectedType(selectedType === 'guest_house' ? 'all' : 'guest_house')}
+                className={`h-5 sm:h-6 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[8.5px] sm:text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 whitespace-nowrap ${
+                  selectedType === 'guest_house'
+                    ? 'bg-[#FACC15] text-neutral-950 font-black shadow-xs border border-amber-300'
+                    : 'bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20'
+                }`}
+                title={selectedType === 'guest_house' ? 'Filtro Guest Houses ativo (clique para limpar)' : 'Filtrar apenas Guest Houses'}
+              >
+                <Home className="w-2.5 h-2.5" />
+                <span>Guest Houses</span>
+              </button>
+
+              {/* Quick Filter: Quarto Casal */}
+              <button
+                type="button"
+                onClick={() => setOnlyCoupleRooms(!onlyCoupleRooms)}
+                className={`h-5 sm:h-6 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[8.5px] sm:text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 whitespace-nowrap ${
+                  onlyCoupleRooms
+                    ? 'bg-[#FACC15] text-neutral-950 font-black shadow-xs border border-amber-300'
+                    : 'bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20'
+                }`}
+                title={onlyCoupleRooms ? 'Filtro Quarto Casal ativo (clique para limpar)' : 'Filtrar por Quarto Casal'}
+              >
+                <span className="text-[9px] sm:text-[10px]">🛏️</span>
+                <span>Quarto Casal</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

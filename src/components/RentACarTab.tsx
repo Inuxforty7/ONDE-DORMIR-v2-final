@@ -427,56 +427,56 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
 
   return (
     <div className="pb-16 sm:pb-20 pt-1 sm:pt-3 max-w-5xl mx-auto px-2.5 sm:px-4 space-y-2.5 sm:space-y-3.5">
-      {/* Banner */}
-      <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0">
-              <Car className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-2xl font-black tracking-tight leading-none">
-                  Rent-a-Car
-                </h1>
-                <span className="text-[9.5px] uppercase font-black tracking-wider bg-black/20 text-amber-200 px-2 py-0.5 rounded-full border border-amber-200/30 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  Verificado
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-orange-100 font-medium mt-0.5">
-                A viatura certa para cada destino.
-              </p>
-            </div>
+      {/* Banner: RENT-A-CAR MOÇAMBIQUE - 16:9 Mobile & Panorâmico */}
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border border-amber-500/25 bg-neutral-950 text-white aspect-[16/9] sm:aspect-auto sm:min-h-[200px] md:min-h-[220px]">
+        {/* Vídeo Background em Loop */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
+          src="https://res.cloudinary.com/dwlfwnbt0/video/upload/v1791544196/Create_Motion_Loop_Animation_20261009130823_m3huz5.mp4"
+        />
+
+        {/* Gradiente sutil reforçado apenas no lado esquerdo dos textos; lado direito sem textos continua 100% límpido e visível */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/85 via-black/45 via-55% to-transparent pointer-events-none" />
+
+        {/* Conteúdo no Lado Esquerdo - Alinhado, Agrupado e com Hierarquia Visual Harmonizada */}
+        <div className="relative z-20 p-3 sm:p-5 md:p-6 flex flex-col justify-center items-start text-left h-full max-w-[75%] sm:max-w-md md:max-w-lg gap-1 sm:gap-1.5">
+          {/* Badge de Visitas Alinhado */}
+          <div 
+            className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-bold shadow-xs"
+            title="Visitas ao módulo Rent-a-Car"
+          >
+            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 shrink-0" />
+            <span>{formatVisitCount(getModuleCount('rentacar'))} visitas</span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-            {/* Real Module Visit Counter */}
-            <div 
-              className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/20 text-white text-[11px] font-bold shrink-0 shadow-xs"
-              title="Visitas ao módulo Rent-a-Car"
-            >
-              <Eye className="w-3.5 h-3.5 text-amber-200 shrink-0" />
-              <span>{formatVisitCount(getModuleCount('rentacar'))}</span>
-            </div>
+          {/* Título Principal com Tamanho Reduzido e Harmonizado */}
+          <h1 className="text-[14px] sm:text-lg md:text-xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
+            <span>RENT-A-CAR </span>
+            <span className="text-[#FACC15]">MOÇAMBIQUE</span>
+          </h1>
 
+          {/* Subtítulo Agrupado e Quebrado */}
+          <p className="text-white text-[10px] sm:text-xs md:text-sm font-medium leading-tight sm:leading-snug drop-shadow-xs">
+            A viatura certa para cada destino. <br />
+            Frotas e proprietários verificados.
+          </p>
+
+          {/* Botão de Ação Alinhado e Compacto */}
+          <div className="pt-0.5 sm:pt-1">
             <button
+              type="button"
               onClick={handleOpenOwnerFleet}
-              className="w-full sm:w-auto h-9 sm:h-10 px-3.5 bg-white text-orange-900 hover:bg-orange-50 active:scale-95 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              className="h-6.5 sm:h-8 px-2.5 sm:px-4 bg-white text-orange-950 hover:bg-orange-50 active:scale-95 font-black text-[10px] sm:text-xs rounded-lg sm:rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer touch-manipulation shrink-0"
             >
-              <Plus className="w-3.5 h-3.5 text-orange-600" />
-              <span>Anunciar Viatura</span>
+              <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-600" />
+              <span>+ Anunciar Viatura</span>
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Security Status Line */}
-      <div className="p-2 sm:p-2.5 rounded-xl bg-amber-50 border border-amber-200/90 flex items-center gap-2 text-[11px] sm:text-xs text-amber-950">
-        <ShieldCheck className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-        <span className="leading-tight font-medium">
-          Viaturas verificadas com proprietários credenciados em Moçambique.
-        </span>
       </div>
 
       {/* Sticky Filters Bar */}
