@@ -24,6 +24,14 @@ export interface SubmitVerificationPayload {
   biNumber: string;
   targetType: 'USER_PROFILE' | 'OWNER_ACCOUNT' | 'VEHICLE' | 'TOUR_GUIDE';
   targetId?: string;
+  birthDate?: string;
+  phone?: string;
+  province?: string;
+  city?: string;
+  biFrontUrl?: string;
+  biBackUrl?: string;
+  selfieUrl?: string;
+  driverLicenseUrl?: string;
   biFrontHash?: string;
   biBackHash?: string;
   livenessPassed: boolean;

@@ -39,6 +39,7 @@ import {
   RoomFeatureId 
 } from '../types';
 import { propertyService } from '../services/propertyService';
+import { uploadService } from '../services/uploadService';
 import { 
   PROPERTY_SERVICES_CATALOG, 
   ROOM_FEATURES_CATALOG 
@@ -263,6 +264,37 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
     if (newPhotoUrl.trim()) {
       setPhotos((prev) => [...prev, newPhotoUrl.trim()]);
       setNewPhotoUrl('');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 8 * 1024 * 1024) continue;
+
+      // 1. Local preview first
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const localData = ev.target?.result as string;
+        if (localData) {
+          setPhotos((prev) => [...prev, localData]);
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // 2. Real upload to server
+      try {
+        const res = await uploadService.uploadFile(file, 'property');
+        if (res.success && res.data?.url) {
+          const serverUrl = res.data.url;
+          setPhotos((prev) => [...prev.slice(0, -1), serverUrl]);
+        }
+      } catch (err) {
+        console.warn('[Accommodation Photo Upload Error]', err);
+      }
     }
   };
 
@@ -758,22 +790,36 @@ export const RegisterAccommodationModal: React.FC<RegisterAccommodationModalProp
                   ))}
                 </div>
 
-                {/* Add Photo Input */}
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="Colar URL de fotografia (https://...)"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    className="flex-1 h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddPhoto}
-                    className="h-11 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
-                  >
-                    Adicionar
-                  </button>
+                {/* Add Photo Input: File Upload & URL */}
+                <div className="space-y-2">
+                  <label className="flex items-center justify-center gap-2 w-full h-11 border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/60 hover:bg-emerald-50 rounded-xl text-xs font-bold text-emerald-800 cursor-pointer transition-all">
+                    <Upload className="w-4 h-4 text-emerald-600" />
+                    <span>Carregar Fotos do Dispositivo (JPG, PNG, WebP)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="Ou colar URL de fotografia (https://...)"
+                      value={newPhotoUrl}
+                      onChange={(e) => setNewPhotoUrl(e.target.value)}
+                      className="flex-1 h-11 px-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddPhoto}
+                      className="h-11 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
+                    >
+                      Adicionar
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 pt-2">

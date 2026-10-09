@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { platformOwnerService, PlatformOwnerMetrics } from '../services/platformOwnerService';
 import { e2paymentsService, E2PAYMENTS_OFFICIAL_URLS } from '../services/e2paymentsService';
+import { heartLinkAccessService } from '../services/heartLinkAccessService';
 import { E2PaymentsSetupModal } from './E2PaymentsSetupModal';
 import { Logo } from './Logo';
 
@@ -543,6 +544,44 @@ export const PlatformOwnerDashboardModal: React.FC<PlatformOwnerDashboardModalPr
                           <span className="text-sm font-black text-rose-400">{metrics.modulePerformance.loveShop.ordersCount}</span>
                         </div>
                       </div>
+
+                      {/* Real HeartLink Pass Monetization Metrics */}
+                      {(() => {
+                        const hlStats = heartLinkAccessService.getStats();
+                        return (
+                          <div className="pt-2 border-t border-rose-950/80 space-y-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400/90 block">
+                              Métricas de Passes & Monetização HeartLink:
+                            </span>
+                            <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                              <div className="p-2 rounded-xl bg-neutral-900/90 border border-neutral-800">
+                                <span className="text-neutral-400 block text-[9.5px]">Passes Contacto (20 MT)</span>
+                                <span className="text-xs font-black text-white">{hlStats.contactPassesCount} un.</span>
+                                <span className="text-[10px] text-emerald-400 font-bold block">{hlStats.revenueContactPasses} MT</span>
+                              </div>
+                              <div className="p-2 rounded-xl bg-neutral-900/90 border border-neutral-800">
+                                <span className="text-neutral-400 block text-[9.5px]">Passes Diários (50 MT)</span>
+                                <span className="text-xs font-black text-white">{hlStats.dailyPassesCount} un.</span>
+                                <span className="text-[10px] text-emerald-400 font-bold block">{hlStats.revenueDailyPasses} MT</span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5 text-center text-[9.5px]">
+                              <div className="p-1.5 rounded-lg bg-neutral-900">
+                                <span className="text-neutral-400 block">Desbloqueados</span>
+                                <span className="text-xs font-black text-rose-300">{hlStats.unlockedContactsCount}</span>
+                              </div>
+                              <div className="p-1.5 rounded-lg bg-neutral-900">
+                                <span className="text-neutral-400 block">Conversões Mensais</span>
+                                <span className="text-xs font-black text-amber-300">{hlStats.conversionsToMonthlyCount}</span>
+                              </div>
+                              <div className="p-1.5 rounded-lg bg-neutral-900">
+                                <span className="text-neutral-400 block">Receita Total</span>
+                                <span className="text-xs font-black text-emerald-400">{hlStats.totalRevenue} MT</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

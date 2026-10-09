@@ -23,32 +23,34 @@ export interface HeartLinkPlanConfig {
 export const HEARTLINK_ALL_PLANS: HeartLinkPlanConfig[] = [
   {
     id: 'contact_20mt',
-    name: 'Desbloquear apenas este contacto',
+    name: 'Passe Contacto',
     priceMt: 20,
-    durationLabel: 'Acesso permanente exclusivo',
+    durationLabel: 'Permanente para este contacto',
     type: 'single',
     badge: '20 MT',
-    description: 'Desbloqueia permanentemente apenas este contacto específico.',
+    description: 'Desbloqueia permanentemente apenas este contacto específico sem necessidade de adquirir plano mensal.',
     features: [
-      'Desbloqueia apenas este contacto permanentemente',
-      'Permite troca de mensagens no chat',
-      'Acesso aos detalhes de telefone / WhatsApp',
-      'Não desbloqueia outros contactos',
+      'Desbloquear apenas aquele contacto',
+      'Permite ver telefone e WhatsApp',
+      'Permite enviar mensagens no chat para este contacto',
+      'Não desbloqueia outros contactos nem mensagens de outros utilizadores',
+      'Validade permanente (não precisa voltar a pagar para o mesmo contacto)',
     ]
   },
   {
     id: 'access_50mt',
-    name: 'Acesso 24 Horas',
+    name: 'Passe Diário (24h)',
     priceMt: 50,
-    durationLabel: 'Válido por 24 horas',
+    durationLabel: 'Válido por exactamente 24 horas',
     type: '24h',
     badge: '50 MT',
-    description: 'Acesso a mensagens e contactos durante 24 horas.',
+    description: 'Acesso completo durante 24 horas a todas as funções e mensagens.',
     features: [
-      'Válido exactamente por 24 horas',
-      'Permite troca de mensagens durante o período',
-      'Acesso a contactos elegíveis',
-      'Expira automaticamente após 24 horas',
+      'Mensagens ilimitadas durante 24 horas',
+      'Ver contactos, telefones e WhatsApp',
+      'Responder a todas as novas mensagens',
+      'Ver quem visitou o perfil e funções Premium durante 24h',
+      'Duração exacta de 24 horas (regressa ao plano gratuito após expirar)',
     ]
   },
   {
@@ -59,7 +61,7 @@ export const HEARTLINK_ALL_PLANS: HeartLinkPlanConfig[] = [
     type: 'monthly',
     tier: 'heart',
     badge: '100 MT',
-    description: 'Nível P2P Coração ♥️ com acesso de 30 dias.',
+    description: 'Nível P2P Coração ♥️ com acesso ilimitado de 30 dias.',
     features: [
       'Plano com termo de 30 dias',
       'Activa o nível P2P correspondente (Coração ♥️)',
@@ -75,7 +77,7 @@ export const HEARTLINK_ALL_PLANS: HeartLinkPlanConfig[] = [
     type: 'monthly',
     tier: 'diamond',
     badge: '250 MT',
-    description: 'Nível P2P Diamante 💎 com acesso de 30 dias.',
+    description: 'Nível P2P Diamante 💎 com acesso ilimitado de 30 dias.',
     features: [
       'Plano com termo de 30 dias',
       'Activa o nível P2P correspondente (Diamante 💎)',
@@ -100,6 +102,26 @@ export const HEARTLINK_ALL_PLANS: HeartLinkPlanConfig[] = [
     ]
   }
 ];
+
+export type HeartLinkPriorityLevel = 
+  | 'vip'
+  | 'diamond'
+  | 'heart'
+  | 'daily_pass'
+  | 'contact_pass'
+  | 'free';
+
+export interface HeartLinkStats {
+  contactPassesCount: number;
+  dailyPassesCount: number;
+  monthlyPlansCount: number;
+  revenueContactPasses: number;
+  revenueDailyPasses: number;
+  revenueMonthlyPlans: number;
+  totalRevenue: number;
+  unlockedContactsCount: number;
+  conversionsToMonthlyCount: number;
+}
 
 export interface HeartLinkTransaction {
   id: string;
@@ -146,6 +168,7 @@ export interface HeartLinkNotification {
 const STORAGE_KEY_STATE = 'onde_dormir_hl_access_state';
 const STORAGE_KEY_TX = 'onde_dormir_hl_transactions';
 const STORAGE_KEY_NOTIFS = 'onde_dormir_hl_notifications';
+const STORAGE_KEY_STATS = 'onde_dormir_hl_stats';
 
 type AccessListener = () => void;
 
@@ -457,7 +480,119 @@ class HeartLinkAccessService {
 
     this.saveTransaction(transaction);
 
+    // 4. Update and persist statistics
+    this.updateStatsOnPayment(params.planId, amount, params.targetContactId);
+
     return { success: true, transaction };
+  }
+
+  public getPriorityLevel(contactId?: string): HeartLinkPriorityLevel {
+    this.cleanExpired();
+    const state = this.getLocalState();
+    if (state.activeMonthlyPlan?.tier === 'king') return 'vip';
+    if (state.activeMonthlyPlan?.tier === 'diamond') return 'diamond';
+    if (state.activeMonthlyPlan?.tier === 'heart') return 'heart';
+    if (state.access24h) return 'daily_pass';
+    if (contactId && state.unlockedSpecificContacts.includes(contactId)) return 'contact_pass';
+    return 'free';
+  }
+
+  public getStats(): HeartLinkStats {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_STATS);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch {
+      // fallback
+    }
+
+    // Compute from existing transactions if no stored stats cache
+    const txs = this.getTransactions();
+    let contactPassesCount = 0;
+    let dailyPassesCount = 0;
+    let monthlyPlansCount = 0;
+    let revenueContactPasses = 0;
+    let revenueDailyPasses = 0;
+    let revenueMonthlyPlans = 0;
+    const unlockedIds = new Set<string>();
+    let conversionsToMonthlyCount = 0;
+
+    let hasHadPassBefore = false;
+    for (const tx of [...txs].reverse()) {
+      if (tx.planId === 'contact_20mt') {
+        contactPassesCount++;
+        revenueContactPasses += tx.amount || 20;
+        if (tx.targetContactId) unlockedIds.add(tx.targetContactId);
+        hasHadPassBefore = true;
+      } else if (tx.planId === 'access_50mt') {
+        dailyPassesCount++;
+        revenueDailyPasses += tx.amount || 50;
+        if (tx.targetContactId) unlockedIds.add(tx.targetContactId);
+        hasHadPassBefore = true;
+      } else if (tx.planId.startsWith('monthly_')) {
+        monthlyPlansCount++;
+        revenueMonthlyPlans += tx.amount;
+        if (hasHadPassBefore) {
+          conversionsToMonthlyCount++;
+        }
+      }
+    }
+
+    const stats: HeartLinkStats = {
+      contactPassesCount,
+      dailyPassesCount,
+      monthlyPlansCount,
+      revenueContactPasses,
+      revenueDailyPasses,
+      revenueMonthlyPlans,
+      totalRevenue: revenueContactPasses + revenueDailyPasses + revenueMonthlyPlans,
+      unlockedContactsCount: unlockedIds.size,
+      conversionsToMonthlyCount,
+    };
+
+    return stats;
+  }
+
+  private updateStatsOnPayment(planId: HeartLinkPlanId, amount: number, contactId?: string): void {
+    try {
+      const stats = this.getStats();
+      const txs = this.getTransactions();
+      const hadPreviousPass = txs.some(
+        (t) => t.planId === 'contact_20mt' || t.planId === 'access_50mt'
+      );
+
+      if (planId === 'contact_20mt') {
+        stats.contactPassesCount += 1;
+        stats.revenueContactPasses += amount;
+        if (contactId) {
+          const state = this.getLocalState();
+          stats.unlockedContactsCount = state.unlockedSpecificContacts.length;
+        }
+      } else if (planId === 'access_50mt') {
+        stats.dailyPassesCount += 1;
+        stats.revenueDailyPasses += amount;
+        if (contactId) {
+          const state = this.getLocalState();
+          stats.unlockedContactsCount = state.unlockedSpecificContacts.length;
+        }
+      } else {
+        // Monthly
+        stats.monthlyPlansCount += 1;
+        stats.revenueMonthlyPlans += amount;
+        if (hadPreviousPass) {
+          stats.conversionsToMonthlyCount += 1;
+        }
+      }
+
+      stats.totalRevenue =
+        stats.revenueContactPasses + stats.revenueDailyPasses + stats.revenueMonthlyPlans;
+
+      localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
+      this.notify();
+    } catch {
+      // fallback
+    }
   }
 
   public getTransactions(): HeartLinkTransaction[] {

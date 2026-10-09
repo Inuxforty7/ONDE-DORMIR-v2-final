@@ -16,6 +16,7 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { INITIAL_ACCOMMODATIONS } from './src/data/accommodations.js';
@@ -30,10 +31,20 @@ const PORT = process.env.PORT || 3000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const IS_DEMO_MODE = process.env.DEMO_MODE !== 'false';
 
+// Ensure persistent uploads storage directory exists
+const UPLOADS_DIR = path.resolve(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(UPLOADS_DIR));
+
 // ============================================================================
 // SECURITY & MIDDLEWARE SETUP
 // ============================================================================
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '35mb' }));
+app.use(express.urlencoded({ extended: true, limit: '35mb' }));
 
 // Secure HTTP Headers
 app.use((_req: Request, res: Response, next: NextFunction) => {
@@ -115,6 +126,14 @@ interface VerificationRecord {
   targetId: string;
   fullName: string;
   biNumber: string;
+  birthDate?: string;
+  phone?: string;
+  province?: string;
+  city?: string;
+  biFrontUrl?: string;
+  biBackUrl?: string;
+  selfieUrl?: string;
+  driverLicenseUrl?: string;
   livenessPassed: boolean;
   livenessScore: number;
   status: 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED';
@@ -908,14 +927,42 @@ app.post('/api/properties', (req: Request, res: Response) => {
 
 // 8. VERIFICATION STATE MACHINE
 app.post('/api/verification/request', (req: Request, res: Response) => {
-  const { fullName, biNumber, targetType, targetId, livenessPassed, livenessScore } = req.body;
+  const { 
+    fullName, 
+    biNumber, 
+    targetType, 
+    targetId, 
+    livenessPassed, 
+    livenessScore,
+    birthDate,
+    phone,
+    province,
+    city,
+    biFrontUrl,
+    biBackUrl,
+    selfieUrl,
+    driverLicenseUrl,
+  } = req.body;
 
-  if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 3) {
-    return res.status(400).json({ success: false, error: 'Nome completo obrigatório conforme documento de identificação.' });
+  if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 4) {
+    return res.status(400).json({ success: false, error: 'Nome completo obrigatório conforme documento oficial.' });
   }
 
-  if (!biNumber || typeof biNumber !== 'string' || biNumber.trim().length < 8) {
-    return res.status(400).json({ success: false, error: 'Número de Bilhete de Identidade (BI) ou Passaporte inválido.' });
+  // Mozambican BI is typically 12 digits followed by 1 uppercase letter (ex: 110100456789M) or passport (minimum 8 alphanumeric characters)
+  const cleanBi = (biNumber || '').toString().trim().toUpperCase();
+  const biRegex = /^[0-9]{12}[A-Z]$|^[A-Z0-9]{7,15}$/;
+  if (!cleanBi || !biRegex.test(cleanBi)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Número de Bilhete de Identidade (BI) inválido. Deve conter 12 dígitos e 1 letra maiúscula no final (ex: 110100456789M).' 
+    });
+  }
+
+  if (phone) {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length < 8) {
+      return res.status(400).json({ success: false, error: 'Número de telefone moçambicano inválido.' });
+    }
   }
 
   const effectiveTargetId = targetId || `usr_${crypto.randomUUID().slice(0, 8)}`;
@@ -940,7 +987,15 @@ app.post('/api/verification/request', (req: Request, res: Response) => {
     targetType: targetType || 'USER_PROFILE',
     targetId: effectiveTargetId,
     fullName: fullName.trim(),
-    biNumber: biNumber.trim(),
+    biNumber: cleanBi,
+    birthDate,
+    phone,
+    province,
+    city,
+    biFrontUrl,
+    biBackUrl,
+    selfieUrl,
+    driverLicenseUrl,
     livenessPassed: Boolean(livenessPassed),
     livenessScore: livenessScore || 0.95,
     status: isApproved ? 'VERIFIED' : 'UNDER_REVIEW',
@@ -962,7 +1017,7 @@ app.post('/api/verification/request', (req: Request, res: Response) => {
     action: 'VERIFICATION_SUBMITTED',
     resourceType: record.targetType,
     resourceId: effectiveTargetId,
-    newState: { status: record.status },
+    newState: { status: record.status, biNumber: cleanBi, fullName: record.fullName },
     createdAt: new Date().toISOString(),
   });
 
@@ -2082,6 +2137,120 @@ app.get('/api/admin/reports', authenticateToken, requireRole(['ADMIN', 'SUPER_AD
     success: true,
     data: reportsStore.slice(0, 50),
   });
+});
+
+// ============================================================================
+// 14. REAL FILE & MEDIA UPLOAD ENDPOINTS (/api/upload)
+// ============================================================================
+interface UploadRequestPayload {
+  dataUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  category?: 'document' | 'profile' | 'property' | 'vehicle' | 'loveshop' | 'general';
+}
+
+const ALLOWED_MIME_TYPES = new Map<string, string>([
+  ['image/jpeg', '.jpg'],
+  ['image/jpg', '.jpg'],
+  ['image/png', '.png'],
+  ['image/webp', '.webp'],
+  ['image/gif', '.gif'],
+  ['video/mp4', '.mp4'],
+  ['video/webm', '.webm'],
+  ['video/quicktime', '.mov'],
+  ['application/pdf', '.pdf'],
+]);
+
+const MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
+const MAX_VIDEO_SIZE_BYTES = 30 * 1024 * 1024; // 30MB
+
+app.post('/api/upload', (req: Request, res: Response) => {
+  const { dataUrl, fileName, fileType, category = 'general' } = req.body as UploadRequestPayload;
+
+  if (!dataUrl || typeof dataUrl !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'Payload inválido: dataUrl (base64) é obrigatório.',
+    });
+  }
+
+  // Parse Data URL: data:[<mediatype>][;base64],<data>
+  const matches = dataUrl.match(/^data:([a-zA-Z0-9\/+.-]+);base64,(.+)$/);
+  let mime = fileType;
+  let base64Data: string;
+
+  if (matches) {
+    mime = matches[1].toLowerCase();
+    base64Data = matches[2];
+  } else {
+    // If sent purely as base64 without prefix
+    base64Data = dataUrl;
+  }
+
+  if (!mime || !ALLOWED_MIME_TYPES.has(mime)) {
+    return res.status(400).json({
+      success: false,
+      error: `Formato de arquivo não suportado (${mime || 'desconhecido'}). Envie JPG, PNG, WebP, MP4, WebM ou PDF.`,
+    });
+  }
+
+  const extension = ALLOWED_MIME_TYPES.get(mime)!;
+  const isVideo = mime.startsWith('video/');
+  const maxBytes = isVideo ? MAX_VIDEO_SIZE_BYTES : MAX_IMAGE_SIZE_BYTES;
+
+  try {
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    if (buffer.length > maxBytes) {
+      return res.status(413).json({
+        success: false,
+        error: `Arquivo excede o limite permitido (${isVideo ? '30MB para vídeos' : '8MB para imagens'}).`,
+      });
+    }
+
+    // Generate SHA-256 integrity hash and unique persistent filename
+    const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
+    const uniqueId = `${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
+    const safeBaseName = (fileName || 'file')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .slice(0, 30);
+    const finalFileName = `${category}_${uniqueId}_${safeBaseName}${extension}`;
+
+    const filePath = path.join(UPLOADS_DIR, finalFileName);
+    fs.writeFileSync(filePath, buffer);
+
+    const fileUrl = `/uploads/${finalFileName}`;
+
+    auditLogsStore.unshift({
+      id: crypto.randomUUID(),
+      actorId: (req as any).user?.userId || 'anonymous',
+      actorRole: 'USER',
+      action: 'FILE_UPLOADED',
+      resourceType: category.toUpperCase(),
+      resourceId: finalFileName,
+      newState: { fileUrl, sizeBytes: buffer.length, mimeType: mime },
+      createdAt: new Date().toISOString(),
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        url: fileUrl,
+        fileName: finalFileName,
+        mimeType: mime,
+        sizeBytes: buffer.length,
+        hash: fileHash,
+        category,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+  } catch (err: any) {
+    console.error('[Upload Error]', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Falha ao processar e salvar o arquivo no servidor.',
+    });
+  }
 });
 
 // Generic 404 for unmatched API routes

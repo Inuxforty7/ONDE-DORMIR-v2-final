@@ -34,14 +34,14 @@ export const getStatusDetails = (
 ) => {
   if (!isContactUnlocked) {
     return {
-      label: 'Contacto indisponível',
-      shortLabel: 'Indisponível',
+      label: 'Requer desbloqueio',
+      shortLabel: 'Bloqueado',
       colorClass: 'bg-neutral-50 text-neutral-600 border-neutral-200',
       badgeBg: 'bg-neutral-400',
       dotColor: 'bg-rose-500',
-      icon: <X className="w-3.5 h-3.5 text-rose-500 stroke-[2.5]" />,
-      statusIcon: '✕',
-      statusText: 'Contacto indisponível'
+      icon: <Lock className="w-3.5 h-3.5 text-rose-500 stroke-[2.5]" />,
+      statusIcon: '🔒',
+      statusText: 'Bloqueado (20 MT ou Passe 24h)'
     };
   }
 
@@ -140,22 +140,22 @@ export const HeartLinkContactAvailabilitySection: React.FC<HeartLinkContactAvail
       )}
 
       {!isContactUnlocked && (
-        <div className="mb-2.5 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 space-y-1">
-          <div className="flex items-center gap-1.5 font-extrabold text-amber-900">
-            <Lock className="w-3.5 h-3.5 text-amber-700" />
-            <span>Contacto indisponível no momento</span>
+        <div className="mb-2.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-950 space-y-1.5">
+          <div className="flex items-center gap-1.5 font-extrabold text-rose-900">
+            <Lock className="w-3.5 h-3.5 text-rose-600" />
+            <span>Contacto Bloqueado</span>
           </div>
-          <p className="text-[11px] text-amber-800 leading-snug">
-            O perfil é público e visível, mas o acesso a contactos directos requer que o titular tenha um plano de contacto ativo.
+          <p className="text-[11px] text-neutral-600 leading-snug">
+            O perfil e as fotos são públicos, mas o acesso a telefone, WhatsApp e troca de mensagens directas requer o desbloqueio de contacto.
           </p>
-          {isOwnProfile && onActivateContactAccess && (
+          {onActivateContactAccess && (
             <button
               type="button"
               onClick={onActivateContactAccess}
-              className="mt-1 w-full h-8 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              className="mt-1 w-full h-8 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-lg font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Ativar Acesso a Contactos</span>
+              <Lock className="w-3.5 h-3.5" />
+              <span>Desbloquear este contacto (20 MT) ou Ver Planos</span>
             </button>
           )}
         </div>

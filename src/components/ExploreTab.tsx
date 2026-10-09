@@ -448,7 +448,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             title="Visitas ao módulo Onde Dormir"
           >
             <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-300 shrink-0" />
-            <span>{formatVisitCount(getModuleCount('onde_dormir'))} visitas</span>
+            <span>{formatVisitCount(getModuleCount('onde_dormir'))}</span>
           </div>
 
           {/* Título Principal Harmonizado */}

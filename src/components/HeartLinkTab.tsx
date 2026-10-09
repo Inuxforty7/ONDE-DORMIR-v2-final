@@ -116,7 +116,7 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
 
   // Compact P2P Chat State
   const [activeP2PGroupModal, setActiveP2PGroupModal] = useState<P2PTier | null>(null);
-  const [p2pModalPlanTarget, setP2PModalPlanTarget] = useState<'vis_24h' | 'vis_7d' | 'vis_30d'>('vis_24h');
+  const [p2pModalPlanTarget, setP2PModalPlanTarget] = useState<HeartLinkPlanId | 'vis_24h' | 'vis_7d' | 'vis_30d' | undefined>('contact_20mt');
   const [p2pTab, setP2PTab] = useState<'chat' | 'contactos'>('chat');
   const [p2pMessages, setP2PMessages] = useState<Record<P2PTier, P2PGroupMessage[]>>(() => ({
     heart: heartLinkService.getP2PMessages('heart'),
@@ -174,7 +174,10 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     return hlNotifications.find((n) => !n.read) || null;
   }, [hlNotifications]);
 
-  const handleRespondToNotification = (notif: HeartLinkNotification) => {
+  const handleRespondToNotification = (
+    notif: HeartLinkNotification,
+    option: 'unlock_20mt' | 'daily_50mt' | 'see_plans' = 'unlock_20mt'
+  ) => {
     heartLinkAccessService.markNotificationAsRead(notif.id);
     const hasPaidPlan = heartLinkAccessService.hasActiveMonthlyPlan() || heartLinkAccessService.canContactUser(notif.contactId);
     const target = profiles.find((p) => p.id === notif.contactId) || ({
@@ -194,6 +197,13 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     if (!hasPaidPlan) {
       setTargetUnlockProfile(target);
       setPendingAction({ type: 'chat', profile: target });
+      if (option === 'daily_50mt') {
+        setP2PModalPlanTarget('access_50mt');
+      } else if (option === 'see_plans') {
+        setP2PModalPlanTarget('monthly_100mt');
+      } else {
+        setP2PModalPlanTarget('contact_20mt');
+      }
       setIsVisibilityModalOpen(true);
     } else {
       setSelectedProfile(null);
@@ -281,6 +291,8 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
     const saved = localStorage.getItem('onde_dormir_user_verification_dossier');
     return saved ? JSON.parse(saved) : null;
   });
+
+  const isUserRegisteredAndAuth = Boolean(myProfile || verifiedDossier);
 
   const [expandedProfileSections, setExpandedProfileSections] = useState<{
     about: boolean;
@@ -824,9 +836,9 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
         </div>
       </div>
 
-      {/* Real Contact Attempt Notification Banner: "Maria wants to talk to you on HeartLink" */}
-      {unreadContactNotif && (
-        <div className="bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 text-white p-3 sm:p-3.5 rounded-2xl sm:rounded-3xl shadow-md border border-rose-400/40 flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-200">
+      {/* Real Contact Attempt Notification Banner: Only for registered & authenticated users with no active monthly plan */}
+      {isUserRegisteredAndAuth && unreadContactNotif && !accessState.hasActiveMonthlyPlan && (
+        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-3 sm:p-3.5 rounded-2xl sm:rounded-3xl shadow-md border border-rose-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {unreadContactNotif.contactPhoto ? (
               <img
@@ -841,22 +853,40 @@ export const HeartLinkTab: React.FC<HeartLinkTabProps> = ({
             )}
             <div className="min-w-0">
               <span className="text-[9.5px] font-black uppercase tracking-wider bg-black/25 text-pink-200 px-2 py-0.5 rounded-md inline-block">
-                Notificação de Contacto
+                Interesse no Perfil
               </span>
               <p className="text-xs sm:text-sm font-black text-white truncate mt-0.5">
-                {unreadContactNotif.message || `${unreadContactNotif.contactName} quer conversar consigo no HeartLink.`}
+                Alguém demonstrou interesse no seu perfil.
+              </p>
+              <p className="text-[11px] text-pink-100 truncate">
+                {unreadContactNotif.contactName} quer conversar consigo no HeartLink.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0">
             <button
               type="button"
-              onClick={() => handleRespondToNotification(unreadContactNotif)}
-              className="h-9 px-3.5 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 rounded-xl text-xs font-black shadow-xs cursor-pointer transition-all flex items-center gap-1.5"
+              onClick={() => handleRespondToNotification(unreadContactNotif, 'unlock_20mt')}
+              className="h-8.5 px-3 bg-white text-rose-600 hover:bg-rose-50 active:scale-95 rounded-xl text-xs font-black shadow-xs cursor-pointer transition-all flex items-center gap-1"
             >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>Desbloquear Contacto</span>
+              <Check className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Desbloquear este contacto – 20 MT</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRespondToNotification(unreadContactNotif, 'daily_50mt')}
+              className="h-8.5 px-2.5 bg-rose-800/80 hover:bg-rose-900 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1 border border-white/20"
+              title="Acesso completo 24 horas"
+            >
+              <span>Passe Diário – 50 MT</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRespondToNotification(unreadContactNotif, 'see_plans')}
+              className="h-8.5 px-2.5 bg-black/20 hover:bg-black/30 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1"
+            >
+              <span>Ver planos</span>
             </button>
             <button
               type="button"

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Camera, Video, Upload, Trash2, RefreshCw, AlertCircle, Play, Film, CheckCircle2, Image as ImageIcon } from 'lucide-react';
+import { uploadService } from '../services/uploadService';
 
 export interface HeartLinkMediaState {
   photos: (string | null)[]; // Exactly 4 slots
@@ -43,7 +44,7 @@ export const HeartLinkMediaManager: React.FC<HeartLinkMediaManagerProps> = ({
   ];
 
   // Helper to validate and convert file
-  const handlePhotoFileChange = (slotIndex: number, file: File) => {
+  const handlePhotoFileChange = async (slotIndex: number, file: File) => {
     setErrorMsg(null);
 
     // Validate type
@@ -58,6 +59,7 @@ export const HeartLinkMediaManager: React.FC<HeartLinkMediaManagerProps> = ({
       return;
     }
 
+    // 1. Instant preview for immediate UI feedback
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
@@ -72,9 +74,27 @@ export const HeartLinkMediaManager: React.FC<HeartLinkMediaManagerProps> = ({
       });
     };
     reader.readAsDataURL(file);
+
+    // 2. Real upload to backend server for persistence
+    try {
+      const res = await uploadService.uploadFile(file, 'profile');
+      if (res.success && res.data?.url) {
+        const updatedPhotos = [...media.photos];
+        while (updatedPhotos.length < 4) {
+          updatedPhotos.push(null);
+        }
+        updatedPhotos[slotIndex] = res.data.url;
+        onChange({
+          ...media,
+          photos: updatedPhotos,
+        });
+      }
+    } catch (err) {
+      console.warn('[HeartLink Media Upload Error]', err);
+    }
   };
 
-  const handleVideoFileChange = (file: File) => {
+  const handleVideoFileChange = async (file: File) => {
     setErrorMsg(null);
 
     // Validate type
@@ -89,6 +109,7 @@ export const HeartLinkMediaManager: React.FC<HeartLinkMediaManagerProps> = ({
       return;
     }
 
+    // 1. Instant preview
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
@@ -99,6 +120,20 @@ export const HeartLinkMediaManager: React.FC<HeartLinkMediaManagerProps> = ({
       });
     };
     reader.readAsDataURL(file);
+
+    // 2. Real upload to backend server
+    try {
+      const res = await uploadService.uploadFile(file, 'profile');
+      if (res.success && res.data?.url) {
+        onChange({
+          ...media,
+          video: res.data.url,
+          videoDuration: '0:30 min',
+        });
+      }
+    } catch (err) {
+      console.warn('[HeartLink Video Upload Error]', err);
+    }
   };
 
   const handleRemovePhoto = (slotIndex: number) => {

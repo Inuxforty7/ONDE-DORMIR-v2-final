@@ -12,7 +12,10 @@ import {
   User,
   ShieldCheck,
   MapPin,
-  Lock
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  BarChart3
 } from 'lucide-react';
 import { HeartLinkTwoHeartsIcon } from './HeartLinkLogo';
 import { P2PGreenHeartIcon, P2PBlueDiamondIcon, P2PGoldenCrownIcon } from './HeartLinkP2PIcons';
@@ -80,6 +83,14 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
     return HEARTLINK_ALL_PLANS;
   }, [hasActiveMonthly]);
 
+  const passPlans = useMemo(() => {
+    return availablePlans.filter((p) => p.type === 'single' || p.type === '24h');
+  }, [availablePlans]);
+
+  const monthlyPlans = useMemo(() => {
+    return availablePlans.filter((p) => p.type === 'monthly');
+  }, [availablePlans]);
+
   const mapInitialId = (id?: string): HeartLinkPlanId => {
     if (id === 'vis_24h') return 'monthly_100mt';
     if (id === 'vis_7d') return 'monthly_250mt';
@@ -93,9 +104,18 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
     mapInitialId(initialPlanId)
   );
 
+  const [showFullPlans, setShowFullPlans] = useState<boolean>(() => {
+    return initialPlanId ? String(initialPlanId).startsWith('monthly_') || String(initialPlanId).startsWith('vis_') : false;
+  });
+
+  const [showStats, setShowStats] = useState<boolean>(false);
+
   useEffect(() => {
     if (initialPlanId) {
       setSelectedPlanId(mapInitialId(initialPlanId));
+      if (String(initialPlanId).startsWith('monthly_') || String(initialPlanId).startsWith('vis_')) {
+        setShowFullPlans(true);
+      }
     } else if (!hasActiveMonthly) {
       setSelectedPlanId('contact_20mt');
     } else if (availablePlans.length > 0 && !availablePlans.some((p) => p.id === selectedPlanId)) {
@@ -287,65 +307,166 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                 </div>
               )}
 
-              {/* Options List */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-neutral-800 uppercase tracking-wide block">
-                  OPÇÕES DE ACESSO AO CONTACTO:
-                </label>
-
-                <div className="grid grid-cols-1 gap-2">
-                  {availablePlans.map((plan) => {
-                    const isSelected = selectedPlanId === plan.id;
-
-                    return (
-                      <div
-                        key={plan.id}
-                        onClick={() => setSelectedPlanId(plan.id)}
-                        className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-1.5 ${
-                          isSelected
-                            ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-600/20'
-                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 pr-6">
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            {getPlanIcon(plan)}
-                            <div className="min-w-0">
-                              <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight block truncate">
-                                {plan.name}
-                              </span>
-                              <span className="text-[10px] text-neutral-500 font-medium block">
-                                {plan.durationLabel}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <div className="font-black text-base sm:text-lg text-rose-600 tracking-tight whitespace-nowrap">
-                              {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Bulleted features */}
-                        <div className="pt-1.5 border-t border-neutral-200/70 grid grid-cols-1 gap-1 text-xs">
-                          {plan.features.map((feat, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5 text-[10.5px] text-neutral-700">
-                              <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                              <span className="leading-tight">{feat}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {isSelected && (
-                          <div className="absolute top-3 right-3 w-4.5 h-4.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+              {/* Options List with Contact Blocked suggestion interface */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-neutral-900">
+                    <Lock className="w-4 h-4 text-rose-600" />
+                    <span className="text-xs sm:text-sm font-black uppercase tracking-wide">
+                      {targetProfile ? '🔒 Contacto bloqueado' : 'Opções de Acesso ao Contacto'}
+                    </span>
+                  </div>
+                  {!hasActiveMonthly && (
+                    <span className="text-[10.5px] font-bold text-neutral-500">
+                      Escolha uma opção:
+                    </span>
+                  )}
                 </div>
+
+                {/* PASSES (20 MT and 50 MT) - Only shown if user has NO active monthly plan */}
+                {!hasActiveMonthly && passPlans.length > 0 && (
+                  <div className="grid grid-cols-1 gap-2">
+                    {passPlans.map((plan) => {
+                      const isSelected = selectedPlanId === plan.id;
+                      const isContactPass = plan.id === 'contact_20mt';
+
+                      return (
+                        <div
+                          key={plan.id}
+                          onClick={() => setSelectedPlanId(plan.id)}
+                          className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-1.5 ${
+                            isSelected
+                              ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-600/20'
+                              : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 pr-6">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              {getPlanIcon(plan)}
+                              <div className="min-w-0">
+                                <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight block truncate">
+                                  {isContactPass
+                                    ? 'Desbloquear apenas este contacto — 20 MT'
+                                    : 'Passe Diário (24h) — 50 MT'}
+                                </span>
+                                <span className="text-[10px] text-neutral-500 font-medium block">
+                                  {plan.durationLabel}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <div className="font-black text-base sm:text-lg text-rose-600 tracking-tight whitespace-nowrap">
+                                {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bulleted features */}
+                          <div className="pt-1.5 border-t border-neutral-200/70 grid grid-cols-1 gap-1 text-xs">
+                            {plan.features.map((feat, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5 text-[10.5px] text-neutral-700">
+                                <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                <span className="leading-tight">{feat}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {isSelected && (
+                            <div className="absolute top-3 right-3 w-4.5 h-4.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Button: Ver planos completos */}
+                    <button
+                      type="button"
+                      onClick={() => setShowFullPlans((prev) => !prev)}
+                      className="w-full py-2.5 px-3 rounded-2xl border border-dashed border-rose-300 hover:border-rose-400 bg-rose-50/60 hover:bg-rose-50 text-rose-700 font-black text-xs flex items-center justify-between cursor-pointer transition-all"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Ver planos completos</span>
+                      </span>
+                      {showFullPlans ? (
+                        <ChevronUp className="w-4 h-4 text-rose-600" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-rose-600" />
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* FULL MONTHLY PLANS (100 MT, 250 MT, 1000 MT) */}
+                {(showFullPlans || hasActiveMonthly) && (
+                  <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-neutral-800 uppercase tracking-wide block">
+                        Planos Mensais Completos:
+                      </label>
+                      <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                        Assinatura 30 dias
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {monthlyPlans.map((plan) => {
+                        const isSelected = selectedPlanId === plan.id;
+
+                        return (
+                          <div
+                            key={plan.id}
+                            onClick={() => setSelectedPlanId(plan.id)}
+                            className={`p-3 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-1.5 ${
+                              isSelected
+                                ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-600/20'
+                                : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 pr-6">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                {getPlanIcon(plan)}
+                                <div className="min-w-0">
+                                  <span className="font-black text-xs sm:text-sm text-neutral-900 tracking-tight block truncate">
+                                    {plan.name}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-500 font-medium block">
+                                    {plan.durationLabel}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <div className="font-black text-base sm:text-lg text-rose-600 tracking-tight whitespace-nowrap">
+                                  {plan.priceMt} <span className="text-xs font-bold text-neutral-700">MT</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Bulleted features */}
+                            <div className="pt-1.5 border-t border-neutral-200/70 grid grid-cols-1 gap-1 text-xs">
+                              {plan.features.map((feat, idx) => (
+                                <div key={idx} className="flex items-center gap-1.5 text-[10.5px] text-neutral-700">
+                                  <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                                  <span className="leading-tight">{feat}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {isSelected && (
+                              <div className="absolute top-3 right-3 w-4.5 h-4.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Payment Method Selector (M-Pesa / E-Mola) */}
@@ -428,6 +549,60 @@ export const HeartLinkVisibilityModal: React.FC<HeartLinkVisibilityModalProps> =
                     <span>do HeartLink.</span>
                   </div>
                 </label>
+              </div>
+
+              {/* Statistics Accordion (Passes e Monetização) */}
+              <div className="pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setShowStats((prev) => !prev)}
+                  className="w-full text-left py-2 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 text-[11px] font-bold flex items-center justify-between cursor-pointer transition-colors"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <BarChart3 className="w-3.5 h-3.5 text-neutral-600" />
+                    <span>Estatísticas de Passes e Desbloqueios</span>
+                  </span>
+                  {showStats ? (
+                    <ChevronUp className="w-3.5 h-3.5 text-neutral-600" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 text-neutral-600" />
+                  )}
+                </button>
+
+                {showStats && (() => {
+                  const currentStats = heartLinkAccessService.getStats();
+                  return (
+                    <div className="mt-1.5 p-3 rounded-2xl bg-neutral-900 text-white text-xs space-y-2.5 border border-neutral-800 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="p-2 rounded-xl bg-neutral-800/90 border border-neutral-700/50">
+                          <span className="text-neutral-400 block text-[10px]">Passes Contacto (20 MT)</span>
+                          <span className="text-sm font-black text-white">{currentStats.contactPassesCount} vendidos</span>
+                          <span className="text-[10.5px] text-emerald-400 font-bold block">{currentStats.revenueContactPasses} MT</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-neutral-800/90 border border-neutral-700/50">
+                          <span className="text-neutral-400 block text-[10px]">Passes Diários (50 MT)</span>
+                          <span className="text-sm font-black text-white">{currentStats.dailyPassesCount} vendidos</span>
+                          <span className="text-[10.5px] text-emerald-400 font-bold block">{currentStats.revenueDailyPasses} MT</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                        <div className="p-1.5 rounded-xl bg-neutral-800/60 border border-neutral-700/40">
+                          <span className="text-neutral-400 block">Contactos Desbloq.</span>
+                          <span className="text-xs font-black text-rose-400">{currentStats.unlockedContactsCount}</span>
+                        </div>
+                        <div className="p-1.5 rounded-xl bg-neutral-800/60 border border-neutral-700/40">
+                          <span className="text-neutral-400 block">Conversões Mensais</span>
+                          <span className="text-xs font-black text-amber-400">{currentStats.conversionsToMonthlyCount}</span>
+                        </div>
+                        <div className="p-1.5 rounded-xl bg-neutral-800/60 border border-neutral-700/40">
+                          <span className="text-neutral-400 block">Receita Total</span>
+                          <span className="text-xs font-black text-emerald-400">{currentStats.totalRevenue} MT</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Action Buttons */}

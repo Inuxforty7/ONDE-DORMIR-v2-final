@@ -430,7 +430,7 @@ export const TourGuidesTab: React.FC<TourGuidesTabProps> = ({
             title="Visitas ao módulo Turismo"
           >
             <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-300 shrink-0" />
-            <span>{formatVisitCount(getModuleCount('turismo'))} visitas</span>
+            <span>{formatVisitCount(getModuleCount('turismo'))}</span>
           </div>
 
           {/* Título Principal com Tamanho Reduzido */}

@@ -27,8 +27,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258842112233',
     verified: true,
     featured: true,
-    ownerId: 'owner-demo-1',
-    ownerName: 'Armando C. Guebuza (Rentals)',
+    ownerId: 'owner-prado-maputo',
+    ownerName: 'Rentals & Serviços Moçambique Lda',
     description: 'Ideal para viagens até à Ponta do Ouro, Bilene ou deslocações executivas em Maputo. Tração 4x4 integral e ar condicionado duplo.'
   },
   {
@@ -82,8 +82,8 @@ export const INITIAL_CAR_RENTALS: CarRental[] = [
     whatsapp: '258848881122',
     verified: true,
     featured: false,
-    ownerId: 'owner-demo-1',
-    ownerName: 'Armando C. Guebuza (Rentals)',
+    ownerId: 'owner-hilux-matola',
+    ownerName: 'Transportes & Logística Matola Lda',
     description: 'Robusta e económica para serviços comerciais, logística e deslocações em Maputo Província.'
   },
 

@@ -66,112 +66,18 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
     const saved = localStorage.getItem('onde_dormir_owner_fleet');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Purge obsolete demo owner mock
+        if (parsed?.ownerId === 'owner-demo-1' || parsed?.fullName?.includes('Armando C. Guebuza')) {
+          localStorage.removeItem('onde_dormir_owner_fleet');
+          return null;
+        }
+        return parsed;
       } catch (e) {
         return null;
       }
     }
-    // Default demo owner fleet for immediate testing
-    return {
-      ownerId: 'owner-demo-1',
-      fullName: 'Armando C. Guebuza (Rentals)',
-      biNumber: '110200345678A',
-      isFacialVerified: true,
-      phone: '+258842112233',
-      whatsapp: '258842112233',
-      city: 'Maputo',
-      province: 'Maputo Cidade',
-      verifiedAt: new Date().toISOString(),
-      vehicles: [
-        {
-          id: 'fleet-v1',
-          model: 'Toyota Land Cruiser Prado VX 4x4',
-          brand: 'Toyota',
-          category: '4x4',
-          categoryLabel: '4x4 Todo-o-Terreno',
-          photo: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80',
-          seats: 7,
-          transmission: 'Automático',
-          fuel: 'Gasóleo',
-          city: 'Maputo',
-          province: 'Maputo Cidade',
-          withDriverAvailable: true,
-          ratePerDay: 5500,
-          depositAmount: 15000,
-          plateNumber: 'AE-890-MC',
-          phone: '+258842112233',
-          whatsapp: '258842112233',
-          verified: true,
-          featured: true,
-          description: 'Viatura da frota executiva. Ar condicionado bizona e revisão completa.',
-          ownerName: 'Armando C. Guebuza (Rentals)',
-          ownerBiNumber: '110200345678A',
-          ownerFacialVerified: true,
-          livretePhoto: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
-          tituloPropriedadePhoto: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=400&q=80',
-          isActiveSubscription: true,
-          monthlyFee: 1000
-        },
-        {
-          id: 'fleet-v2',
-          model: 'Toyota Hilux GD-6 2.8 4x4 Double Cab',
-          brand: 'Toyota',
-          category: 'carrinha',
-          categoryLabel: 'Pickup 4x4',
-          photo: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80',
-          seats: 5,
-          transmission: 'Manual',
-          fuel: 'Gasóleo',
-          city: 'Matola',
-          province: 'Maputo Província',
-          withDriverAvailable: true,
-          ratePerDay: 4200,
-          depositAmount: 12000,
-          plateNumber: 'AF-321-MC',
-          phone: '+258842112233',
-          whatsapp: '258842112233',
-          verified: true,
-          featured: true,
-          description: 'Carrinha para safari, trabalhos de campo e transporte de carga.',
-          ownerName: 'Armando C. Guebuza (Rentals)',
-          ownerBiNumber: '110200345678A',
-          ownerFacialVerified: true,
-          livretePhoto: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
-          tituloPropriedadePhoto: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=400&q=80',
-          isActiveSubscription: true,
-          monthlyFee: 1000
-        },
-        {
-          id: 'fleet-v3',
-          model: 'Toyota Corolla Cross Hybrid',
-          brand: 'Toyota',
-          category: 'suv',
-          categoryLabel: 'SUV Familiar',
-          photo: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
-          seats: 5,
-          transmission: 'Automático',
-          fuel: 'Gasolina',
-          city: 'Maputo',
-          province: 'Maputo Cidade',
-          withDriverAvailable: true,
-          ratePerDay: 3500,
-          depositAmount: 10000,
-          plateNumber: 'AH-112-MC',
-          phone: '+258842112233',
-          whatsapp: '258842112233',
-          verified: true,
-          featured: false,
-          description: 'Económico e confortável para a cidade de Maputo.',
-          ownerName: 'Armando C. Guebuza (Rentals)',
-          ownerBiNumber: '110200345678A',
-          ownerFacialVerified: true,
-          livretePhoto: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80',
-          tituloPropriedadePhoto: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=400&q=80',
-          isActiveSubscription: false, // Mensalidade expirada: invisível no catálogo público até pagar!
-          monthlyFee: 1000
-        }
-      ]
-    };
+    return null;
   });
 
   const [vehicles, setVehicles] = useState<CarRental[]>(() => {
@@ -450,7 +356,7 @@ export const RentACarTab: React.FC<RentACarTabProps> = ({
             title="Visitas ao módulo Rent-a-Car"
           >
             <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 shrink-0" />
-            <span>{formatVisitCount(getModuleCount('rentacar'))} visitas</span>
+            <span>{formatVisitCount(getModuleCount('rentacar'))}</span>
           </div>
 
           {/* Título Principal com Tamanho Reduzido e Harmonizado */}
